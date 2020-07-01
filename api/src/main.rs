@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
 
@@ -20,16 +21,21 @@ struct Dependency {
     kind: String,
 }
 
-fn traverse_dir(path: &Path) -> io::Result<()> {
-    for dir_entry in fs::read_dir(path)? {
-        let dir_entry = dir_entry?;
-        if dir_entry.file_type()?.is_dir() {
-            traverse_dir(dir_entry.path().as_path())?;
-        } else {
-            for line in BufReader::new(File::open(dir_entry.path().as_path())?).lines() {
-                let deserialized: Result<Crate, _> = serde_json::from_str(&line?);
-                if let Ok(line_crate) = deserialized {
-                    ()
+fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
+    if !path.to_str().unwrap().ends_with(".git") {
+        for dir_entry in fs::read_dir(path)? {
+            let dir_entry = dir_entry?;
+            if dir_entry.file_type()?.is_dir() {
+                traverse_dir(dir_entry.path().as_path(), crates)?;
+            } else {
+                for line in BufReader::new(File::open(dir_entry.path().as_path())?).lines() {
+                    let deserialized: Result<Crate, _> = serde_json::from_str(&line?);
+                    if let Ok(line_crate) = deserialized {
+                        crates.insert(
+                            format!("{}@{}", line_crate.name, line_crate.vers),
+                            line_crate,
+                        );
+                    }
                 }
             }
         }
@@ -47,7 +53,11 @@ fn main() {
     //     let dir_entry = dir_entry
     // }
 
-    traverse_dir(Path::new("data")).unwrap();
+    let mut crates: HashMap<String, Crate> = HashMap::new();
+
+    traverse_dir(Path::new("data"), &mut crates).unwrap();
+
+    println!("number of crates: {}", crates.len());
 
     // let example_path = Path::new("data/ac/ti/actix-web");
     // let file_contents = fs::read_to_string(example_path).unwrap();
