@@ -2,7 +2,9 @@
 use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
-use std::fs;
+// use semver_parser::version;
+use std::fs::{self, File};
+use std::io::{self, BufRead, BufReader};
 
 #[derive(Deserialize, Debug)]
 struct Crate {
@@ -18,19 +20,42 @@ struct Dependency {
     kind: String,
 }
 
+fn traverse_dir(path: &Path) -> io::Result<()> {
+    for dir_entry in fs::read_dir(path)? {
+        let dir_entry = dir_entry?;
+        if dir_entry.file_type()?.is_dir() {
+            traverse_dir(dir_entry.path().as_path())?;
+        } else {
+            for line in BufReader::new(File::open(dir_entry.path().as_path())?).lines() {
+                let deserialized: Result<Crate, _> = serde_json::from_str(&line?);
+                if let Ok(line_crate) = deserialized {
+                    ()
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn main() {
     // let temp_dir: TempDir = tempdir().unwrap();
     // let path: &Path = temp_dir.path();
     // Repository::clone("https://github.com/rust-lang/crates.io-index.git", path).unwrap();
     println!("Hello, world!");
 
-    let example_path = Path::new("data/ac/ti/actix-web");
-    let file_contents = fs::read_to_string(example_path).unwrap();
-    for line in file_contents.split("\n").filter(|line| line.len() > 0) {
-        // println!("size: {}", line.len());
-        let line_crate: Crate = serde_json::from_str(&line).unwrap();
-        println!("crate: {:?}\n", line_crate);
-    }
+    // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
+    //     let dir_entry = dir_entry
+    // }
+
+    traverse_dir(Path::new("data")).unwrap();
+
+    // let example_path = Path::new("data/ac/ti/actix-web");
+    // let file_contents = fs::read_to_string(example_path).unwrap();
+    // for line in file_contents.split("\n").filter(|line| line.len() > 0) {
+    //     // println!("size: {}", line.len());
+    //     let line_crate: Crate = serde_json::from_str(&line).unwrap();
+    //     println!("crate: {:?}\n", line_crate);
+    // }
     // let example_file = File::open(example_path).unwrap();
     // temp_dir.close().unwrap();
 }
