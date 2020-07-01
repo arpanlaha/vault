@@ -1,0 +1,11 @@
+target/
+**/*.rs.bk
+Cargo.lock
+bin/
+wasm-spectrum/
+wasm-pack.log
+
+node_modules
+.vercel
+dist
+ts
