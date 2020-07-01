@@ -15,8 +15,6 @@ struct Crate {
 struct Dependency {
     name: String,
     req: String,
-    features: Vec<String>,
-    default_features: bool,
     kind: String,
 }
 
