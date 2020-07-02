@@ -21,6 +21,15 @@ struct Dependency {
     kind: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct Category {
+    category: String,
+    description: String,
+    id: usize,
+    path: String,
+    slug: String,
+}
+
 fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
     if !path.to_str().unwrap().ends_with(".git") {
         for dir_entry in fs::read_dir(path)? {
@@ -43,21 +52,34 @@ fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<
     Ok(())
 }
 
+fn read_categories() -> io::Result<()> {
+    for result in csv::Reader::from_reader(BufReader::new(File::open(Path::new(
+        "../dump/data/categories.csv",
+    ))?))
+    .deserialize()
+    {
+        let record: Category = result?;
+        println!("{:?}\n", record);
+    }
+    Ok(())
+}
+
 fn main() {
     // let temp_dir: TempDir = tempdir().unwrap();
     // let path: &Path = temp_dir.path();
     // Repository::clone("https://github.com/rust-lang/crates.io-index.git", path).unwrap();
     println!("Hello, world!");
+    read_categories().unwrap();
 
     // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
     //     let dir_entry = dir_entry
     // }
 
-    let mut crates: HashMap<String, Crate> = HashMap::new();
+    // let mut crates: HashMap<String, Crate> = HashMap::new();
 
-    traverse_dir(Path::new("data"), &mut crates).unwrap();
+    // traverse_dir(Path::new("data"), &mut crates).unwrap();
 
-    println!("number of crates: {}", crates.len());
+    // println!("number of crates: {}", crates.len());
 
     // let example_path = Path::new("data/ac/ti/actix-web");
     // let file_contents = fs::read_to_string(example_path).unwrap();
