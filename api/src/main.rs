@@ -1,9 +1,12 @@
 // use git2::Repository;
+
 use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
+use crate::ArangoDocument;
 use arangors::{ClientError, Collection, Connection, Database, Document};
+
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
@@ -22,13 +25,17 @@ struct Dependency {
     kind: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, ArangoDocument)]
 struct Category {
     category: String,
     description: String,
     id: usize,
     path: String,
     slug: String,
+}
+
+trait ArangoDocument {
+    fn get_insert() -> String;
 }
 
 fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
