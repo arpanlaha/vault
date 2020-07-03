@@ -9,8 +9,8 @@ pub fn arango_document_derive(input: TokenStream) -> TokenStream {
 
     let gen = quote! {
         impl ArangoDocument for #name {
-            fn get_insert() {
-                println!("Hello, Macro! My name is {}!", stringify!(#name));
+            fn get_insert(&self) -> String {
+                format!("Hello, Macro! My name is {}!", stringify!(#name))
             }
         }
     };

@@ -4,13 +4,12 @@ use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
-use crate::ArangoDocument;
 use arangors::{ClientError, Collection, Connection, Database, Document};
-
+use derive::ArangoDocument;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
-
+use traits::ArangoDocument;
 #[derive(Deserialize, Debug)]
 struct Crate {
     name: String,
@@ -32,10 +31,6 @@ struct Category {
     id: usize,
     path: String,
     slug: String,
-}
-
-trait ArangoDocument {
-    fn get_insert() -> String;
 }
 
 fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
@@ -108,10 +103,11 @@ async fn connect_db() -> io::Result<()> {
     .deserialize()
     {
         let record: Category = result?;
-        let document = Document::<Category>::new(record);
-        println!("{:?}", document);
+        println!("record: {}", record.get_insert());
+        // let document = Document::<Category>::new(record);
+        // println!("{:?}", document);
         // TODO: proc macro
-        collection.create_document(document).await;
+        // collection.create_document(document).await;
     }
 
     Ok(())
