@@ -101,16 +101,17 @@ async fn connect_db() -> io::Result<()> {
     .deserialize()
     {
         let record: Category = result?;
-
-        collection.create_document(Document::new(record)).await;
-        println!("Hello, again!");
+        let document = Document::<Category>::new(record);
+        println!("{:?}", document);
+        // TODO: proc macro
+        collection.create_document(document).await;
     }
 
     Ok(())
 }
 
-#[tokio::main]
-async fn main() {
+// #[tokio::main]
+fn main() {
     dotenv::dotenv().unwrap();
 
     // let temp_dir: TempDir = tempdir().unwrap();
@@ -119,7 +120,10 @@ async fn main() {
     println!("Hello, world!");
     // read_categories().unwrap();
 
-    connect_db().await.unwrap()
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(connect_db())
+        .unwrap();
 
     // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
     //     let dir_entry = dir_entry
