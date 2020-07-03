@@ -3,11 +3,10 @@ use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
-use arangors::Connection;
+use arangors::{ClientError, Collection, Connection, Database, Document};
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
-use tokio::runtime::Runtime;
 
 #[derive(Deserialize, Debug)]
 struct Crate {
@@ -66,17 +65,52 @@ fn read_categories() -> io::Result<()> {
     Ok(())
 }
 
-async fn connect_db() {
-    let conn = Connection::establish_jwt(
+async fn get_connection() -> Result<Connection, ClientError> {
+    Connection::establish_jwt(
         dotenv::var("ARANGODB_URI").unwrap().as_str(),
-        "root",
-        dotenv::var("ARANGODB_ROOT_PASSWORD").unwrap().as_str(),
+        dotenv::var("ARANGODB_USER").unwrap().as_str(),
+        dotenv::var("ARANGODB_PASSWORD").unwrap().as_str(),
     )
     .await
-    .unwrap();
 }
 
-fn main() {
+// async fn get_db(connection: &Connection, db: &str) -> Result<Database, ClientError> {
+//     connection.db(db).await
+// }
+
+// async fn g
+
+// async fn get_collection(collection: &str) -> Result<Collection, ClientError> {
+//     let conn = Connection::establish_jwt(
+//         dotenv::var("ARANGODB_URI").unwrap().as_str(),
+//         dotenv::var("ARANGODB_USER").unwrap().as_str(),
+//         dotenv::var("ARANGODB_PASSWORD").unwrap().as_str(),
+//     )
+//     .await
+//     .unwrap().db("vault").await.unwrap()collection("categories").await
+// }
+
+async fn connect_db() -> io::Result<()> {
+    let connection = get_connection().await.unwrap();
+    let db = connection.db("vault").await.unwrap();
+    let collection = db.collection("categories").await.unwrap();
+
+    for result in csv::Reader::from_reader(BufReader::new(File::open(Path::new(
+        "../dump/data/categories.csv",
+    ))?))
+    .deserialize()
+    {
+        let record: Category = result?;
+
+        collection.create_document(Document::new(record)).await;
+        println!("Hello, again!");
+    }
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() {
     dotenv::dotenv().unwrap();
 
     // let temp_dir: TempDir = tempdir().unwrap();
@@ -85,7 +119,7 @@ fn main() {
     println!("Hello, world!");
     // read_categories().unwrap();
 
-    Runtime::new().unwrap().block_on(connect_db());
+    connect_db().await.unwrap()
 
     // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
     //     let dir_entry = dir_entry
@@ -107,3 +141,8 @@ fn main() {
     // let example_file = File::open(example_path).unwrap();
     // temp_dir.close().unwrap();
 }
+
+// fn main() {
+//     start();
+// }
+//
