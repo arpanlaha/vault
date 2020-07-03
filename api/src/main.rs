@@ -3,9 +3,11 @@ use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
+use arangors::Connection;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
+use tokio::runtime::Runtime;
 
 #[derive(Deserialize, Debug)]
 struct Crate {
@@ -64,12 +66,26 @@ fn read_categories() -> io::Result<()> {
     Ok(())
 }
 
+async fn connect_db() {
+    let conn = Connection::establish_jwt(
+        dotenv::var("ARANGODB_URI").unwrap().as_str(),
+        "root",
+        dotenv::var("ARANGODB_ROOT_PASSWORD").unwrap().as_str(),
+    )
+    .await
+    .unwrap();
+}
+
 fn main() {
+    dotenv::dotenv().unwrap();
+
     // let temp_dir: TempDir = tempdir().unwrap();
     // let path: &Path = temp_dir.path();
     // Repository::clone("https://github.com/rust-lang/crates.io-index.git", path).unwrap();
     println!("Hello, world!");
-    read_categories().unwrap();
+    // read_categories().unwrap();
+
+    Runtime::new().unwrap().block_on(connect_db());
 
     // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
     //     let dir_entry = dir_entry
