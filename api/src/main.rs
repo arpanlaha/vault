@@ -48,7 +48,11 @@ impl ArangoDocument for Category {
         } = self;
         format!(
             r#"INSERT {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
-            category, description, id, path, slug
+            category,
+            description.replace("\"", "\\\""),
+            id,
+            path,
+            slug
         )
     }
 }
@@ -115,7 +119,7 @@ async fn get_connection() -> Result<Connection, ClientError> {
 async fn connect_db() -> io::Result<()> {
     let connection = get_connection().await.unwrap();
     let db = connection.db("vault").await.unwrap();
-    let collection = db.collection("categories").await.unwrap();
+    // let collection = db.collection("categories").await.unwrap();
 
     for result in csv::Reader::from_reader(BufReader::new(File::open(Path::new(
         "../dump/data/categories.csv",
@@ -123,7 +127,10 @@ async fn connect_db() -> io::Result<()> {
     .deserialize()
     {
         let record: Category = result?;
-        println!("record: {}", record.get_insert());
+        let _res: Vec<Category> = db
+            .aql_str(record.get_insert().as_str())
+            .await
+            .expect(record.get_insert().as_str());
         // let document = Document::<Category>::new(record);
         // println!("{:?}", document);
         // TODO: proc macro
