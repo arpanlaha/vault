@@ -140,8 +140,8 @@ async fn connect_db() -> io::Result<()> {
     Ok(())
 }
 
-// #[tokio::main]
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv::dotenv().unwrap();
 
     // let temp_dir: TempDir = tempdir().unwrap();
@@ -150,10 +150,7 @@ fn main() {
     println!("Hello, world!");
     // read_categories().unwrap();
 
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(connect_db())
-        .unwrap();
+    connect_db().await.unwrap();
 
     // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
     //     let dir_entry = dir_entry
