@@ -57,27 +57,27 @@ impl ArangoDocument for Category {
     }
 }
 
-fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
-    if !path.to_str().unwrap().ends_with(".git") {
-        for dir_entry in fs::read_dir(path)? {
-            let dir_entry = dir_entry?;
-            if dir_entry.file_type()?.is_dir() {
-                traverse_dir(dir_entry.path().as_path(), crates)?;
-            } else {
-                for line in BufReader::new(File::open(dir_entry.path().as_path())?).lines() {
-                    let deserialized: Result<Crate, _> = serde_json::from_str(&line?);
-                    if let Ok(line_crate) = deserialized {
-                        crates.insert(
-                            format!("{}@{}", line_crate.name, line_crate.vers),
-                            line_crate,
-                        );
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
-}
+// fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
+//     if !path.to_str().unwrap().ends_with(".git") {
+//         for dir_entry in fs::read_dir(path)? {
+//             let dir_entry = dir_entry?;
+//             if dir_entry.file_type()?.is_dir() {
+//                 traverse_dir(dir_entry.path().as_path(), crates)?;
+//             } else {
+//                 for line in BufReader::new(File::open(dir_entry.path().as_path())?).lines() {
+//                     let deserialized: Result<Crate, _> = serde_json::from_str(&line?);
+//                     if let Ok(line_crate) = deserialized {
+//                         crates.insert(
+//                             format!("{}@{}", line_crate.name, line_crate.vers),
+//                             line_crate,
+//                         );
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     Ok(())
+// }
 
 fn read_categories() -> io::Result<()> {
     for result in csv::Reader::from_reader(BufReader::new(File::open(Path::new(
