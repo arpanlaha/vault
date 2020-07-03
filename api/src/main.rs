@@ -5,11 +5,11 @@ use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
 use arangors::{ClientError, Collection, Connection, Database, Document};
-use derive::ArangoDocument;
+// use derive::ArangoDocument;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
-use traits::ArangoDocument;
+// use traits::ArangoDocument;
 #[derive(Deserialize, Debug)]
 struct Crate {
     name: String,
@@ -24,13 +24,33 @@ struct Dependency {
     kind: String,
 }
 
-#[derive(Deserialize, Debug, ArangoDocument)]
+#[derive(Deserialize, Debug)]
 struct Category {
     category: String,
     description: String,
     id: usize,
     path: String,
     slug: String,
+}
+
+trait ArangoDocument {
+    fn get_insert(&self) -> String;
+}
+
+impl ArangoDocument for Category {
+    fn get_insert(&self) -> String {
+        let Category {
+            category,
+            description,
+            id,
+            path,
+            slug,
+        } = self;
+        format!(
+            r#"INSERT {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
+            category, description, id, path, slug
+        )
+    }
 }
 
 fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
