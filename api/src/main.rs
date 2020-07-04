@@ -4,24 +4,18 @@ use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
-use arangors::{ClientError, Collection, Connection, Database, Document};
+use arangors::{
+    client::reqwest::ReqwestClient, ClientError, Collection, Connection, Database, Document,
+};
 // use derive::ArangoDocument;
-use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
 // use traits::ArangoDocument;
 #[derive(Deserialize, Debug)]
 struct Crate {
+    description: String,
+    id: String,
     name: String,
-    vers: String,
-    deps: Vec<Dependency>,
-}
-
-#[derive(Deserialize, Debug)]
-struct Dependency {
-    name: String,
-    req: String,
-    kind: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -49,10 +43,27 @@ impl ArangoDocument for Category {
         format!(
             r#"INSERT {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
             category,
+            // TODO: fix appearance in db
             description.replace("\"", "\\\""),
             id,
             path,
             slug
+        )
+    }
+}
+
+impl ArangoDocument for Crate {
+    fn get_insert(&self) -> String {
+        let Crate {
+            description,
+            id,
+            name,
+        } = self;
+        format!(
+            r#"INSERT {{ description: "{}", id: {}, name: "{}" }} INTO documents"#,
+            description.replace("\"", "\\\""),
+            id,
+            name
         )
     }
 }
@@ -79,18 +90,6 @@ impl ArangoDocument for Category {
 //     Ok(())
 // }
 
-fn read_categories() -> io::Result<()> {
-    for result in csv::Reader::from_reader(BufReader::new(File::open(Path::new(
-        "../dump/data/categories.csv",
-    ))?))
-    .deserialize()
-    {
-        let record: Category = result?;
-        println!("{:?}\n", record);
-    }
-    Ok(())
-}
-
 async fn get_connection() -> Result<Connection, ClientError> {
     Connection::establish_jwt(
         dotenv::var("ARANGODB_URI").unwrap().as_str(),
@@ -116,27 +115,24 @@ async fn get_connection() -> Result<Connection, ClientError> {
 //     .unwrap().db("vault").await.unwrap()collection("categories").await
 // }
 
-async fn connect_db() -> io::Result<()> {
-    let connection = get_connection().await.unwrap();
-    let db = connection.db("vault").await.unwrap();
-    // let collection = db.collection("categories").await.unwrap();
+async fn connect_db() -> Result<(), ClientError> {
+    let connection = get_connection().await?;
+    let db = connection.db("vault").await?;
 
-    for result in csv::Reader::from_reader(BufReader::new(File::open(Path::new(
-        "../dump/data/categories.csv",
-    ))?))
+    load_categories(db).await?;
+
+    Ok(())
+}
+
+async fn load_categories(db: Database<'_, ReqwestClient>) -> Result<(), ClientError> {
+    for result in csv::Reader::from_reader(BufReader::new(
+        File::open(Path::new("../dump/data/categories.csv")).unwrap(),
+    ))
     .deserialize()
     {
-        let record: Category = result?;
-        let _res: Vec<Category> = db
-            .aql_str(record.get_insert().as_str())
-            .await
-            .expect(record.get_insert().as_str());
-        // let document = Document::<Category>::new(record);
-        // println!("{:?}", document);
-        // TODO: proc macro
-        // collection.create_document(document).await;
+        let record: Category = result.unwrap();
+        let _vec: Vec<Category> = db.aql_str(record.get_insert().as_str()).await?;
     }
-
     Ok(())
 }
 
@@ -172,8 +168,3 @@ async fn main() {
     // let example_file = File::open(example_path).unwrap();
     // temp_dir.close().unwrap();
 }
-
-// fn main() {
-//     start();
-// }
-//
