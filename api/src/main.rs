@@ -1,20 +1,11 @@
 // use git2::Repository;
 
-use serde::Deserialize;
-use std::path::Path;
-// use tempfile::{tempdir, TempDir};
-// use semver_parser::version;
 use arangors::{client::reqwest::ReqwestClient, ClientError, Connection, Database};
-// use derive::ArangoDocument;
+use serde::{de::DeserializeOwned, Deserialize};
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufReader;
-// use traits::ArangoDocument;
-#[derive(Deserialize, Debug)]
-struct Crate {
-    description: String,
-    id: String,
-    name: String,
-}
+use std::path::Path;
 
 #[derive(Deserialize, Debug)]
 struct Category {
@@ -25,12 +16,30 @@ struct Category {
     slug: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct Crate {
+    description: String,
+    id: String,
+    name: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct Keyword {
+    crates_cnt: usize,
+    id: usize,
+    keyword: String,
+}
+
 trait ArangoDocument {
-    fn get_insert(&self) -> String;
+    fn get_insert_query(&self) -> String;
+}
+
+fn escape_quotes(input: &String) -> String {
+    input.replace("\"", "\\\"")
 }
 
 impl ArangoDocument for Category {
-    fn get_insert(&self) -> String {
+    fn get_insert_query(&self) -> String {
         let Category {
             category,
             description,
@@ -42,7 +51,7 @@ impl ArangoDocument for Category {
             r#"INSERT {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
             category,
             // TODO: fix appearance in db
-            description.replace("\"", "\\\""),
+            escape_quotes(description),
             id,
             path,
             slug
@@ -51,44 +60,39 @@ impl ArangoDocument for Category {
 }
 
 impl ArangoDocument for Crate {
-    fn get_insert(&self) -> String {
+    fn get_insert_query(&self) -> String {
         let Crate {
             description,
             id,
             name,
         } = self;
         format!(
-            r#"INSERT {{ description: "{}", id: {}, name: "{}" }} INTO documents"#,
-            description.replace("\"", "\\\""),
+            r#"INSERT {{ description: "{}", id: {}, name: "{}" }} INTO crates"#,
+            escape_quotes(description),
             id,
             name
         )
     }
 }
 
-// fn traverse_dir(path: &Path, crates: &mut HashMap<String, Crate>) -> io::Result<()> {
-//     if !path.to_str().unwrap().ends_with(".git") {
-//         for dir_entry in fs::read_dir(path)? {
-//             let dir_entry = dir_entry?;
-//             if dir_entry.file_type()?.is_dir() {
-//                 traverse_dir(dir_entry.path().as_path(), crates)?;
-//             } else {
-//                 for line in BufReader::new(File::open(dir_entry.path().as_path())?).lines() {
-//                     let deserialized: Result<Crate, _> = serde_json::from_str(&line?);
-//                     if let Ok(line_crate) = deserialized {
-//                         crates.insert(
-//                             format!("{}@{}", line_crate.name, line_crate.vers),
-//                             line_crate,
-//                         );
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     Ok(())
-// }
+impl ArangoDocument for Keyword {
+    fn get_insert_query(&self) -> String {
+        let Keyword {
+            crates_cnt,
+            id,
+            keyword,
+        } = self;
+        format!(
+            r#"INSERT {{ crates_cnt: {}, id: {}, keyword: "{}" }}"#,
+            crates_cnt,
+            id,
+            escape_quotes(keyword),
+        )
+    }
+}
 
 async fn get_connection() -> Result<Connection, ClientError> {
+    println!("Establishing driver connection...");
     Connection::establish_jwt(
         dotenv::var("ARANGODB_URI").unwrap().as_str(),
         dotenv::var("ARANGODB_USER").unwrap().as_str(),
@@ -97,39 +101,30 @@ async fn get_connection() -> Result<Connection, ClientError> {
     .await
 }
 
-// async fn get_db(connection: &Connection, db: &str) -> Result<Database, ClientError> {
-//     connection.db(db).await
-// }
-
-// async fn g
-
-// async fn get_collection(collection: &str) -> Result<Collection, ClientError> {
-//     let conn = Connection::establish_jwt(
-//         dotenv::var("ARANGODB_URI").unwrap().as_str(),
-//         dotenv::var("ARANGODB_USER").unwrap().as_str(),
-//         dotenv::var("ARANGODB_PASSWORD").unwrap().as_str(),
-//     )
-//     .await
-//     .unwrap().db("vault").await.unwrap()collection("categories").await
-// }
-
 async fn connect_db() -> Result<(), ClientError> {
+    println!("Connecting to database...");
     let connection = get_connection().await?;
     let db = connection.db("vault").await?;
 
-    load_categories(db).await?;
+    load_documents::<Category>(&db, "categories").await?;
+    load_documents::<Crate>(&db, "crates").await?;
+    load_documents::<Keyword>(&db, "keywords").await?;
 
     Ok(())
 }
 
-async fn load_categories(db: Database<'_, ReqwestClient>) -> Result<(), ClientError> {
+async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
+    db: &Database<'_, ReqwestClient>,
+    filename: &str,
+) -> Result<(), ClientError> {
+    println!("Loading {}...", filename);
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new("../dump/data/categories.csv")).unwrap(),
+        File::open(Path::new(format!("../dump/data/{}.csv", filename).as_str())).unwrap(),
     ))
     .deserialize()
     {
-        let record: Category = result.unwrap();
-        let _vec: Vec<Category> = db.aql_str(record.get_insert().as_str()).await?;
+        let record: T = result.unwrap();
+        let _vec: Vec<T> = db.aql_str(record.get_insert_query().as_str()).await?;
     }
     Ok(())
 }
@@ -137,32 +132,5 @@ async fn load_categories(db: Database<'_, ReqwestClient>) -> Result<(), ClientEr
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().unwrap();
-
-    // let temp_dir: TempDir = tempdir().unwrap();
-    // let path: &Path = temp_dir.path();
-    // Repository::clone("https://github.com/rust-lang/crates.io-index.git", path).unwrap();
-    println!("Hello, world!");
-    // read_categories().unwrap();
-
     connect_db().await.unwrap();
-
-    // for dir_entry in fs::read_dir(Path::new("data")).unwrap() {
-    //     let dir_entry = dir_entry
-    // }
-
-    // let mut crates: HashMap<String, Crate> = HashMap::new();
-
-    // traverse_dir(Path::new("data"), &mut crates).unwrap();
-
-    // println!("number of crates: {}", crates.len());
-
-    // let example_path = Path::new("data/ac/ti/actix-web");
-    // let file_contents = fs::read_to_string(example_path).unwrap();
-    // for line in file_contents.split("\n").filter(|line| line.len() > 0) {
-    //     // println!("size: {}", line.len());
-    //     let line_crate: Crate = serde_json::from_str(&line).unwrap();
-    //     println!("crate: {:?}\n", line_crate);
-    // }
-    // let example_file = File::open(example_path).unwrap();
-    // temp_dir.close().unwrap();
 }
