@@ -4,12 +4,10 @@ use serde::Deserialize;
 use std::path::Path;
 // use tempfile::{tempdir, TempDir};
 // use semver_parser::version;
-use arangors::{
-    client::reqwest::ReqwestClient, ClientError, Collection, Connection, Database, Document,
-};
+use arangors::{client::reqwest::ReqwestClient, ClientError, Connection, Database};
 // use derive::ArangoDocument;
-use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader};
+use std::fs::File;
+use std::io::BufReader;
 // use traits::ArangoDocument;
 #[derive(Deserialize, Debug)]
 struct Crate {
