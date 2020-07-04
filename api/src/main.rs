@@ -29,9 +29,9 @@ async fn connect_db() -> Result<(), ClientError> {
     println!("Database connection established.");
     println!("Loading documents...");
 
-    // load_documents::<Category>(&db, "categories").await?;
-    // load_documents::<Crate>(&db, "crates").await?;
-    // load_documents::<Keyword>(&db, "keywords").await?;
+    load_documents::<Category>(&db, "categories").await?;
+    load_documents::<Crate>(&db, "crates").await?;
+    load_documents::<Keyword>(&db, "keywords").await?;
     load_versions(&db).await?;
 
     println!(

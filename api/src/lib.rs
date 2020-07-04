@@ -124,16 +124,21 @@ mod custom_time {
     use chrono::{DateTime, NaiveDateTime};
     use serde::{self, Deserialize, Deserializer};
 
-    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S.%f";
+    const FORMAT_1: &'static str = "%Y-%m-%d %H:%M:%S.%f";
+    const FORMAT_2: &'static str = "%Y-%m-%d %H:%M:%S";
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        match DateTime::parse_from_rfc3339(&s) {
-            Ok(date_time) => Ok(date_time.naive_utc()),
-            Err(_) => NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom),
+        if let Ok(date_time) = DateTime::parse_from_rfc3339(&s) {
+            return Ok(date_time.naive_utc());
         }
+        if let Ok(date_time) = NaiveDateTime::parse_from_str(&s, FORMAT_1) {
+            return Ok(date_time);
+        }
+
+        NaiveDateTime::parse_from_str(&s, FORMAT_2).map_err(serde::de::Error::custom)
     }
 }
