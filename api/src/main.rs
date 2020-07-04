@@ -1,95 +1,10 @@
-// use git2::Repository;
-
 use arangors::{client::reqwest::ReqwestClient, ClientError, Connection, Database};
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-
-#[derive(Deserialize, Debug)]
-struct Category {
-    category: String,
-    description: String,
-    id: usize,
-    path: String,
-    slug: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Crate {
-    description: String,
-    id: String,
-    name: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Keyword {
-    crates_cnt: usize,
-    id: usize,
-    keyword: String,
-}
-
-trait ArangoDocument {
-    fn get_insert_query(&self) -> String;
-}
-
-fn escape_quotes(input: &String) -> String {
-    input.replace("\"", "\\\"")
-}
-
-impl ArangoDocument for Category {
-    fn get_insert_query(&self) -> String {
-        let Category {
-            category,
-            description,
-            id,
-            path,
-            slug,
-        } = self;
-        format!(
-            r#"INSERT {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
-            category,
-            // TODO: fix appearance in db
-            escape_quotes(description),
-            id,
-            path,
-            slug
-        )
-    }
-}
-
-impl ArangoDocument for Crate {
-    fn get_insert_query(&self) -> String {
-        let Crate {
-            description,
-            id,
-            name,
-        } = self;
-        format!(
-            r#"INSERT {{ description: "{}", id: {}, name: "{}" }} INTO crates"#,
-            escape_quotes(description),
-            id,
-            name
-        )
-    }
-}
-
-impl ArangoDocument for Keyword {
-    fn get_insert_query(&self) -> String {
-        let Keyword {
-            crates_cnt,
-            id,
-            keyword,
-        } = self;
-        format!(
-            r#"INSERT {{ crates_cnt: {}, id: {}, keyword: "{}" }} INTO keywords"#,
-            crates_cnt,
-            id,
-            escape_quotes(keyword),
-        )
-    }
-}
+use vault::{ArangoDocument, Category, Crate, Keyword};
 
 async fn get_connection() -> Result<Connection, ClientError> {
     println!("Establishing driver connection...");
