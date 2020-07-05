@@ -61,7 +61,8 @@ impl ArangoDocument for Category {
             slug,
         } = self;
         format!(
-            r#"INSERT {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
+            r#"INSERT {{ _key: "{}", category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
+            id,
             category,
             // TODO: fix appearance in db
             escape_quotes(description),
@@ -80,7 +81,8 @@ impl ArangoDocument for Crate {
             name,
         } = self;
         format!(
-            r#"INSERT {{ description: "{}", id: {}, name: "{}" }} INTO crates"#,
+            r#"INSERT {{ _key: "{}", description: "{}", id: {}, name: "{}" }} INTO crates"#,
+            id,
             escape_quotes(description),
             id,
             name
@@ -96,7 +98,8 @@ impl ArangoDocument for Keyword {
             keyword,
         } = self;
         format!(
-            r#"INSERT {{ crates_cnt: {}, id: {}, keyword: "{}" }} INTO keywords"#,
+            r#"INSERT {{ _key: "{}", crates_cnt: {}, id: {}, keyword: "{}" }} INTO keywords"#,
+            id,
             crates_cnt,
             id,
             escape_quotes(keyword),
@@ -114,8 +117,8 @@ impl ArangoDocument for Version {
             num,
         } = self;
         format!(
-            r#"INSERT {{ crate_id: {}, created_at: "{}", downloads: {}, id: {}, num: "{}" }} INTO versions"#,
-            crate_id, created_at, downloads, id, num
+            r#"INSERT {{ _key: "{}", crate_id: {}, created_at: "{}", downloads: {}, id: {}, num: "{}" }} INTO versions"#,
+            id, crate_id, created_at, downloads, id, num
         )
     }
 }
