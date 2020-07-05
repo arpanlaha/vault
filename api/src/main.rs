@@ -20,6 +20,7 @@ async fn connect_db() -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
     let connection = get_connection().await?;
+    println!("Driver connection established.");
     let db = get_db(&connection, "vault").await?;
 
     println!("Database connection established.");
