@@ -87,11 +87,11 @@ async fn connect_db(data_path: &str) -> Result<(), ClientError> {
     println!("Loading documents...");
 
     load_documents::<Category>(&db, data_path, "categories").await?;
-    load_documents::<Crate>(&db, data_path, "categories").await?;
-    load_documents::<Keyword>(&db, data_path, "categories").await?;
+    load_documents::<Crate>(&db, data_path, "crates").await?;
+    load_documents::<Keyword>(&db, data_path, "keywords").await?;
 
-    load_documents::<CrateCategory>(&db, data_path, "categories").await?;
-    load_documents::<CrateKeyword>(&db, data_path, "categories").await?;
+    load_documents::<CrateCategory>(&db, data_path, "crates_categories").await?;
+    load_documents::<CrateKeyword>(&db, data_path, "crates_keywords").await?;
 
     let versions_to_crates = load_versions(&db, data_path).await?;
     load_dependencies(&db, data_path, &versions_to_crates).await?;
