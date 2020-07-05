@@ -111,14 +111,13 @@ impl ArangoDocument for Version {
     fn get_insert_query(&self) -> String {
         let Version {
             crate_id,
-            created_at,
             downloads,
-            id,
             num,
+            ..
         } = self;
         format!(
-            r#"INSERT {{ _key: "{}", crate_id: {}, created_at: "{}", downloads: {}, id: {}, num: "{}" }} INTO versions"#,
-            id, crate_id, created_at, downloads, id, num
+            r#"UPDATE "{}" WITH {{ current_version: "{}", downloads: {} }} IN crates"#,
+            crate_id, num, downloads
         )
     }
 }
