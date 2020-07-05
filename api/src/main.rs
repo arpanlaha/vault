@@ -1,15 +1,17 @@
 use arangors::{client::reqwest::ReqwestClient, ClientError, Database};
+use flate2::read::GzDecoder;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
+use tar::Archive;
 use tempfile::TempDir;
 use vault::arango::{
     client::{get_connection, get_db},
@@ -19,28 +21,53 @@ use vault::arango::{
     },
 };
 
+fn get_data_path(temp_dir: &TempDir) -> Option<String> {
+    for dir_entry in fs::read_dir(temp_dir.path()).expect("Unable to read temporary directory") {
+        let dir_entry = dir_entry.unwrap();
+        if let Ok(file_type) = dir_entry.file_type() {
+            if file_type.is_dir() {
+                return Some(String::from(
+                    dir_entry
+                        .path()
+                        .as_path()
+                        .to_str()
+                        .expect("Data path is not valid UTF-8"),
+                ));
+            }
+        }
+    }
+
+    None
+}
+
 fn fetch_data() -> TempDir {
     let temp_dir = TempDir::new().unwrap();
     let tgz_path = temp_dir.path().join("crates_data.tar.gz");
+    let tgz_path_name = tgz_path
+        .as_path()
+        .to_str()
+        .expect("Tarball path not valid UTF-8");
 
     println!("Downloading tarballed database dump...");
     Command::new("curl")
         .arg("https://static.crates.io/db-dump.tar.gz")
         .arg("-o")
-        .arg(tgz_path.as_path())
+        .arg(tgz_path_name)
         .output()
         .expect("Unable to fetch Crates database dump");
     println!("Tarballed database dump downloaded.");
 
-    println!("Unpacking tarballed database dump...");
-    Command::new("tar")
-        .arg("-fxz")
-        .arg(tgz_path.as_path())
-        .arg("-c")
-        .arg(temp_dir.path())
-        .output()
-        .expect("Unable to unpack tarball");
-    println!("Tarballed database dump unpacked.");
+    println!("Unzipping tarballed database dump...");
+    let tar = GzDecoder::new(
+        File::open(tgz_path_name).expect(format!("Unable to open {}", tgz_path_name).as_str()),
+    );
+    println!("Unzipped tarballed database dump into TAR archive.");
+
+    println!("Unpacking database dump TAR archive...");
+    Archive::new(tar)
+        .unpack(temp_dir.path())
+        .expect("Unable to unpack database dump TAR archive");
+    println!("Unpacked database dump TAR.");
 
     temp_dir
 }
@@ -49,7 +76,7 @@ fn get_collection_pathname(temp_dir_pathname: &str, filename: &str) -> String {
     format!("{}/data/{}.csv", temp_dir_pathname, filename)
 }
 
-async fn connect_db(temp_dir: &TempDir) -> Result<(), ClientError> {
+async fn connect_db(data_path: &str) -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
     let connection = get_connection().await?;
@@ -59,35 +86,20 @@ async fn connect_db(temp_dir: &TempDir) -> Result<(), ClientError> {
     println!("Database connection established.");
     println!("Loading documents...");
 
-    let temp_dir_pathname = temp_dir
-        .path()
-        .to_str()
-        .expect("Temporary directory path name not valid UTF-8");
+    load_documents::<Category>(&db, get_collection_pathname(data_path, "categories")).await?;
+    load_documents::<Crate>(&db, get_collection_pathname(data_path, "crates")).await?;
+    load_documents::<Keyword>(&db, get_collection_pathname(data_path, "keywords")).await?;
 
-    load_documents::<Category>(
-        &db,
-        get_collection_pathname(temp_dir_pathname, "categories"),
-    )
-    .await?;
-    load_documents::<Crate>(&db, get_collection_pathname(temp_dir_pathname, "crates")).await?;
-    load_documents::<Keyword>(&db, get_collection_pathname(temp_dir_pathname, "keywords")).await?;
-
-    load_documents::<CrateCategory>(
-        &db,
-        get_collection_pathname(temp_dir_pathname, "crates_categories"),
-    )
-    .await?;
-    load_documents::<CrateKeyword>(
-        &db,
-        get_collection_pathname(temp_dir_pathname, "crates_keywords"),
-    )
-    .await?;
+    load_documents::<CrateCategory>(&db, get_collection_pathname(data_path, "crates_categories"))
+        .await?;
+    load_documents::<CrateKeyword>(&db, get_collection_pathname(data_path, "crates_keywords"))
+        .await?;
 
     let versions_to_crates =
-        load_versions(&db, get_collection_pathname(temp_dir_pathname, "versions")).await?;
+        load_versions(&db, get_collection_pathname(data_path, "versions")).await?;
     load_dependencies(
         &db,
-        get_collection_pathname(temp_dir_pathname, "dependencies"),
+        get_collection_pathname(data_path, "dependencies"),
         &versions_to_crates,
     )
     .await?;
@@ -278,9 +290,11 @@ fn clean_tempdir(temp_dir: TempDir) {
 async fn main() {
     let temp_dir = fetch_data();
 
+    let data_path = get_data_path(&temp_dir).expect("Unable to locate data path");
+
     dotenv::dotenv().unwrap();
 
-    connect_db(&temp_dir).await.unwrap();
+    connect_db(data_path.as_str()).await.unwrap();
 
     clean_tempdir(temp_dir);
 }
