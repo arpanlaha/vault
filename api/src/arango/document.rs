@@ -18,6 +18,14 @@ pub struct Crate {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct Dependency {
+    pub from: usize,
+    pub id: usize,
+    pub kind: usize,
+    pub to: usize,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Keyword {
     pub crates_cnt: usize,
     pub id: usize,
@@ -32,6 +40,14 @@ pub struct Version {
     pub downloads: usize,
     pub id: usize,
     pub num: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SqlDependency {
+    pub crate_id: usize,
+    pub id: usize,
+    pub kind: usize,
+    pub version_id: usize,
 }
 
 impl Version {
@@ -90,6 +106,16 @@ impl ArangoDocument for Crate {
     }
 }
 
+impl ArangoDocument for Dependency {
+    fn get_insert_query(&self) -> String {
+        let Dependency { from, id, kind, to } = self;
+        format!(
+            r#"INSERT {{ _key: "{}", _from: "crates/{}", id: {}, kind: {}, _to: "crates/{}" }} INTO dependencies"#,
+            id, from, id, kind, to
+        )
+    }
+}
+
 impl ArangoDocument for Keyword {
     fn get_insert_query(&self) -> String {
         let Keyword {
@@ -112,12 +138,13 @@ impl ArangoDocument for Version {
         let Version {
             crate_id,
             downloads,
+            id,
             num,
             ..
         } = self;
         format!(
-            r#"UPDATE "{}" WITH {{ current_version: "{}", downloads: {} }} IN crates"#,
-            crate_id, num, downloads
+            r#"UPDATE "{}" WITH {{ current_version: "{}", current_version_id: {}, downloads: {} }} INTO crates"#,
+            crate_id, num, id, downloads
         )
     }
 }
