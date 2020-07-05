@@ -10,7 +10,10 @@ use std::path::Path;
 use std::time::Instant;
 use vault::arango::{
     client::{get_connection, get_db},
-    document::{ArangoDocument, Category, Crate, Dependency, Keyword, SqlDependency, Version},
+    document::{
+        ArangoDocument, Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword,
+        SqlDependency, Version,
+    },
 };
 
 async fn connect_db() -> Result<(), ClientError> {
@@ -25,6 +28,10 @@ async fn connect_db() -> Result<(), ClientError> {
     load_documents::<Category>(&db, "categories").await?;
     load_documents::<Crate>(&db, "crates").await?;
     load_documents::<Keyword>(&db, "keywords").await?;
+
+    load_documents::<CrateCategory>(&db, "crate_categories").await?;
+    load_documents::<CrateKeyword>(&db, "crate_keywords").await?;
+
     let versions_to_crates = load_versions(&db).await?;
     load_dependencies(&db, &versions_to_crates).await?;
 
