@@ -125,7 +125,7 @@ impl ArangoDocument for CrateCategory {
             crate_id,
         } = self;
         format!(
-            r#"INSERT {{ category_id: {}, crate_id: {}, _from: "crates/{}", _to: "categories/{}" }} INTO crate_categories"#,
+            r#"INSERT {{ category_id: {}, crate_id: {}, _from: "crates/{}", _to: "categories/{}" }} INTO crates_categories"#,
             category_id, crate_id, crate_id, category_id
         )
     }
@@ -138,7 +138,7 @@ impl ArangoDocument for CrateKeyword {
             keyword_id,
         } = self;
         format!(
-            r#"INSERT {{ crate_id: {}, _from: "crates/{}", keyword_id: {}, _to: "keywords/{}" }} INTO crate_keywords"#,
+            r#"INSERT {{ crate_id: {}, _from: "crates/{}", keyword_id: {}, _to: "keywords/{}" }} INTO crates_keywords"#,
             crate_id, crate_id, keyword_id, keyword_id
         )
     }

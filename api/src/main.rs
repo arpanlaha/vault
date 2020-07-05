@@ -29,8 +29,8 @@ async fn connect_db() -> Result<(), ClientError> {
     load_documents::<Crate>(&db, "crates").await?;
     load_documents::<Keyword>(&db, "keywords").await?;
 
-    load_documents::<CrateCategory>(&db, "crate_categories").await?;
-    load_documents::<CrateKeyword>(&db, "crate_keywords").await?;
+    load_documents::<CrateCategory>(&db, "crates_categories").await?;
+    load_documents::<CrateKeyword>(&db, "crates_keywords").await?;
 
     let versions_to_crates = load_versions(&db).await?;
     load_dependencies(&db, &versions_to_crates).await?;
