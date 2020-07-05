@@ -37,7 +37,7 @@ pub struct Version {
 impl Version {
     pub fn is_pre(&self) -> bool {
         !semver_version::parse(self.num.as_str())
-            .expect(format!("{:?}", self).as_str())
+            .unwrap()
             .pre
             .is_empty()
     }
