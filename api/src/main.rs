@@ -1,4 +1,4 @@
-use arangors::{client::reqwest::ReqwestClient, ClientError, Connection, Database};
+use arangors::{client::reqwest::ReqwestClient, ClientError, Database};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::cmp::Ordering;
@@ -8,23 +8,16 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::time::Instant;
-use vault::{ArangoDocument, Category, Crate, Keyword, Version};
-
-async fn get_connection() -> Result<Connection, ClientError> {
-    println!("Establishing driver connection...");
-    Connection::establish_jwt(
-        dotenv::var("ARANGODB_URI").unwrap().as_str(),
-        dotenv::var("ARANGODB_USER").unwrap().as_str(),
-        dotenv::var("ARANGODB_PASSWORD").unwrap().as_str(),
-    )
-    .await
-}
+use vault::arango::{
+    client::{get_connection, get_db},
+    document::{ArangoDocument, Category, Crate, Keyword, Version},
+};
 
 async fn connect_db() -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
     let connection = get_connection().await?;
-    let db = connection.db("vault").await?;
+    let db = get_db(&connection, "vault").await?;
 
     println!("Database connection established.");
     println!("Loading documents...");
