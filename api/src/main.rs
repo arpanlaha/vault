@@ -8,7 +8,9 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::process::Command;
 use std::time::Instant;
+use tempfile::TempDir;
 use vault::arango::{
     client::{get_connection, get_db},
     document::{
@@ -17,7 +19,37 @@ use vault::arango::{
     },
 };
 
-async fn connect_db() -> Result<(), ClientError> {
+fn fetch_data() -> TempDir {
+    let temp_dir = TempDir::new().unwrap();
+    let tgz_path = temp_dir.path().join("crates_data.tar.gz");
+
+    println!("Downloading tarballed database dump...");
+    Command::new("curl")
+        .arg("https://static.crates.io/db-dump.tar.gz")
+        .arg("-o")
+        .arg(tgz_path.as_path())
+        .output()
+        .expect("Unable to fetch Crates database dump");
+    println!("Tarballed database dump downloaded.");
+
+    println!("Unpacking tarballed database dump...");
+    Command::new("tar")
+        .arg("-fxz")
+        .arg(tgz_path.as_path())
+        .arg("-c")
+        .arg(temp_dir.path())
+        .output()
+        .expect("Unable to unpack tarball");
+    println!("Tarballed database dump unpacked.");
+
+    temp_dir
+}
+
+fn get_collection_pathname(temp_dir_pathname: &str, filename: &str) -> String {
+    format!("{}/data/{}.csv", temp_dir_pathname, filename)
+}
+
+async fn connect_db(temp_dir: &TempDir) -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
     let connection = get_connection().await?;
@@ -27,15 +59,38 @@ async fn connect_db() -> Result<(), ClientError> {
     println!("Database connection established.");
     println!("Loading documents...");
 
-    load_documents::<Category>(&db, "categories").await?;
-    load_documents::<Crate>(&db, "crates").await?;
-    load_documents::<Keyword>(&db, "keywords").await?;
+    let temp_dir_pathname = temp_dir
+        .path()
+        .to_str()
+        .expect("Temporary directory path name not valid UTF-8");
 
-    load_documents::<CrateCategory>(&db, "crates_categories").await?;
-    load_documents::<CrateKeyword>(&db, "crates_keywords").await?;
+    load_documents::<Category>(
+        &db,
+        get_collection_pathname(temp_dir_pathname, "categories"),
+    )
+    .await?;
+    load_documents::<Crate>(&db, get_collection_pathname(temp_dir_pathname, "crates")).await?;
+    load_documents::<Keyword>(&db, get_collection_pathname(temp_dir_pathname, "keywords")).await?;
 
-    let versions_to_crates = load_versions(&db).await?;
-    load_dependencies(&db, &versions_to_crates).await?;
+    load_documents::<CrateCategory>(
+        &db,
+        get_collection_pathname(temp_dir_pathname, "crates_categories"),
+    )
+    .await?;
+    load_documents::<CrateKeyword>(
+        &db,
+        get_collection_pathname(temp_dir_pathname, "crates_keywords"),
+    )
+    .await?;
+
+    let versions_to_crates =
+        load_versions(&db, get_collection_pathname(temp_dir_pathname, "versions")).await?;
+    load_dependencies(
+        &db,
+        get_collection_pathname(temp_dir_pathname, "dependencies"),
+        &versions_to_crates,
+    )
+    .await?;
 
     println!(
         "Finished loading documents into database in {} seconds.",
@@ -47,21 +102,14 @@ async fn connect_db() -> Result<(), ClientError> {
 
 async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
     db: &Database<'_, ReqwestClient>,
-    filename: &str,
+    filename: String,
 ) -> Result<(), ClientError> {
     println!("Loading {}...", filename);
     let start = Instant::now();
     let mut count = 0usize;
-    let filename = format!("../dump/data/{}.csv", filename);
 
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new(filename.as_str())).expect(
-            format!(
-                "Unable to open {}",
-                format!("../dump/data/{}.csv", filename)
-            )
-            .as_str(),
-        ),
+        File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
     ))
     .deserialize()
     {
@@ -87,12 +135,11 @@ async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
     Ok(())
 }
 
-fn get_versions() -> HashMap<usize, Version> {
+fn get_versions(filename: String) -> HashMap<usize, Version> {
     let mut versions = HashMap::<usize, Version>::new();
     let mut count = 0usize;
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new("../dump/data/versions.csv"))
-            .expect("Unable to open ../dump/data/versions.csv"),
+        File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
     ))
     .deserialize()
     {
@@ -144,12 +191,13 @@ fn get_versions() -> HashMap<usize, Version> {
 
 async fn load_versions<'a>(
     db: &'a Database<'_, ReqwestClient>,
+    filename: String,
 ) -> Result<HashMap<usize, usize>, ClientError> {
     println!("Loading versions...");
     let start = Instant::now();
     let mut count = 0usize;
 
-    let versions = get_versions();
+    let versions = get_versions(filename);
 
     for version in versions.values() {
         let _: Vec<Version> = db.aql_str(version.get_insert_query().as_str()).await?;
@@ -168,12 +216,14 @@ async fn load_versions<'a>(
         .collect())
 }
 
-fn get_dependencies(versions_to_crates: &HashMap<usize, usize>) -> Vec<Dependency> {
+fn get_dependencies(
+    filename: String,
+    versions_to_crates: &HashMap<usize, usize>,
+) -> Vec<Dependency> {
     let mut dependencies = Vec::with_capacity(versions_to_crates.len());
     let mut count = 0usize;
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new("../dump/data/dependencies.csv"))
-            .expect("Unable to open ../dump/data/dependencies.csv"),
+        File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
     ))
     .deserialize()
     {
@@ -193,13 +243,14 @@ fn get_dependencies(versions_to_crates: &HashMap<usize, usize>) -> Vec<Dependenc
 
 async fn load_dependencies<'a>(
     db: &'a Database<'_, ReqwestClient>,
+    filename: String,
     versions_to_crates: &HashMap<usize, usize>,
 ) -> Result<(), ClientError> {
     println!("Loading dependencies...");
     let start = Instant::now();
     let mut count = 0usize;
 
-    let dependencies = get_dependencies(versions_to_crates);
+    let dependencies = get_dependencies(filename, versions_to_crates);
 
     for dependency in dependencies {
         let _: Vec<Dependency> = db.aql_str(dependency.get_insert_query().as_str()).await?;
@@ -215,8 +266,21 @@ async fn load_dependencies<'a>(
     Ok(())
 }
 
+fn clean_tempdir(temp_dir: TempDir) {
+    println!("Cleaning up temporary files and directories...");
+    temp_dir
+        .close()
+        .expect("Unable to close temporary directory");
+    println!("Temporary files and directories removed.");
+}
+
 #[tokio::main]
 async fn main() {
+    let temp_dir = fetch_data();
+
     dotenv::dotenv().unwrap();
-    connect_db().await.unwrap();
+
+    connect_db(&temp_dir).await.unwrap();
+
+    clean_tempdir(temp_dir);
 }

@@ -12,7 +12,6 @@ version = "0.1.0"
 # r2d2_cypher    = "0.4"
 # rusted_cypher  = "1.1"
 # serde_json     = "1.0"
-# tempfile       = "3.1"
 # tokio-postgres = "0.5"
 arangors      = "0.3"
 chrono        = { version = "0.4", features = ["serde"] }
@@ -20,6 +19,7 @@ csv           = "1.1"
 dotenv        = "0.15"
 semver-parser = "0.9"
 serde         = "1.0"
+tempfile      = "3.1"
 tokio         = { version = "0.2", features = ["macros"] }
 
 # derive = { path = "./derive" }
