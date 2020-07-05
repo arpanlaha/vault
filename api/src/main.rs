@@ -72,8 +72,8 @@ fn fetch_data() -> TempDir {
     temp_dir
 }
 
-fn get_collection_pathname(temp_dir_pathname: &str, filename: &str) -> String {
-    format!("{}/data/{}.csv", temp_dir_pathname, filename)
+fn get_collection_path(data_path: &str, collection_name: &str) -> String {
+    format!("{}/data/{}.csv", data_path, collection_name)
 }
 
 async fn connect_db(data_path: &str) -> Result<(), ClientError> {
@@ -86,23 +86,15 @@ async fn connect_db(data_path: &str) -> Result<(), ClientError> {
     println!("Database connection established.");
     println!("Loading documents...");
 
-    load_documents::<Category>(&db, get_collection_pathname(data_path, "categories")).await?;
-    load_documents::<Crate>(&db, get_collection_pathname(data_path, "crates")).await?;
-    load_documents::<Keyword>(&db, get_collection_pathname(data_path, "keywords")).await?;
+    load_documents::<Category>(&db, data_path, "categories").await?;
+    load_documents::<Crate>(&db, data_path, "categories").await?;
+    load_documents::<Keyword>(&db, data_path, "categories").await?;
 
-    load_documents::<CrateCategory>(&db, get_collection_pathname(data_path, "crates_categories"))
-        .await?;
-    load_documents::<CrateKeyword>(&db, get_collection_pathname(data_path, "crates_keywords"))
-        .await?;
+    load_documents::<CrateCategory>(&db, data_path, "categories").await?;
+    load_documents::<CrateKeyword>(&db, data_path, "categories").await?;
 
-    let versions_to_crates =
-        load_versions(&db, get_collection_pathname(data_path, "versions")).await?;
-    load_dependencies(
-        &db,
-        get_collection_pathname(data_path, "dependencies"),
-        &versions_to_crates,
-    )
-    .await?;
+    let versions_to_crates = load_versions(&db, data_path).await?;
+    load_dependencies(&db, data_path, &versions_to_crates).await?;
 
     println!(
         "Finished loading documents into database in {} seconds.",
@@ -114,14 +106,17 @@ async fn connect_db(data_path: &str) -> Result<(), ClientError> {
 
 async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
     db: &Database<'_, ReqwestClient>,
-    filename: String,
+    data_path: &str,
+    collection_name: &str,
 ) -> Result<(), ClientError> {
-    println!("Loading {}...", filename);
+    println!("Loading {}...", collection_name);
     let start = Instant::now();
     let mut count = 0usize;
 
+    let file_path = get_collection_path(data_path, collection_name);
+
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
+        File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
     ))
     .deserialize()
     {
@@ -140,7 +135,7 @@ async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
     println!(
         "Loaded {} {} into database in {} seconds.",
         count,
-        filename,
+        collection_name,
         start.elapsed().as_secs_f64()
     );
 
@@ -203,13 +198,14 @@ fn get_versions(filename: String) -> HashMap<usize, Version> {
 
 async fn load_versions<'a>(
     db: &'a Database<'_, ReqwestClient>,
-    filename: String,
+    data_path: &str,
 ) -> Result<HashMap<usize, usize>, ClientError> {
     println!("Loading versions...");
     let start = Instant::now();
     let mut count = 0usize;
+    let versions_path = get_collection_path(data_path, "versions");
 
-    let versions = get_versions(filename);
+    let versions = get_versions(versions_path);
 
     for version in versions.values() {
         let _: Vec<Version> = db.aql_str(version.get_insert_query().as_str()).await?;
@@ -255,14 +251,16 @@ fn get_dependencies(
 
 async fn load_dependencies<'a>(
     db: &'a Database<'_, ReqwestClient>,
-    filename: String,
+    data_path: &str,
     versions_to_crates: &HashMap<usize, usize>,
 ) -> Result<(), ClientError> {
     println!("Loading dependencies...");
     let start = Instant::now();
     let mut count = 0usize;
 
-    let dependencies = get_dependencies(filename, versions_to_crates);
+    let dependencies_path = get_collection_path(data_path, "dependencies");
+
+    let dependencies = get_dependencies(dependencies_path, versions_to_crates);
 
     for dependency in dependencies {
         let _: Vec<Dependency> = db.aql_str(dependency.get_insert_query().as_str()).await?;
