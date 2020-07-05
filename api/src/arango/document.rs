@@ -65,7 +65,7 @@ pub struct SqlDependency {
 impl Version {
     pub fn is_pre(&self) -> bool {
         !semver_version::parse(self.num.as_str())
-            .unwrap()
+            .expect(format!("{} does not adhere to SemVer", self.num).as_str())
             .pre
             .is_empty()
     }
@@ -92,7 +92,6 @@ impl ArangoDocument for Category {
             r#"INSERT {{ _key: "{}", category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
             id,
             category,
-            // TODO: fix appearance in db
             escape_quotes(description),
             id,
             path,

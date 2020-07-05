@@ -1,6 +1,7 @@
 use arangors::{client::reqwest::ReqwestClient, ClientError, Database};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
+use std::any;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -51,15 +52,29 @@ async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
     println!("Loading {}...", filename);
     let start = Instant::now();
     let mut count = 0usize;
+    let filename = format!("../dump/data/{}.csv", filename);
 
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new(format!("../dump/data/{}.csv", filename).as_str())).unwrap(),
+        File::open(Path::new(filename.as_str())).expect(
+            format!(
+                "Unable to open {}",
+                format!("../dump/data/{}.csv", filename)
+            )
+            .as_str(),
+        ),
     ))
     .deserialize()
     {
-        let record: T = result.unwrap();
-        let _: Vec<T> = db.aql_str(record.get_insert_query().as_str()).await?;
         count += 1;
+        let record: T = result.expect(
+            format!(
+                "Unable to deserialize entry {} as {}",
+                count,
+                any::type_name::<T>()
+            )
+            .as_str(),
+        );
+        let _: Vec<T> = db.aql_str(record.get_insert_query().as_str()).await?;
     }
 
     println!(
@@ -74,12 +89,16 @@ async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
 
 fn get_versions() -> HashMap<usize, Version> {
     let mut versions = HashMap::<usize, Version>::new();
+    let mut count = 0usize;
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new("../dump/data/versions.csv")).unwrap(),
+        File::open(Path::new("../dump/data/versions.csv"))
+            .expect("Unable to open ../dump/data/versions.csv"),
     ))
     .deserialize()
     {
-        let version: Version = result.unwrap();
+        count += 1;
+        let version: Version =
+            result.expect(format!("Unable to deserialize entry {} as Version", count).as_str());
         let Version { crate_id, .. } = version;
 
         if versions.contains_key(&crate_id) {
@@ -151,12 +170,16 @@ async fn load_versions<'a>(
 
 fn get_dependencies(versions_to_crates: &HashMap<usize, usize>) -> Vec<Dependency> {
     let mut dependencies = Vec::with_capacity(versions_to_crates.len());
+    let mut count = 0usize;
     for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new("../dump/data/dependencies.csv")).unwrap(),
+        File::open(Path::new("../dump/data/dependencies.csv"))
+            .expect("Unable to open ../dump/data/dependencies.csv"),
     ))
     .deserialize()
     {
-        let sql_dependency: SqlDependency = result.unwrap();
+        count += 1;
+        let sql_dependency: SqlDependency =
+            result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
         let SqlDependency { id, kind, .. } = sql_dependency;
         let from_version_id = sql_dependency.version_id;
         let to = sql_dependency.crate_id;

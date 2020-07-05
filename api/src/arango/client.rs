@@ -3,9 +3,15 @@ use arangors::{client::reqwest::ReqwestClient, ClientError, Connection, Database
 pub async fn get_connection() -> Result<Connection, ClientError> {
     println!("Establishing driver connection...");
     Connection::establish_jwt(
-        dotenv::var("ARANGODB_URI").unwrap().as_str(),
-        dotenv::var("ARANGODB_USER").unwrap().as_str(),
-        dotenv::var("ARANGODB_PASSWORD").unwrap().as_str(),
+        dotenv::var("ARANGODB_URI")
+            .expect("Environment variable ARANGODB_URI not set")
+            .as_str(),
+        dotenv::var("ARANGODB_USER")
+            .expect("Environment variable ARANGODB_USER not set")
+            .as_str(),
+        dotenv::var("ARANGODB_PASSWORD")
+            .expect("Environment variable ARANGODB_PASSWORD not set")
+            .as_str(),
     )
     .await
 }
