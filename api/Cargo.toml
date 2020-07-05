@@ -24,6 +24,3 @@ tokio         = { version = "0.2", features = ["macros"] }
 
 # derive = { path = "./derive" }
 # traits = { path = "./traits" }
-
-[profile.release]
-opt-level = 3
