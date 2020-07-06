@@ -41,6 +41,8 @@ fn get_data_path(temp_dir: &TempDir) -> Option<String> {
 }
 
 fn fetch_data() -> TempDir {
+    println!("Fetching data...");
+    let fetch_start = Instant::now();
     let temp_dir = TempDir::new().unwrap();
     let tgz_path = temp_dir.path().join("crates_data.tar.gz");
     let tgz_path_name = tgz_path
@@ -51,25 +53,41 @@ fn fetch_data() -> TempDir {
         .expect(format!("Unable to create {}", tgz_path_name).as_str());
 
     println!("Downloading tarballed database dump...");
+    let download_start = Instant::now();
     let mut curl = Easy::new();
     curl.url("https://static.crates.io/db-dump.tar.gz").unwrap();
     curl.write_function(move |data| Ok(tgz_file.write(data).unwrap()))
         .unwrap();
     curl.perform().unwrap();
-    println!("Tarballed database dump downloaded.");
+    println!(
+        "Tarballed database dump downloaded in {} seconds.",
+        download_start.elapsed().as_secs_f64()
+    );
 
     println!("Unzipping tarballed database dump...");
+    let unzip_start = Instant::now();
     let tar = GzDecoder::new(
         File::open(tgz_path_name).expect(format!("Unable to open {}", tgz_path_name).as_str()),
     );
-    println!("Unzipped tarballed database dump into TAR archive.");
+    println!(
+        "Unzipped tarballed database dump into TAR archive in {} seconds.",
+        unzip_start.elapsed().as_secs_f64()
+    );
 
     println!("Unpacking database dump TAR archive...");
+    let unpack_start = Instant::now();
     Archive::new(tar)
         .unpack(temp_dir.path())
         .expect("Unable to unpack database dump TAR archive");
-    println!("Unpacked database dump TAR.");
+    println!(
+        "Unpacked database dump TAR archive in {} seconds.",
+        unpack_start.elapsed().as_secs_f64()
+    );
 
+    println!(
+        "Finished fetching data in {} seconds.",
+        fetch_start.elapsed().as_secs_f64()
+    );
     temp_dir
 }
 
@@ -279,10 +297,14 @@ async fn load_dependencies<'a>(
 
 fn clean_tempdir(temp_dir: TempDir) {
     println!("Cleaning up temporary files and directories...");
+    let clean_start = Instant::now();
     temp_dir
         .close()
         .expect("Unable to close temporary directory");
-    println!("Temporary files and directories removed.");
+    println!(
+        "Temporary files and directories removed in {} seconds.",
+        clean_start.elapsed().as_secs_f64()
+    );
 }
 
 #[tokio::main]
