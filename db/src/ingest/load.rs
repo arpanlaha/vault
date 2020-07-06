@@ -183,12 +183,14 @@ fn get_dependencies(
         count += 1;
         let sql_dependency: SqlDependency =
             result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
-        let SqlDependency { id, kind, .. } = sql_dependency;
+        let SqlDependency { kind, .. } = sql_dependency;
         let from_version_id = sql_dependency.version_id;
         let to = sql_dependency.crate_id;
 
         if let Some(&from) = versions_to_crates.get(&from_version_id) {
-            dependencies.push(Dependency { from, id, kind, to });
+            if kind == 0 {
+                dependencies.push(Dependency { from, to });
+            }
         }
     }
     dependencies

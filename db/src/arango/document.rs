@@ -32,8 +32,6 @@ pub struct CrateKeyword {
 #[derive(Deserialize, Debug)]
 pub struct Dependency {
     pub from: usize,
-    pub id: usize,
-    pub kind: usize,
     pub to: usize,
 }
 
@@ -124,8 +122,8 @@ impl ArangoDocument for CrateCategory {
             crate_id,
         } = self;
         format!(
-            r#"INSERT {{ category_id: {}, crate_id: {}, _from: "crates/{}", _to: "categories/{}" }} INTO crates_categories"#,
-            category_id, crate_id, crate_id, category_id
+            r#"INSERT {{ _from: "crates/{}", _to: "categories/{}" }} INTO crates_categories"#,
+            crate_id, category_id
         )
     }
 }
@@ -137,18 +135,18 @@ impl ArangoDocument for CrateKeyword {
             keyword_id,
         } = self;
         format!(
-            r#"INSERT {{ crate_id: {}, _from: "crates/{}", keyword_id: {}, _to: "keywords/{}" }} INTO crates_keywords"#,
-            crate_id, crate_id, keyword_id, keyword_id
+            r#"INSERT {{ _from: "crates/{}", _to: "keywords/{}" }} INTO crates_keywords"#,
+            crate_id, keyword_id
         )
     }
 }
 
 impl ArangoDocument for Dependency {
     fn get_insert_query(&self) -> String {
-        let Dependency { from, id, kind, to } = self;
+        let Dependency { from, to } = self;
         format!(
-            r#"INSERT {{ _key: "{}", _from: "crates/{}", id: {}, kind: {}, _to: "crates/{}" }} INTO dependencies"#,
-            id, from, id, kind, to
+            r#"INSERT {{_from: "crates/{}", _to: "crates/{}" }} INTO dependencies"#,
+            from, to
         )
     }
 }
