@@ -13,7 +13,7 @@ use std::path::Path;
 use std::time::Instant;
 use tar::Archive;
 use tempfile::TempDir;
-use vault::arango::{
+use vault_ingest::arango::{
     client::{get_connection, get_db},
     document::{
         ArangoDocument, Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword,

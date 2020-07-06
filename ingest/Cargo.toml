@@ -1,7 +1,7 @@
 [package]
 authors = ["Arpan Laha <arpanlaha99@gmail.com>"]
 edition = "2018"
-name    = "vault-ingest"
+name    = "vault_ingest"
 version = "0.1.0"
 
 [dependencies]
