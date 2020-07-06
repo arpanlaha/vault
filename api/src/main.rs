@@ -1,4 +1,5 @@
 use arangors::{client::reqwest::ReqwestClient, ClientError, Database};
+use curl::easy::Easy;
 use flate2::read::GzDecoder;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
@@ -7,9 +8,8 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::{self, File};
-use std::io::BufReader;
+use std::io::{BufReader, Write};
 use std::path::Path;
-use std::process::Command;
 use std::time::Instant;
 use tar::Archive;
 use tempfile::TempDir;
@@ -47,14 +47,15 @@ fn fetch_data() -> TempDir {
         .as_path()
         .to_str()
         .expect("Tarball path not valid UTF-8");
+    let mut tgz_file = File::create(tgz_path.as_path())
+        .expect(format!("Unable to create {}", tgz_path_name).as_str());
 
     println!("Downloading tarballed database dump...");
-    Command::new("curl")
-        .arg("https://static.crates.io/db-dump.tar.gz")
-        .arg("-o")
-        .arg(tgz_path_name)
-        .output()
-        .expect("Unable to fetch Crates database dump");
+    let mut curl = Easy::new();
+    curl.url("https://static.crates.io/db-dump.tar.gz").unwrap();
+    curl.write_function(move |data| Ok(tgz_file.write(data).unwrap()))
+        .unwrap();
+    curl.perform().unwrap();
     println!("Tarballed database dump downloaded.");
 
     println!("Unzipping tarballed database dump...");
