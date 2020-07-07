@@ -12,3 +12,5 @@ ts
 data
 dump
 .env
+.redis
+redis.conf
