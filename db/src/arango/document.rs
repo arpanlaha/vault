@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use semver_parser::version as semver_version;
 use serde::Deserialize;
+
 #[derive(Deserialize, Debug)]
 pub struct Category {
     pub category: String,
@@ -32,6 +33,7 @@ pub struct CrateKeyword {
 #[derive(Deserialize, Debug)]
 pub struct Dependency {
     pub from: usize,
+    pub optional: bool,
     pub to: usize,
 }
 
@@ -57,6 +59,7 @@ pub struct SqlDependency {
     pub crate_id: usize,
     pub id: usize,
     pub kind: usize,
+    pub optional: String,
     pub version_id: usize,
 }
 
@@ -143,10 +146,10 @@ impl ArangoDocument for CrateKeyword {
 
 impl ArangoDocument for Dependency {
     fn get_insert_query(&self) -> String {
-        let Dependency { from, to } = self;
+        let Dependency { from, optional, to } = self;
         format!(
-            r#"INSERT {{_from: "crates/{}", _to: "crates/{}" }} INTO dependencies"#,
-            from, to
+            r#"INSERT {{ _from: "crates/{}", _to: "crates/{}", optional: {} }} INTO dependencies"#,
+            from, to, optional
         )
     }
 }
