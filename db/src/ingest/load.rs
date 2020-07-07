@@ -1,7 +1,7 @@
 use crate::arango::{
     client::{get_connection, get_db},
     document::{
-        ArangoDocument, Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword,
+        Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, RedisGraphDocument,
         SqlDependency, Version,
     },
 };
@@ -49,7 +49,7 @@ pub async fn load_database(data_path: &str) -> Result<(), ClientError> {
     Ok(())
 }
 
-async fn load_documents<T: DeserializeOwned + ArangoDocument + Debug>(
+async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
     db: &Database<'_, ReqwestClient>,
     data_path: &str,
     collection_name: &str,

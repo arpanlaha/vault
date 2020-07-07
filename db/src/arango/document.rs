@@ -72,7 +72,7 @@ impl Version {
     }
 }
 
-pub trait ArangoDocument {
+pub trait RedisGraphDocument {
     fn get_insert_query(&self) -> String;
 }
 
@@ -80,7 +80,7 @@ fn escape_quotes(input: &String) -> String {
     input.replace("\"", "\\\"")
 }
 
-impl ArangoDocument for Category {
+impl RedisGraphDocument for Category {
     fn get_insert_query(&self) -> String {
         let Category {
             category,
@@ -90,8 +90,7 @@ impl ArangoDocument for Category {
             slug,
         } = self;
         format!(
-            r#"INSERT {{ _key: "{}", category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }} INTO categories"#,
-            id,
+            r#"CREATE (n:Category {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }})"#,
             category,
             escape_quotes(description),
             id,
@@ -101,7 +100,7 @@ impl ArangoDocument for Category {
     }
 }
 
-impl ArangoDocument for Crate {
+impl RedisGraphDocument for Crate {
     fn get_insert_query(&self) -> String {
         let Crate {
             description,
@@ -109,8 +108,7 @@ impl ArangoDocument for Crate {
             name,
         } = self;
         format!(
-            r#"INSERT {{ _key: "{}", description: "{}", id: {}, name: "{}" }} INTO crates"#,
-            id,
+            r#"CREATE (n:Crate {{ description: "{}", id: {}, name: "{}" }})"#,
             escape_quotes(description),
             id,
             name
@@ -118,43 +116,55 @@ impl ArangoDocument for Crate {
     }
 }
 
-impl ArangoDocument for CrateCategory {
+impl RedisGraphDocument for CrateCategory {
     fn get_insert_query(&self) -> String {
         let CrateCategory {
             category_id,
             crate_id,
         } = self;
         format!(
-            r#"INSERT {{ _from: "crates/{}", _to: "categories/{}" }} INTO crates_categories"#,
+            r#"
+            MATCH (crate:Crate), (category:Category)
+            WHERE crate.id == {} && category.id == {}
+            CREATE (crate)-[r:HAS_CATEGORY]->(category)
+            "#,
             crate_id, category_id
         )
     }
 }
 
-impl ArangoDocument for CrateKeyword {
+impl RedisGraphDocument for CrateKeyword {
     fn get_insert_query(&self) -> String {
         let CrateKeyword {
             crate_id,
             keyword_id,
         } = self;
         format!(
-            r#"INSERT {{ _from: "crates/{}", _to: "keywords/{}" }} INTO crates_keywords"#,
+            r#"
+            MATCH (crate:Crate), (keyword:Keyword)
+            WHERE crate.id == {} && keyword.id == {}
+            CREATE (crate)-[r:HAS_KEYWORD]->(keyword)
+            "#,
             crate_id, keyword_id
         )
     }
 }
 
-impl ArangoDocument for Dependency {
+impl RedisGraphDocument for Dependency {
     fn get_insert_query(&self) -> String {
         let Dependency { from, optional, to } = self;
         format!(
-            r#"INSERT {{ _from: "crates/{}", _to: "crates/{}", optional: {} }} INTO dependencies"#,
+            r#"
+            MATCH (from:Crate), (to:Crate)
+            WHERE from.id == {} && to.id == {}
+            CREATE (from)-[r:DEPENDS_ON {{ optional: {} }}]->(to)
+            "#,
             from, to, optional
         )
     }
 }
 
-impl ArangoDocument for Keyword {
+impl RedisGraphDocument for Keyword {
     fn get_insert_query(&self) -> String {
         let Keyword {
             crates_cnt,
@@ -162,16 +172,13 @@ impl ArangoDocument for Keyword {
             keyword,
         } = self;
         format!(
-            r#"INSERT {{ _key: "{}", crates_cnt: {}, id: {}, keyword: "{}" }} INTO keywords"#,
-            id,
-            crates_cnt,
-            id,
-            escape_quotes(keyword),
+            r#"CREATE (n:Keyword {{ crates_cnt: {}, id: {}, keyword: "{}" }})"#,
+            id, crates_cnt, keyword,
         )
     }
 }
 
-impl ArangoDocument for Version {
+impl RedisGraphDocument for Version {
     fn get_insert_query(&self) -> String {
         let Version {
             crate_id,
@@ -181,8 +188,12 @@ impl ArangoDocument for Version {
             ..
         } = self;
         format!(
-            r#"UPDATE "{}" WITH {{ current_version: "{}", current_version_id: {}, downloads: {} }} INTO crates"#,
-            crate_id, num, id, downloads
+            r#"
+            MATCH (n:Crate)
+            WHERE n.id == {}
+            SET n.downloads = {}, n.num = "{}", n.version_id = {}
+            "#,
+            crate_id, downloads, num, id
         )
     }
 }
