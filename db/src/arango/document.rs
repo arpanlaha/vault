@@ -126,7 +126,7 @@ impl RedisGraphDocument for CrateCategory {
         format!(
             r#"
             MATCH (crate:Crate), (category:Category)
-            WHERE crate.id == {} && category.id == {}
+            WHERE crate.id = {} && category.id = {}
             CREATE (crate)-[r:HAS_CATEGORY]->(category)
             "#,
             crate_id, category_id
@@ -143,7 +143,7 @@ impl RedisGraphDocument for CrateKeyword {
         format!(
             r#"
             MATCH (crate:Crate), (keyword:Keyword)
-            WHERE crate.id == {} && keyword.id == {}
+            WHERE crate.id = {} && keyword.id = {}
             CREATE (crate)-[r:HAS_KEYWORD]->(keyword)
             "#,
             crate_id, keyword_id
@@ -162,7 +162,7 @@ impl RedisGraphDocument for Dependency {
         format!(
             r#"
             MATCH (from:Crate), (to:Crate)
-            WHERE from.id == {} && to.id == {}
+            WHERE from.id = {} && to.id = {}
             CREATE (from)-[r:DEPENDS_ON {{ kind: {}, optional: {} }}]->(to)
             "#,
             from, to, kind, optional
@@ -196,7 +196,7 @@ impl RedisGraphDocument for Version {
         format!(
             r#"
             MATCH (n:Crate)
-            WHERE n.id == {}
+            WHERE n.id = {}
             SET n.downloads = {}, n.num = "{}", n.version_id = {}
             "#,
             crate_id, downloads, num, id
