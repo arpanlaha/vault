@@ -1,58 +1,47 @@
-use arangors::{client::reqwest::ReqwestClient, ClientError, Connection, Database};
+use redis::{Client, Connection, RedisResult};
+use redisgraph::{Graph, RedisGraphResult};
 
-pub async fn get_connection() -> Result<Connection, ClientError> {
+pub fn get_connection() -> RedisResult<Connection> {
     println!("Establishing driver connection...");
-    Connection::establish_jwt(
-        dotenv::var("ARANGODB_URI")
-            .expect("Environment variable ARANGODB_URI not set")
-            .as_str(),
-        dotenv::var("ARANGODB_USER")
-            .expect("Environment variable ARANGODB_USER not set")
-            .as_str(),
-        dotenv::var("ARANGODB_PASSWORD")
-            .expect("Environment variable ARANGODB_PASSWORD not set")
-            .as_str(),
-    )
-    .await
+    let connection = Client::open("redis://127.0.0.1")?.get_connection();
+    println!("Established driver connection.");
+    connection
 }
 
-pub async fn get_db<'a, 'b>(
-    connection: &'a Connection,
-    db_name: &'b str,
-) -> Result<Database<'a, ReqwestClient>, ClientError> {
-    connection.db(db_name).await
+pub fn get_db(connection: Connection, db_name: &str) -> RedisGraphResult<Graph> {
+    Graph::open(connection, String::from(db_name))
 }
 
-pub async fn create_collections<'a>(
-    db: &mut Database<'a, ReqwestClient>,
-    collection_names: Vec<&str>,
-) -> Result<(), ClientError> {
-    for collection_name in collection_names {
-        db.create_collection(collection_name).await?;
-    }
+// pub async fn create_collections<'a>(
+//     db: &mut Database<'a, ReqwestClient>,
+//     collection_names: Vec<&str>,
+// ) -> Result<(), ClientError> {
+//     for collection_name in collection_names {
+//         db.create_collection(collection_name).await?;
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-pub async fn truncate_collections<'a>(
-    _db: &Database<'a, ReqwestClient>,
-    collection_names: Vec<&str>,
-) -> Result<(), ClientError> {
-    for _collection_name in collection_names {
-        //* waiting on implementation
-        // db.collection(collection_name).await?.truncate().await?;
-    }
+// pub async fn truncate_collections<'a>(
+//     _db: &Database<'a, ReqwestClient>,
+//     collection_names: Vec<&str>,
+// ) -> Result<(), ClientError> {
+//     for _collection_name in collection_names {
+//         //* waiting on implementation
+//         // db.collection(collection_name).await?.truncate().await?;
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-pub async fn drop_collections<'a>(
-    db: &mut Database<'a, ReqwestClient>,
-    collection_names: Vec<&str>,
-) -> Result<(), ClientError> {
-    for collection_name in collection_names {
-        db.drop_collection(collection_name).await?;
-    }
+// pub async fn drop_collections<'a>(
+//     db: &mut Database<'a, ReqwestClient>,
+//     collection_names: Vec<&str>,
+// ) -> Result<(), ClientError> {
+//     for collection_name in collection_names {
+//         db.drop_collection(collection_name).await?;
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }

@@ -33,6 +33,7 @@ pub struct CrateKeyword {
 #[derive(Deserialize, Debug)]
 pub struct Dependency {
     pub from: usize,
+    pub kind: usize,
     pub optional: bool,
     pub to: usize,
 }
@@ -152,14 +153,19 @@ impl RedisGraphDocument for CrateKeyword {
 
 impl RedisGraphDocument for Dependency {
     fn get_insert_query(&self) -> String {
-        let Dependency { from, optional, to } = self;
+        let Dependency {
+            from,
+            kind,
+            optional,
+            to,
+        } = self;
         format!(
             r#"
             MATCH (from:Crate), (to:Crate)
             WHERE from.id == {} && to.id == {}
-            CREATE (from)-[r:DEPENDS_ON {{ optional: {} }}]->(to)
+            CREATE (from)-[r:DEPENDS_ON {{ kind: {}, optional: {} }}]->(to)
             "#,
-            from, to, optional
+            from, to, kind, optional
         )
     }
 }

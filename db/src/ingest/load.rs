@@ -5,7 +5,8 @@ use crate::arango::{
         SqlDependency, Version,
     },
 };
-use arangors::{client::reqwest::ReqwestClient, ClientError, Database};
+use arangors::ClientError;
+use redisgraph::Graph;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
@@ -24,22 +25,22 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 pub async fn load_database(data_path: &str) -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
-    let connection = get_connection().await?;
+    let connection = get_connection().unwrap();
     println!("Driver connection established.");
-    let db = get_db(&connection, "vault").await?;
+    let mut db = get_db(connection, "vault").unwrap();
 
     println!("Database connection established.");
     println!("Loading documents...");
 
-    load_documents::<Category>(&db, data_path, "categories").await?;
-    load_documents::<Crate>(&db, data_path, "crates").await?;
-    load_documents::<Keyword>(&db, data_path, "keywords").await?;
+    load_documents::<Category>(&mut db, data_path, "categories").await?;
+    load_documents::<Crate>(&mut db, data_path, "crates").await?;
+    load_documents::<Keyword>(&mut db, data_path, "keywords").await?;
 
-    load_documents::<CrateCategory>(&db, data_path, "crates_categories").await?;
-    load_documents::<CrateKeyword>(&db, data_path, "crates_keywords").await?;
+    load_documents::<CrateCategory>(&mut db, data_path, "crates_categories").await?;
+    load_documents::<CrateKeyword>(&mut db, data_path, "crates_keywords").await?;
 
-    let versions_to_crates = load_versions(&db, data_path).await?;
-    load_dependencies(&db, data_path, &versions_to_crates).await?;
+    let versions_to_crates = load_versions(&mut db, data_path).await?;
+    load_dependencies(&mut db, data_path, &versions_to_crates).await?;
 
     println!(
         "Finished loading documents into database in {} seconds.",
@@ -50,7 +51,7 @@ pub async fn load_database(data_path: &str) -> Result<(), ClientError> {
 }
 
 async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
-    db: &Database<'_, ReqwestClient>,
+    db: &mut Graph,
     data_path: &str,
     collection_name: &str,
 ) -> Result<(), ClientError> {
@@ -74,7 +75,7 @@ async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
             )
             .as_str(),
         );
-        let _: Vec<T> = db.aql_str(record.get_insert_query().as_str()).await?;
+        db.mutate(record.get_insert_query().as_str()).unwrap();
     }
 
     println!(
@@ -141,8 +142,8 @@ fn get_versions(filename: String) -> HashMap<usize, Version> {
     versions
 }
 
-async fn load_versions<'a>(
-    db: &'a Database<'_, ReqwestClient>,
+async fn load_versions(
+    db: &mut Graph,
     data_path: &str,
 ) -> Result<HashMap<usize, usize>, ClientError> {
     println!("Loading versions...");
@@ -153,7 +154,7 @@ async fn load_versions<'a>(
     let versions = get_versions(versions_path);
 
     for version in versions.values() {
-        let _: Vec<Version> = db.aql_str(version.get_insert_query().as_str()).await?;
+        db.mutate(version.get_insert_query().as_str()).unwrap();
         count += 1;
     }
 
@@ -188,20 +189,19 @@ fn get_dependencies(
         let to = sql_dependency.crate_id;
 
         if let Some(&from) = versions_to_crates.get(&from_version_id) {
-            if kind == 0 {
-                dependencies.push(Dependency {
-                    from,
-                    optional: optional == "t",
-                    to,
-                });
-            }
+            dependencies.push(Dependency {
+                from,
+                kind,
+                optional: optional == "t",
+                to,
+            });
         }
     }
     dependencies
 }
 
-async fn load_dependencies<'a>(
-    db: &'a Database<'_, ReqwestClient>,
+async fn load_dependencies(
+    db: &mut Graph,
     data_path: &str,
     versions_to_crates: &HashMap<usize, usize>,
 ) -> Result<(), ClientError> {
@@ -214,7 +214,7 @@ async fn load_dependencies<'a>(
     let dependencies = get_dependencies(dependencies_path, versions_to_crates);
 
     for dependency in dependencies {
-        let _: Vec<Dependency> = db.aql_str(dependency.get_insert_query().as_str()).await?;
+        db.mutate(dependency.get_insert_query().as_str()).unwrap();
         count += 1;
     }
 
