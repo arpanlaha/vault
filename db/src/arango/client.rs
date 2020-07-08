@@ -35,13 +35,10 @@ pub fn get_db(connection: Connection, db_name: &str) -> RedisGraphResult<Graph> 
 //     Ok(())
 // }
 
-// pub async fn drop_collections<'a>(
-//     db: &mut Database<'a, ReqwestClient>,
-//     collection_names: Vec<&str>,
-// ) -> Result<(), ClientError> {
-//     for collection_name in collection_names {
-//         db.drop_collection(collection_name).await?;
-//     }
+pub fn drop_collections<'a>(db: &mut Graph, collection_names: Vec<&str>) -> RedisGraphResult<()> {
+    for collection_name in collection_names {
+        db.mutate(format!(r#"MATCH (n:{}) DETACH DELETE n"#, collection_name).as_str())?;
+    }
 
-//     Ok(())
-// }
+    Ok(())
+}

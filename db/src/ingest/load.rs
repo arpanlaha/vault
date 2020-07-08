@@ -1,12 +1,12 @@
 use crate::arango::{
-    client::{get_connection, get_db},
+    client::{drop_collections, get_connection, get_db},
     document::{
         Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, RedisGraphDocument,
-        SqlDependency, Version,
+        RedisGraphNode, SqlDependency, Version,
     },
 };
 use arangors::ClientError;
-use redisgraph::Graph;
+use redisgraph::{Graph, RedisGraphResult};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
@@ -22,6 +22,13 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
     format!("{}/data/{}.csv", data_path, collection_name)
 }
 
+fn create_indices(db: &mut Graph) -> RedisGraphResult<()> {
+    db.mutate(Category::get_constraint().as_str())?;
+    db.mutate(Category::get_constraint().as_str())?;
+    db.mutate(Category::get_constraint().as_str())?;
+    Ok(())
+}
+
 pub async fn load_database(data_path: &str) -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
@@ -31,6 +38,21 @@ pub async fn load_database(data_path: &str) -> Result<(), ClientError> {
 
     println!("Database connection established.");
     println!("Loading documents...");
+
+    drop_collections(
+        &mut db,
+        vec![
+            "Category",
+            "Crate",
+            "Keyword",
+            "HAS_CATEGORY",
+            "HAS_KEYWORD",
+            "DEPENDS_ON",
+        ],
+    )
+    .unwrap();
+
+    create_indices(&mut db).unwrap();
 
     load_documents::<Category>(&mut db, data_path, "categories").await?;
     load_documents::<Crate>(&mut db, data_path, "crates").await?;

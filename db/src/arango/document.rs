@@ -77,6 +77,10 @@ pub trait RedisGraphDocument {
     fn get_insert_query(&self) -> String;
 }
 
+pub trait RedisGraphNode {
+    fn get_constraint() -> String;
+}
+
 fn escape_quotes(input: &String) -> String {
     input.replace("\"", "\\\"")
 }
@@ -101,6 +105,12 @@ impl RedisGraphDocument for Category {
     }
 }
 
+impl RedisGraphNode for Category {
+    fn get_constraint() -> String {
+        String::from("CREATE CONSTRAINT unique_category_id ON (n:Category) ASSERT n.id IS UNIQUE")
+    }
+}
+
 impl RedisGraphDocument for Crate {
     fn get_insert_query(&self) -> String {
         let Crate {
@@ -117,6 +127,12 @@ impl RedisGraphDocument for Crate {
     }
 }
 
+impl RedisGraphNode for Crate {
+    fn get_constraint() -> String {
+        String::from("CREATE CONSTRAINT unique_crate_id ON (n:Crate) ASSERT n.id IS UNIQUE")
+    }
+}
+
 impl RedisGraphDocument for CrateCategory {
     fn get_insert_query(&self) -> String {
         let CrateCategory {
@@ -126,7 +142,7 @@ impl RedisGraphDocument for CrateCategory {
         format!(
             r#"
             MATCH (crate:Crate), (category:Category)
-            WHERE crate.id = {} && category.id = {}
+            WHERE crate.id = {} AND category.id = {}
             CREATE (crate)-[r:HAS_CATEGORY]->(category)
             "#,
             crate_id, category_id
@@ -143,7 +159,7 @@ impl RedisGraphDocument for CrateKeyword {
         format!(
             r#"
             MATCH (crate:Crate), (keyword:Keyword)
-            WHERE crate.id = {} && keyword.id = {}
+            WHERE crate.id = {} AND keyword.id = {}
             CREATE (crate)-[r:HAS_KEYWORD]->(keyword)
             "#,
             crate_id, keyword_id
@@ -162,7 +178,7 @@ impl RedisGraphDocument for Dependency {
         format!(
             r#"
             MATCH (from:Crate), (to:Crate)
-            WHERE from.id = {} && to.id = {}
+            WHERE from.id = {} AND to.id = {}
             CREATE (from)-[r:DEPENDS_ON {{ kind: {}, optional: {} }}]->(to)
             "#,
             from, to, kind, optional
@@ -181,6 +197,12 @@ impl RedisGraphDocument for Keyword {
             r#"CREATE (n:Keyword {{ crates_cnt: {}, id: {}, keyword: "{}" }})"#,
             id, crates_cnt, keyword,
         )
+    }
+}
+
+impl RedisGraphNode for Keyword {
+    fn get_constraint() -> String {
+        String::from("CREATE CONSTRAINT unique_keyword_id ON (n:Keyword) ASSERT n.id IS UNIQUE")
     }
 }
 
