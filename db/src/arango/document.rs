@@ -78,7 +78,7 @@ pub trait RedisGraphDocument {
 }
 
 pub trait RedisGraphNode {
-    fn get_constraint() -> String;
+    fn create_index() -> String;
 }
 
 fn escape_quotes(input: &String) -> String {
@@ -106,8 +106,8 @@ impl RedisGraphDocument for Category {
 }
 
 impl RedisGraphNode for Category {
-    fn get_constraint() -> String {
-        String::from("CREATE CONSTRAINT unique_category_id ON (n:Category) ASSERT n.id IS UNIQUE")
+    fn create_index() -> String {
+        String::from("CREATE INDEX ON :Category(id)")
     }
 }
 
@@ -128,8 +128,8 @@ impl RedisGraphDocument for Crate {
 }
 
 impl RedisGraphNode for Crate {
-    fn get_constraint() -> String {
-        String::from("CREATE CONSTRAINT unique_crate_id ON (n:Crate) ASSERT n.id IS UNIQUE")
+    fn create_index() -> String {
+        String::from("CREATE INDEX ON :Crate(id)")
     }
 }
 
@@ -201,8 +201,8 @@ impl RedisGraphDocument for Keyword {
 }
 
 impl RedisGraphNode for Keyword {
-    fn get_constraint() -> String {
-        String::from("CREATE CONSTRAINT unique_keyword_id ON (n:Keyword) ASSERT n.id IS UNIQUE")
+    fn create_index() -> String {
+        String::from("CREATE INDEX ON :Keyword(id)")
     }
 }
 
