@@ -1,19 +1,19 @@
 // use redis::{Client, Connection, RedisResult};
 // use redisgraph::{Graph, RedisGraphResult};
 
-use bolt_client::{error::Result as BoltResult, Client, Metadata};
+use bolt_client::{Client, Metadata};
 use std::iter::FromIterator;
 // use bolt_proto::{message::*, value::*, Message, Value};
 
-pub async fn get_connection() -> BoltResult<Client> {
+pub async fn get_connection() -> Client {
     println!("Establishing driver connection...");
     let mut client = Client::new(
         dotenv::var("NEO4J_ADDRESS").unwrap(),
         None::<String>, // dotenv::var("NEO4J_DOMAIN").ok(),
     )
-    .await?;
-
-    client.handshake(&[4, 0, 0, 0]).await?;
+    .await
+    .unwrap();
+    client.handshake(&[4, 0, 0, 0]).await.unwrap();
 
     client
         .hello(Some(Metadata::from_iter(vec![
@@ -22,10 +22,11 @@ pub async fn get_connection() -> BoltResult<Client> {
             ("principal", &dotenv::var("NEO4J_USER").unwrap()),
             ("credentials", &dotenv::var("NEO4J_PASSWORD").unwrap()),
         ])))
-        .await?;
+        .await
+        .unwrap();
     // let connection = Client::open("redis://127.0.0.1")?.get_connection();
     println!("Established driver connection.");
-    Ok(client)
+    client
 }
 
 // pub fn get_db(connection: Connection, db_name: &str) -> RedisGraphResult<Graph> {
