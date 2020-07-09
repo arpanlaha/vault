@@ -24,8 +24,8 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 
 fn create_indices(db: &mut Graph) -> RedisGraphResult<()> {
     db.mutate(Category::create_index().as_str())?;
-    db.mutate(Crate::create_index().as_str())?;
-    db.mutate(Keyword::create_index().as_str())?;
+    db.mutate(Category::create_index().as_str())?;
+    db.mutate(Category::create_index().as_str())?;
     Ok(())
 }
 
