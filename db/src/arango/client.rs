@@ -1,19 +1,9 @@
 // use redis::{Client, Connection, RedisResult};
 // use redisgraph::{Graph, RedisGraphResult};
+
 use bolt_client::{error::Result as BoltResult, Client, Metadata};
-use bolt_proto::message::{Record, Success};
-use std::convert::TryFrom;
 use std::iter::FromIterator;
 // use bolt_proto::{message::*, value::*, Message, Value};
-
-//BoltResult<(Message, Vec<Record>)>
-pub async fn run_query(client: &mut Client, query: &str) -> BoltResult<Vec<Record>> {
-    Success::try_from(client.run_with_metadata(query, None, None).await?)?;
-    let (pull_response, records) = client.pull(None).await?;
-    Success::try_from(pull_response)?;
-
-    Ok(records)
-}
 
 pub async fn get_connection() -> BoltResult<Client> {
     println!("Establishing driver connection...");

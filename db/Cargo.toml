@@ -15,9 +15,8 @@ flate2 = "1.0"
 # redisgraph    = "0.5"
 # rusted_cypher = "1.1"
 bolt-client   = "0.7"
-bolt-proto    = "0.8"
 semver-parser = "0.9"
-serde         = { version = "1.0", features = ["derive"] }
+serde         = "1.0"
 tar           = "0.4"
 tempfile      = "3.1"
 tokio         = { version = "0.2", features = ["macros"] }
