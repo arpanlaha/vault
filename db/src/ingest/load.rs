@@ -5,6 +5,7 @@ use crate::arango::{
         RedisGraphNode, SqlDependency, Version,
     },
 };
+use arangors::ClientError;
 use redisgraph::{Graph, RedisGraphResult};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
@@ -28,7 +29,7 @@ fn create_indices(db: &mut Graph) -> RedisGraphResult<()> {
     Ok(())
 }
 
-pub async fn load_database(data_path: &str) {
+pub async fn load_database(data_path: &str) -> Result<(), ClientError> {
     println!("Connecting to database...");
     let start = Instant::now();
     let connection = get_connection().unwrap();
@@ -53,27 +54,29 @@ pub async fn load_database(data_path: &str) {
 
     create_indices(&mut db).unwrap();
 
-    load_documents::<Category>(&mut db, data_path, "categories").await;
-    load_documents::<Crate>(&mut db, data_path, "crates").await;
-    load_documents::<Keyword>(&mut db, data_path, "keywords").await;
+    load_documents::<Category>(&mut db, data_path, "categories").await?;
+    load_documents::<Crate>(&mut db, data_path, "crates").await?;
+    load_documents::<Keyword>(&mut db, data_path, "keywords").await?;
 
-    load_documents::<CrateCategory>(&mut db, data_path, "crates_categories").await;
-    load_documents::<CrateKeyword>(&mut db, data_path, "crates_keywords").await;
+    load_documents::<CrateCategory>(&mut db, data_path, "crates_categories").await?;
+    load_documents::<CrateKeyword>(&mut db, data_path, "crates_keywords").await?;
 
-    let versions_to_crates = load_versions(&mut db, data_path).await;
-    load_dependencies(&mut db, data_path, &versions_to_crates).await;
+    let versions_to_crates = load_versions(&mut db, data_path).await?;
+    load_dependencies(&mut db, data_path, &versions_to_crates).await?;
 
     println!(
         "Finished loading documents into database in {} seconds.",
         start.elapsed().as_secs_f64()
     );
+
+    Ok(())
 }
 
 async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
     db: &mut Graph,
     data_path: &str,
     collection_name: &str,
-) {
+) -> Result<(), ClientError> {
     println!("Loading {}...", collection_name);
     let start = Instant::now();
     let mut count = 0usize;
@@ -103,6 +106,8 @@ async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
         collection_name,
         start.elapsed().as_secs_f64()
     );
+
+    Ok(())
 }
 
 fn get_versions(filename: String) -> HashMap<usize, Version> {
@@ -159,7 +164,10 @@ fn get_versions(filename: String) -> HashMap<usize, Version> {
     versions
 }
 
-async fn load_versions(db: &mut Graph, data_path: &str) -> HashMap<usize, usize> {
+async fn load_versions(
+    db: &mut Graph,
+    data_path: &str,
+) -> Result<HashMap<usize, usize>, ClientError> {
     println!("Loading versions...");
     let start = Instant::now();
     let mut count = 0usize;
@@ -178,10 +186,10 @@ async fn load_versions(db: &mut Graph, data_path: &str) -> HashMap<usize, usize>
         start.elapsed().as_secs_f64()
     );
 
-    versions
+    Ok(versions
         .iter()
         .map(|(crate_id, version)| (version.id, *crate_id))
-        .collect()
+        .collect())
 }
 
 fn get_dependencies(
@@ -218,7 +226,7 @@ async fn load_dependencies(
     db: &mut Graph,
     data_path: &str,
     versions_to_crates: &HashMap<usize, usize>,
-) {
+) -> Result<(), ClientError> {
     println!("Loading dependencies...");
     let start = Instant::now();
     let mut count = 0usize;
@@ -237,4 +245,6 @@ async fn load_dependencies(
         count,
         start.elapsed().as_secs_f64()
     );
+
+    Ok(())
 }
