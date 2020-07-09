@@ -1,4 +1,4 @@
-use crate::db::{
+use crate::arango::{
     client::{drop_collections, get_connection, get_db},
     document::{
         Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, RedisGraphDocument,
