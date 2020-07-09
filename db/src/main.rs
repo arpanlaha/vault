@@ -12,5 +12,5 @@ async fn main() {
     // vault_load::load_database(data_path.as_str()).await.unwrap();
 
     // vault_fs::clean_tempdir(temp_dir);
-    get_connection().await;
+    get_connection().await.unwrap();
 }
