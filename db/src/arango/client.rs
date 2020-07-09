@@ -1,16 +1,37 @@
-use redis::{Client, Connection, RedisResult};
-use redisgraph::{Graph, RedisGraphResult};
+// use redis::{Client, Connection, RedisResult};
+// use redisgraph::{Graph, RedisGraphResult};
 
-pub fn get_connection() -> RedisResult<Connection> {
+use bolt_client::{Client, Metadata};
+use std::iter::FromIterator;
+// use bolt_proto::{message::*, value::*, Message, Value};
+
+pub async fn get_connection() -> Client {
     println!("Establishing driver connection...");
-    let connection = Client::open("redis://127.0.0.1")?.get_connection();
+    let mut client = Client::new(
+        dotenv::var("NEO4J_ADDRESS").unwrap(),
+        None::<String>, // dotenv::var("NEO4J_DOMAIN").ok(),
+    )
+    .await
+    .unwrap();
+    client.handshake(&[4, 0, 0, 0]).await.unwrap();
+
+    client
+        .hello(Some(Metadata::from_iter(vec![
+            ("user_agent", "my-client-name/1.0"),
+            ("scheme", "basic"),
+            ("principal", &dotenv::var("NEO4J_USER").unwrap()),
+            ("credentials", &dotenv::var("NEO4J_PASSWORD").unwrap()),
+        ])))
+        .await
+        .unwrap();
+    // let connection = Client::open("redis://127.0.0.1")?.get_connection();
     println!("Established driver connection.");
-    connection
+    client
 }
 
-pub fn get_db(connection: Connection, db_name: &str) -> RedisGraphResult<Graph> {
-    Graph::open(connection, String::from(db_name))
-}
+// pub fn get_db(connection: Connection, db_name: &str) -> RedisGraphResult<Graph> {
+//     Graph::open(connection, String::from(db_name))
+// }
 
 // pub async fn create_collections<'a>(
 //     db: &mut Database<'a, ReqwestClient>,
@@ -35,10 +56,10 @@ pub fn get_db(connection: Connection, db_name: &str) -> RedisGraphResult<Graph> 
 //     Ok(())
 // }
 
-pub fn drop_collections<'a>(db: &mut Graph, collection_names: Vec<&str>) -> RedisGraphResult<()> {
-    for collection_name in collection_names {
-        db.mutate(format!(r#"MATCH (n:{}) DETACH DELETE n"#, collection_name).as_str())?;
-    }
+// pub fn drop_collections<'a>(db: &mut Graph, collection_names: Vec<&str>) -> RedisGraphResult<()> {
+//     for collection_name in collection_names {
+//         db.mutate(format!(r#"MATCH (n:{}) DETACH DELETE n"#, collection_name).as_str())?;
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
