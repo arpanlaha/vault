@@ -8,7 +8,7 @@ async fn main() {
 
     dotenv::dotenv().unwrap();
 
-    vault_load::load_database(data_path.as_str()).await.unwrap();
+    vault_load::load_database(data_path.as_str()).await;
 
     vault_fs::clean_tempdir(temp_dir);
 }
