@@ -14,7 +14,7 @@ pub struct Category {
 #[derive(Deserialize, Debug)]
 pub struct Crate {
     pub description: String,
-    pub id: String,
+    pub id: usize,
     pub name: String,
 }
 
@@ -73,156 +73,25 @@ impl Version {
     }
 }
 
-pub trait RedisGraphDocument {
-    fn get_insert_query(&self) -> String;
+pub trait Vertex {
+    fn id(&self) -> usize;
 }
 
-pub trait RedisGraphNode {
-    fn create_constraint() -> String;
-}
-
-fn escape_quotes(input: &String) -> String {
-    input.replace("\"", "\\\"")
-}
-
-impl RedisGraphDocument for Category {
-    fn get_insert_query(&self) -> String {
-        let Category {
-            category,
-            description,
-            id,
-            path,
-            slug,
-        } = self;
-        format!(
-            r#"CREATE (n:Category {{ category: "{}", description: "{}", id: {}, path: "{}", slug: "{}" }})"#,
-            category,
-            escape_quotes(description),
-            id,
-            path,
-            slug
-        )
+impl Vertex for Category {
+    fn id(&self) -> usize {
+        self.id
     }
 }
 
-impl RedisGraphNode for Category {
-    fn create_constraint() -> String {
-        String::from("CREATE CONSTRAINT unique_category_id ON (n:Category) ASSERT n.id IS UNIQUE")
+impl Vertex for Crate {
+    fn id(&self) -> usize {
+        self.id
     }
 }
 
-impl RedisGraphDocument for Crate {
-    fn get_insert_query(&self) -> String {
-        let Crate {
-            description,
-            id,
-            name,
-        } = self;
-        format!(
-            r#"CREATE (n:Crate {{ description: "{}", id: {}, name: "{}" }})"#,
-            escape_quotes(description),
-            id,
-            name
-        )
-    }
-}
-
-impl RedisGraphNode for Crate {
-    fn create_constraint() -> String {
-        String::from("CREATE CONSTRAINT unique_crate_id ON (n:Crate) ASSERT n.id IS UNIQUE")
-    }
-}
-
-impl RedisGraphDocument for CrateCategory {
-    fn get_insert_query(&self) -> String {
-        let CrateCategory {
-            category_id,
-            crate_id,
-        } = self;
-        format!(
-            r#"
-            MATCH (crate:Crate), (category:Category)
-            WHERE crate.id = {} AND category.id = {}
-            CREATE (crate)-[r:HAS_CATEGORY]->(category)
-            "#,
-            crate_id, category_id
-        )
-    }
-}
-
-impl RedisGraphDocument for CrateKeyword {
-    fn get_insert_query(&self) -> String {
-        let CrateKeyword {
-            crate_id,
-            keyword_id,
-        } = self;
-        format!(
-            r#"
-            MATCH (crate:Crate), (keyword:Keyword)
-            WHERE crate.id = {} AND keyword.id = {}
-            CREATE (crate)-[r:HAS_KEYWORD]->(keyword)
-            "#,
-            crate_id, keyword_id
-        )
-    }
-}
-
-impl RedisGraphDocument for Dependency {
-    fn get_insert_query(&self) -> String {
-        let Dependency {
-            from,
-            kind,
-            optional,
-            to,
-        } = self;
-        format!(
-            r#"
-            MATCH (from:Crate), (to:Crate)
-            WHERE from.id = {} AND to.id = {}
-            CREATE (from)-[r:DEPENDS_ON {{ kind: {}, optional: {} }}]->(to)
-            "#,
-            from, to, kind, optional
-        )
-    }
-}
-
-impl RedisGraphDocument for Keyword {
-    fn get_insert_query(&self) -> String {
-        let Keyword {
-            crates_cnt,
-            id,
-            keyword,
-        } = self;
-        format!(
-            r#"CREATE (n:Keyword {{ crates_cnt: {}, id: {}, keyword: "{}" }})"#,
-            id, crates_cnt, keyword,
-        )
-    }
-}
-
-impl RedisGraphNode for Keyword {
-    fn create_constraint() -> String {
-        String::from("CREATE CONSTRAINT unique_keyword_id ON (n:Keyword) ASSERT n.id IS UNIQUE")
-    }
-}
-
-impl RedisGraphDocument for Version {
-    fn get_insert_query(&self) -> String {
-        let Version {
-            crate_id,
-            downloads,
-            id,
-            num,
-            ..
-        } = self;
-        format!(
-            r#"
-            MATCH (n:Crate)
-            WHERE n.id = {}
-            SET n.downloads = {}, n.num = "{}", n.version_id = {}
-            "#,
-            crate_id, downloads, num, id
-        )
+impl Vertex for Keyword {
+    fn id(&self) -> usize {
+        self.id
     }
 }
 
