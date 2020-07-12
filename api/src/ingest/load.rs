@@ -19,17 +19,13 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 }
 
 pub async fn load_database(data_path: &str) {
-    println!("Connecting to database...");
     let start = Instant::now();
-    println!("Driver connection established.");
-
-    println!("Database connection established.");
-    println!("Loading documents...");
+    println!("Loading registry graph...");
 
     let (mut categories, mut crates, mut keywords) = join!(
-        load_documents::<Category>(data_path, "categories"),
-        load_documents::<Crate>(data_path, "crates"),
-        load_documents::<Keyword>(data_path, "keywords")
+        load_vertices::<Category>(data_path, "categories"),
+        load_vertices::<Crate>(data_path, "crates"),
+        load_vertices::<Keyword>(data_path, "keywords")
     );
 
     let versions_to_crates = create_versioned_crates(data_path, &mut crates);
@@ -39,12 +35,12 @@ pub async fn load_database(data_path: &str) {
     load_crate_keywords(data_path, &mut crates, &mut keywords);
 
     println!(
-        "Finished loading documents into database in {} seconds.",
+        "Finished loading registry graph in {} seconds.",
         start.elapsed().as_secs_f64()
     );
 }
 
-async fn load_documents<T: DeserializeOwned + Vertex + Debug>(
+async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
 ) -> HashMap<usize, T> {
