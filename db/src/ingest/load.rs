@@ -1,13 +1,9 @@
-use crate::arango::{
-    client::{get_connection, run_query},
-    document::{
-        Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, RedisGraphDocument,
-        RedisGraphNode, SqlDependency, Version,
-    },
+use crate::arango::document::{
+    Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
+    Vertex,
 };
 // use arangors::ClientError;
 // use redisgraph::{Graph, RedisGraphResult};
-use bolt_client::{error::Result as BoltResult, Client};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
@@ -18,82 +14,28 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::time::Instant;
+use tokio::join;
 
 fn get_collection_path(data_path: &str, collection_name: &str) -> String {
-    format!("{}/data/{}.csv", data_path, collection_name)
+    format!("{}/{}.csv", data_path, collection_name)
 }
 
-async fn create_constraints(client: &mut Client) -> BoltResult<()> {
-    client.begin(None).await?;
-    run_query(client, Category::create_constraint().as_str()).await;
-    run_query(client, Crate::create_constraint().as_str()).await;
-    run_query(client, Keyword::create_constraint().as_str()).await;
-    client.commit().await?;
-
-    // db.mutate(Category::create_constraint().as_str())?;
-    // db.mutate(Category::create_constraint().as_str())?;
-    // db.mutate(Category::create_constraint().as_str())?;
-    Ok(())
-}
-
-pub async fn load_database(data_path: &str) -> BoltResult<()> {
+pub async fn load_database(data_path: &str) {
     println!("Connecting to database...");
     let start = Instant::now();
-    let mut client = get_connection().await.unwrap();
     println!("Driver connection established.");
-    // let mut db = get_db(connection, "vault").unwrap();
 
     println!("Database connection established.");
     println!("Loading documents...");
 
-    // drop_collections(
-    //     &mut db,
-    //     vec![
-    //         "Category",
-    //         "Crate",
-    //         "Keyword",
-    //         "HAS_CATEGORY",
-    //         "HAS_KEYWORD",
-    //         "DEPENDS_ON",
-    //     ],
-    // )
-    // .unwrap();
+    let categories = HashMap::<usize, Category>::new();
 
-    // create_constraints(&mut client).await?;
+    let categories = load_documents::<Category>(data_path, "categories");
+    let crates = load_documents::<Crate>(data_path, "crates");
+    let keywords = load_documents::<Keyword>(data_path, "keywords");
 
-    println!("Loading categories");
-    let category_start = Instant::now();
+    join!(categories, crates, keywords);
 
-    client.begin(None).await?;
-    run_query(
-        &mut client, 
-        format!(r#"
-        CALL apoc.load.csv("{}/categories.csv")
-        YIELD map
-        CREATE (:Category {{ category: map.category, description: map.description, id: toInteger(map.id), path: map.path, slug: map.slug }})
-        "#, data_path).as_str()
-    ).await;
-    client.commit().await?;
-
-    println!("Finished loading categories in {} seconds", category_start.elapsed().as_secs_f64());
-
-    println!("Loading crates");
-
-    let crate_start = Instant::now();
-
-    run_query(
-        &mut client, 
-        format!(r#"
-        USING PERIODIC COMMIT 10000
-        CALL apoc.load.csv("{}/crates.csv")
-        YIELD map
-        CREATE (:Crate {{ description: map.description, id: toInteger(map.id), name: map.name }})
-        "#, data_path).as_str()
-    ).await;
-
-    println!("Finished loading categories in {} seconds", crate_start.elapsed().as_secs_f64());
-
-    // load_documents::<Category>(&mut client, data_path, "categories").await?;
     // load_documents::<Crate>(&mut client, data_path, "crates").await?;
     // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
 
@@ -107,22 +49,21 @@ pub async fn load_database(data_path: &str) -> BoltResult<()> {
         "Finished loading documents into database in {} seconds.",
         start.elapsed().as_secs_f64()
     );
-
-    Ok(())
 }
 
-async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
-    client: &mut Client,
+async fn load_documents<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
-) -> BoltResult<()> {
+) -> HashMap<usize, T> {
     println!("Loading {}...", collection_name);
     let start = Instant::now();
     let mut count = 0usize;
 
     let file_path = get_collection_path(data_path, collection_name);
 
-    client.begin(None).await?;
+    // client.begin(None).await?;
+
+    let mut collection = HashMap::<usize, T>::new();
 
     for result in csv::Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
@@ -138,19 +79,20 @@ async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
             )
             .as_str(),
         );
-        run_query(client, record.get_insert_query().as_str()).await;
+        collection.insert(record.id(), record);
+        // run_query(client, record.get_insert_query().as_str()).await;
     }
 
-    client.commit().await?;
+    // client.commit().await?;
 
     println!(
-        "Loaded {} {} into database in {} seconds.",
+        "Loaded {} {} in {} seconds.",
         count,
         collection_name,
         start.elapsed().as_secs_f64()
     );
 
-    Ok(())
+    collection
 }
 
 fn get_versions(filename: String) -> HashMap<usize, Version> {
@@ -207,7 +149,7 @@ fn get_versions(filename: String) -> HashMap<usize, Version> {
     versions
 }
 
-async fn load_versions(client: &mut Client, data_path: &str) -> BoltResult<HashMap<usize, usize>> {
+async fn load_versions(data_path: &str) -> HashMap<usize, usize> {
     println!("Loading versions...");
     let start = Instant::now();
     let mut count = 0usize;
@@ -215,21 +157,16 @@ async fn load_versions(client: &mut Client, data_path: &str) -> BoltResult<HashM
 
     let versions = get_versions(versions_path);
 
-    for version in versions.values() {
-        run_query(client, version.get_insert_query().as_str()).await;
-        count += 1;
-    }
-
     println!(
         "Loaded {} versions into database in {} seconds.",
         count,
         start.elapsed().as_secs_f64()
     );
 
-    Ok(versions
+    versions
         .iter()
         .map(|(crate_id, version)| (version.id, *crate_id))
-        .collect())
+        .collect()
 }
 
 fn get_dependencies(
@@ -262,11 +199,7 @@ fn get_dependencies(
     dependencies
 }
 
-async fn load_dependencies(
-    client: &mut Client,
-    data_path: &str,
-    versions_to_crates: &HashMap<usize, usize>,
-) -> BoltResult<()> {
+async fn load_dependencies(data_path: &str, versions_to_crates: &HashMap<usize, usize>) {
     println!("Loading dependencies...");
     let start = Instant::now();
     let mut count = 0usize;
@@ -275,16 +208,9 @@ async fn load_dependencies(
 
     let dependencies = get_dependencies(dependencies_path, versions_to_crates);
 
-    for dependency in dependencies {
-        run_query(client, dependency.get_insert_query().as_str()).await;
-        count += 1;
-    }
-
     println!(
         "Loaded {} dependencies into database in {} seconds.",
         count,
         start.elapsed().as_secs_f64()
     );
-
-    Ok(())
 }
