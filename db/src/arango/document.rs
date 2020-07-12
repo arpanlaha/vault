@@ -56,6 +56,17 @@ pub struct Version {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct VersionedCrate {
+    #[serde(with = "custom_time")]
+    pub created_at: NaiveDateTime,
+    pub description: String,
+    pub downloads: usize,
+    pub id: usize,
+    pub name: String,
+    pub version: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct SqlDependency {
     pub crate_id: usize,
     pub id: usize,

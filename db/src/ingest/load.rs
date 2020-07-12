@@ -1,6 +1,6 @@
 use crate::arango::document::{
     Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
-    Vertex,
+    VersionedCrate, Vertex,
 };
 // use arangors::ClientError;
 // use redisgraph::{Graph, RedisGraphResult};
@@ -28,13 +28,17 @@ pub async fn load_database(data_path: &str) {
     println!("Database connection established.");
     println!("Loading documents...");
 
-    let categories = HashMap::<usize, Category>::new();
+    // let categories = load_documents::<Category>(data_path, "categories");
+    // let crates = load_documents::<Crate>(data_path, "crates");
+    // let keywords = load_documents::<Keyword>(data_path, "keywords");
 
-    let categories = load_documents::<Category>(data_path, "categories");
-    let crates = load_documents::<Crate>(data_path, "crates");
-    let keywords = load_documents::<Keyword>(data_path, "keywords");
+    let (categories, crates, keywords) = join!(
+        load_documents::<Category>(data_path, "categories"),
+        load_documents::<Crate>(data_path, "crates"),
+        load_documents::<Keyword>(data_path, "keywords")
+    );
 
-    join!(categories, crates, keywords);
+    let versioned_crates = create_versioned_crates(data_path, &crates);
 
     // load_documents::<Crate>(&mut client, data_path, "crates").await?;
     // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
@@ -95,9 +99,13 @@ async fn load_documents<T: DeserializeOwned + Vertex + Debug>(
     collection
 }
 
-fn get_versions(filename: String) -> HashMap<usize, Version> {
+fn get_versions(data_path: &str) -> HashMap<usize, Version> {
+    println!("Loading versions...");
+    let start = Instant::now();
     let mut versions = HashMap::<usize, Version>::new();
     let mut count = 0usize;
+    let filename = get_collection_path(data_path, "versions");
+
     for result in csv::Reader::from_reader(BufReader::new(
         File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
     ))
@@ -146,28 +154,84 @@ fn get_versions(filename: String) -> HashMap<usize, Version> {
         }
     }
 
-    versions
-}
-
-async fn load_versions(data_path: &str) -> HashMap<usize, usize> {
-    println!("Loading versions...");
-    let start = Instant::now();
-    let mut count = 0usize;
-    let versions_path = get_collection_path(data_path, "versions");
-
-    let versions = get_versions(versions_path);
-
     println!(
-        "Loaded {} versions into database in {} seconds.",
+        "Loaded {} versions in {} seconds.",
         count,
         start.elapsed().as_secs_f64()
     );
 
     versions
-        .iter()
-        .map(|(crate_id, version)| (version.id, *crate_id))
-        .collect()
 }
+
+fn create_versioned_crates(
+    data_path: &str,
+    crates: &HashMap<usize, Crate>,
+) -> HashMap<usize, VersionedCrate> {
+    let versions = get_versions(data_path);
+
+    println!("Creating versioned crates...");
+    let start = Instant::now();
+
+    let versioned_crates: HashMap<usize, VersionedCrate> = crates
+        .iter()
+        .map(
+            |(
+                id,
+                Crate {
+                    description, name, ..
+                },
+            )| {
+                let Version {
+                    created_at,
+                    downloads,
+                    num,
+                    ..
+                } = versions
+                    .get(id)
+                    .expect(format!("Crate with id {} not found", id).as_str());
+
+                (
+                    *id,
+                    VersionedCrate {
+                        created_at: created_at.clone(),
+                        description: description.clone(),
+                        downloads: *downloads,
+                        id: *id,
+                        name: name.clone(),
+                        version: num.clone(),
+                    },
+                )
+            },
+        )
+        .collect();
+
+    println!(
+        "Created versioned crates in {} seconds.",
+        start.elapsed().as_secs_f64()
+    );
+
+    versioned_crates
+}
+
+// fn load_versions(data_path: &str) -> HashMap<usize, usize> {
+//     println!("Loading versions...");
+//     let start = Instant::now();
+//     let mut count = 0usize;
+//     let versions_path = get_collection_path(data_path, "versions");
+
+//     let versions = get_versions(versions_path);
+
+//     println!(
+//         "Loaded {} versions into database in {} seconds.",
+//         count,
+//         start.elapsed().as_secs_f64()
+//     );
+
+//     versions
+//         .iter()
+//         .map(|(crate_id, version)| (version.id, *crate_id))
+//         .collect()
+// }
 
 fn get_dependencies(
     filename: String,
