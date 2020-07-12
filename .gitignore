@@ -2,8 +2,6 @@ target/
 **/*.rs.bk
 Cargo.lock
 bin/
-wasm-spectrum/
-wasm-pack.log
 
 node_modules
 .vercel
@@ -12,5 +10,3 @@ ts
 data
 dump
 .env
-.redis
-redis.conf
