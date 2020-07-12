@@ -8,7 +8,7 @@ use std::collections::HashSet;
 pub struct Category {
     pub category: String,
     #[serde(skip_deserializing, default)]
-    pub crates: Vec<usize>,
+    pub crates: HashSet<usize>,
     pub description: String,
     pub id: usize,
     pub path: String,
@@ -18,7 +18,7 @@ pub struct Category {
 #[derive(Deserialize, Debug)]
 pub struct Crate {
     #[serde(skip_deserializing, default)]
-    pub categories: Vec<usize>,
+    pub categories: HashSet<usize>,
     #[serde(skip_deserializing, default = "default_naive_date_time")]
     pub created_at: NaiveDateTime,
     #[serde(skip_deserializing, default)]
@@ -27,7 +27,7 @@ pub struct Crate {
     #[serde(skip_deserializing, default)]
     pub downloads: usize,
     #[serde(skip_deserializing, default)]
-    pub keywords: Vec<usize>,
+    pub keywords: HashSet<usize>,
     pub id: usize,
     pub name: String,
     #[serde(skip_deserializing, default)]
@@ -36,14 +36,14 @@ pub struct Crate {
 
 #[derive(Deserialize, Debug)]
 pub struct CrateCategory {
-    category_id: usize,
-    crate_id: usize,
+    pub category_id: usize,
+    pub crate_id: usize,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct CrateKeyword {
-    crate_id: usize,
-    keyword_id: usize,
+    pub crate_id: usize,
+    pub keyword_id: usize,
 }
 
 #[derive(Deserialize, Debug, Hash, Eq, PartialEq)]
@@ -56,7 +56,7 @@ pub struct Dependency {
 #[derive(Deserialize, Debug)]
 pub struct Keyword {
     #[serde(skip_deserializing, default)]
-    pub crates: Vec<usize>,
+    pub crates: HashSet<usize>,
     pub crates_cnt: usize,
     pub id: usize,
     pub keyword: String,

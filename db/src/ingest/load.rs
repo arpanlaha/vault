@@ -32,7 +32,7 @@ pub async fn load_database(data_path: &str) {
     // let crates = load_documents::<Crate>(data_path, "crates");
     // let keywords = load_documents::<Keyword>(data_path, "keywords");
 
-    let (categories, mut crates, keywords) = join!(
+    let (mut categories, mut crates, mut keywords) = join!(
         load_documents::<Category>(data_path, "categories"),
         load_documents::<Crate>(data_path, "crates"),
         load_documents::<Keyword>(data_path, "keywords")
@@ -41,6 +41,8 @@ pub async fn load_database(data_path: &str) {
     let versions_to_crates = create_versioned_crates(data_path, &mut crates);
 
     load_dependencies(data_path, &mut crates, versions_to_crates);
+    load_crate_categories(data_path, &mut crates, &mut categories);
+    load_crate_keywords(data_path, &mut crates, &mut keywords);
 
     // load_documents::<Crate>(&mut client, data_path, "crates").await?;
     // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
@@ -243,18 +245,88 @@ fn load_dependencies(
     );
 }
 
-// async fn load_dependencies(data_path: &str, versions_to_crates: &HashMap<usize, usize>) {
-//     println!("Loading dependencies...");
-//     let start = Instant::now();
-//     // let mut count = 0usize;
+fn load_crate_categories(
+    data_path: &str,
+    crates: &mut HashMap<usize, Crate>,
+    categories: &mut HashMap<usize, Category>,
+) {
+    println!("Loading crate categories...");
+    let start = Instant::now();
+    let mut count = 0usize;
 
-//     let dependencies_path = get_collection_path(data_path, "dependencies");
+    let file_path = get_collection_path(data_path, "crates_categories");
 
-//     let dependencies = get_dependencies(dependencies_path, versions_to_crates);
+    for result in csv::Reader::from_reader(BufReader::new(
+        File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
+    ))
+    .deserialize()
+    {
+        count += 1;
+        let CrateCategory {
+            category_id,
+            crate_id,
+        } = result
+            .expect(format!("Unable to deserialize entry {} as crate category", count).as_str());
 
-//     println!(
-//         "Loaded {} dependencies into database in {} seconds.",
-//         count,
-//         start.elapsed().as_secs_f64()
-//     );
-// }
+        crates
+            .get_mut(&crate_id)
+            .expect(format!("Crate with id {} not found", crate_id).as_str())
+            .categories
+            .insert(category_id);
+
+        categories
+            .get_mut(&category_id)
+            .expect(format!("Category with id {} not found", category_id).as_str())
+            .crates
+            .insert(crate_id);
+    }
+
+    println!(
+        "Loaded {} crate categories in {} seconds.",
+        count,
+        start.elapsed().as_secs_f64()
+    );
+}
+
+fn load_crate_keywords(
+    data_path: &str,
+    crates: &mut HashMap<usize, Crate>,
+    keywords: &mut HashMap<usize, Keyword>,
+) {
+    println!("Loading crate keywords...");
+    let start = Instant::now();
+    let mut count = 0usize;
+
+    let file_path = get_collection_path(data_path, "crates_keywords");
+
+    for result in csv::Reader::from_reader(BufReader::new(
+        File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
+    ))
+    .deserialize()
+    {
+        count += 1;
+        let CrateKeyword {
+            crate_id,
+            keyword_id,
+        } = result
+            .expect(format!("Unable to deserialize entry {} as crate keyword", count).as_str());
+
+        crates
+            .get_mut(&crate_id)
+            .expect(format!("Crate with id {} not found", crate_id).as_str())
+            .keywords
+            .insert(keyword_id);
+
+        keywords
+            .get_mut(&keyword_id)
+            .expect(format!("Keyword with id {} not found", keyword_id).as_str())
+            .crates
+            .insert(crate_id);
+    }
+
+    println!(
+        "Loaded {} crate keywords in {} seconds.",
+        count,
+        start.elapsed().as_secs_f64()
+    );
+}
