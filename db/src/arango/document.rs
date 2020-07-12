@@ -6,6 +6,8 @@ use std::collections::HashSet;
 #[derive(Deserialize, Debug)]
 pub struct Category {
     pub category: String,
+    #[serde(skip_deserializing, default)]
+    pub crates: Vec<usize>,
     pub description: String,
     pub id: usize,
     pub path: String,
@@ -14,6 +16,8 @@ pub struct Category {
 
 #[derive(Deserialize, Debug)]
 pub struct Crate {
+    #[serde(skip_deserializing, default)]
+    pub categories: Vec<usize>,
     #[serde(skip_deserializing, default = "default_naive_date_time")]
     pub created_at: NaiveDateTime,
     #[serde(skip_deserializing, default)]
@@ -21,6 +25,8 @@ pub struct Crate {
     pub description: String,
     #[serde(skip_deserializing, default)]
     pub downloads: usize,
+    #[serde(skip_deserializing, default)]
+    pub keywords: Vec<usize>,
     pub id: usize,
     pub name: String,
     #[serde(skip_deserializing, default)]
@@ -41,7 +47,6 @@ pub struct CrateKeyword {
 
 #[derive(Deserialize, Debug)]
 pub struct Dependency {
-    pub from: usize,
     pub kind: usize,
     pub optional: bool,
     pub to: usize,
@@ -49,6 +54,8 @@ pub struct Dependency {
 
 #[derive(Deserialize, Debug)]
 pub struct Keyword {
+    #[serde(skip_deserializing, default)]
+    pub crates: Vec<usize>,
     pub crates_cnt: usize,
     pub id: usize,
     pub keyword: String,
@@ -63,17 +70,6 @@ pub struct Version {
     pub id: usize,
     pub num: String,
 }
-
-// #[derive(Deserialize, Debug)]
-// pub struct VersionedCrate {
-//     #[serde(with = "custom_time")]
-//     pub created_at: NaiveDateTime,
-//     pub description: String,
-//     pub downloads: usize,
-//     pub id: usize,
-//     pub name: String,
-//     pub version: String,
-// }
 
 #[derive(Deserialize, Debug)]
 pub struct SqlDependency {
