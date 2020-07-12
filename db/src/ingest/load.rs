@@ -1,9 +1,7 @@
-use crate::arango::document::{
+use crate::ingest::traits::{
     Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
     Vertex,
 };
-// use arangors::ClientError;
-// use redisgraph::{Graph, RedisGraphResult};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
@@ -28,10 +26,6 @@ pub async fn load_database(data_path: &str) {
     println!("Database connection established.");
     println!("Loading documents...");
 
-    // let categories = load_documents::<Category>(data_path, "categories");
-    // let crates = load_documents::<Crate>(data_path, "crates");
-    // let keywords = load_documents::<Keyword>(data_path, "keywords");
-
     let (mut categories, mut crates, mut keywords) = join!(
         load_documents::<Category>(data_path, "categories"),
         load_documents::<Crate>(data_path, "crates"),
@@ -43,15 +37,6 @@ pub async fn load_database(data_path: &str) {
     load_dependencies(data_path, &mut crates, versions_to_crates);
     load_crate_categories(data_path, &mut crates, &mut categories);
     load_crate_keywords(data_path, &mut crates, &mut keywords);
-
-    // load_documents::<Crate>(&mut client, data_path, "crates").await?;
-    // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
-
-    // load_documents::<CrateCategory>(&mut client, data_path, "crates_categories").await?;
-    // load_documents::<CrateKeyword>(&mut client, data_path, "crates_keywords").await?;
-
-    // let versions_to_crates = load_versions(&mut client, data_path).await?;
-    // load_dependencies(&mut client, data_path, &versions_to_crates).await?;
 
     println!(
         "Finished loading documents into database in {} seconds.",
@@ -68,8 +53,6 @@ async fn load_documents<T: DeserializeOwned + Vertex + Debug>(
     let mut count = 0usize;
 
     let file_path = get_collection_path(data_path, collection_name);
-
-    // client.begin(None).await?;
 
     let mut collection = HashMap::<usize, T>::new();
 
@@ -88,10 +71,7 @@ async fn load_documents<T: DeserializeOwned + Vertex + Debug>(
             .as_str(),
         );
         collection.insert(record.id(), record);
-        // run_query(client, record.get_insert_query().as_str()).await;
     }
-
-    // client.commit().await?;
 
     println!(
         "Loaded {} {} in {} seconds.",
