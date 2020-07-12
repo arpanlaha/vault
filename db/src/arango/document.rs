@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use semver_parser::version as semver_version;
 use serde::Deserialize;
+use std::collections::HashSet;
 
 #[derive(Deserialize, Debug)]
 pub struct Category {
@@ -13,9 +14,17 @@ pub struct Category {
 
 #[derive(Deserialize, Debug)]
 pub struct Crate {
+    #[serde(skip_deserializing, default = "default_naive_date_time")]
+    pub created_at: NaiveDateTime,
+    #[serde(skip_deserializing, default)]
+    pub dependencies: HashSet<Dependency>,
     pub description: String,
+    #[serde(skip_deserializing, default)]
+    pub downloads: usize,
     pub id: usize,
     pub name: String,
+    #[serde(skip_deserializing, default)]
+    pub version: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -55,16 +64,16 @@ pub struct Version {
     pub num: String,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct VersionedCrate {
-    #[serde(with = "custom_time")]
-    pub created_at: NaiveDateTime,
-    pub description: String,
-    pub downloads: usize,
-    pub id: usize,
-    pub name: String,
-    pub version: String,
-}
+// #[derive(Deserialize, Debug)]
+// pub struct VersionedCrate {
+//     #[serde(with = "custom_time")]
+//     pub created_at: NaiveDateTime,
+//     pub description: String,
+//     pub downloads: usize,
+//     pub id: usize,
+//     pub name: String,
+//     pub version: String,
+// }
 
 #[derive(Deserialize, Debug)]
 pub struct SqlDependency {
@@ -73,6 +82,10 @@ pub struct SqlDependency {
     pub kind: usize,
     pub optional: String,
     pub version_id: usize,
+}
+
+fn default_naive_date_time() -> NaiveDateTime {
+    NaiveDateTime::from_timestamp(0, 0)
 }
 
 impl Version {

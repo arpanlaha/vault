@@ -1,6 +1,6 @@
 use crate::arango::document::{
     Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
-    VersionedCrate, Vertex,
+    Vertex,
 };
 // use arangors::ClientError;
 // use redisgraph::{Graph, RedisGraphResult};
@@ -32,13 +32,13 @@ pub async fn load_database(data_path: &str) {
     // let crates = load_documents::<Crate>(data_path, "crates");
     // let keywords = load_documents::<Keyword>(data_path, "keywords");
 
-    let (categories, crates, keywords) = join!(
+    let (categories, mut crates, keywords) = join!(
         load_documents::<Category>(data_path, "categories"),
         load_documents::<Crate>(data_path, "crates"),
         load_documents::<Keyword>(data_path, "keywords")
     );
 
-    let versioned_crates = create_versioned_crates(data_path, &crates);
+    let versioned_crates = create_versioned_crates(data_path, &mut crates);
 
     // load_documents::<Crate>(&mut client, data_path, "crates").await?;
     // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
@@ -155,7 +155,7 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     }
 
     println!(
-        "Loaded {} versions in {} seconds.",
+        "Processed {} versions in {} seconds.",
         count,
         start.elapsed().as_secs_f64()
     );
@@ -163,54 +163,68 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     versions
 }
 
-fn create_versioned_crates(
-    data_path: &str,
-    crates: &HashMap<usize, Crate>,
-) -> HashMap<usize, VersionedCrate> {
+fn create_versioned_crates(data_path: &str, crates: &mut HashMap<usize, Crate>) {
     let versions = get_versions(data_path);
-
     println!("Creating versioned crates...");
+
     let start = Instant::now();
 
-    let versioned_crates: HashMap<usize, VersionedCrate> = crates
-        .iter()
-        .map(
-            |(
-                id,
-                Crate {
-                    description, name, ..
-                },
-            )| {
-                let Version {
-                    created_at,
-                    downloads,
-                    num,
-                    ..
-                } = versions
-                    .get(id)
-                    .expect(format!("Crate with id {} not found", id).as_str());
+    for Version {
+        crate_id,
+        created_at,
+        downloads,
+        num,
+        ..
+    } in versions.values()
+    {
+        let version_crate = crates
+            .get_mut(crate_id)
+            .expect(format!("Crate with id {} does not exist", crate_id).as_str());
 
-                (
-                    *id,
-                    VersionedCrate {
-                        created_at: created_at.clone(),
-                        description: description.clone(),
-                        downloads: *downloads,
-                        id: *id,
-                        name: name.clone(),
-                        version: num.clone(),
-                    },
-                )
-            },
-        )
-        .collect();
+        version_crate.created_at = created_at.to_owned();
+        version_crate.downloads = downloads.to_owned();
+        version_crate.version = num.to_owned();
+    }
+
+    // let versioned_crates: HashMap<usize, VersionedCrate> = crates
+    //     .iter()
+    //     .map(
+    //         |(
+    //             id,
+    //             Crate {
+    //                 description, name, ..
+    //             },
+    //         )| {
+    //             let Version {
+    //                 created_at,
+    //                 downloads,
+    //                 num,
+    //                 ..
+    //             } = versions
+    //                 .get(id)
+    //                 .expect(format!("Crate with id {} not found", id).as_str());
+
+    //             (
+    //                 *id,
+    //                 VersionedCrate {
+    //                     created_at: created_at.clone(),
+    //                     description: description.clone(),
+    //                     downloads: *downloads,
+    //                     id: *id,
+    //                     name: name.clone(),
+    //                     version: num.clone(),
+    //                 },
+    //             )
+    //         },
+    //     )
+    //     .collect();
 
     println!(
         "Created versioned crates in {} seconds.",
         start.elapsed().as_secs_f64()
     );
 
-    versioned_crates
+    // versioned_crates
 }
 
 // fn load_versions(data_path: &str) -> HashMap<usize, usize> {
@@ -233,48 +247,48 @@ fn create_versioned_crates(
 //         .collect()
 // }
 
-fn get_dependencies(
-    filename: String,
-    versions_to_crates: &HashMap<usize, usize>,
-) -> Vec<Dependency> {
-    let mut dependencies = Vec::with_capacity(versions_to_crates.len());
-    let mut count = 0usize;
-    for result in csv::Reader::from_reader(BufReader::new(
-        File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
-    ))
-    .deserialize()
-    {
-        count += 1;
-        let sql_dependency: SqlDependency =
-            result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
-        let SqlDependency { kind, optional, .. } = sql_dependency;
-        let from_version_id = sql_dependency.version_id;
-        let to = sql_dependency.crate_id;
+// fn get_dependencies(
+//     filename: String,
+//     versions_to_crates: &HashMap<usize, usize>,
+// ) -> Vec<Dependency> {
+//     let mut dependencies = Vec::with_capacity(versions_to_crates.len());
+//     let mut count = 0usize;
+//     for result in csv::Reader::from_reader(BufReader::new(
+//         File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
+//     ))
+//     .deserialize()
+//     {
+//         count += 1;
+//         let sql_dependency: SqlDependency =
+//             result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
+//         let SqlDependency { kind, optional, .. } = sql_dependency;
+//         let from_version_id = sql_dependency.version_id;
+//         let to = sql_dependency.crate_id;
 
-        if let Some(&from) = versions_to_crates.get(&from_version_id) {
-            dependencies.push(Dependency {
-                from,
-                kind,
-                optional: optional == "t",
-                to,
-            });
-        }
-    }
-    dependencies
-}
+//         if let Some(&from) = versions_to_crates.get(&from_version_id) {
+//             dependencies.push(Dependency {
+//                 from,
+//                 kind,
+//                 optional: optional == "t",
+//                 to,
+//             });
+//         }
+//     }
+//     dependencies
+// }
 
-async fn load_dependencies(data_path: &str, versions_to_crates: &HashMap<usize, usize>) {
-    println!("Loading dependencies...");
-    let start = Instant::now();
-    let mut count = 0usize;
+// async fn load_dependencies(data_path: &str, versions_to_crates: &HashMap<usize, usize>) {
+//     println!("Loading dependencies...");
+//     let start = Instant::now();
+//     // let mut count = 0usize;
 
-    let dependencies_path = get_collection_path(data_path, "dependencies");
+//     let dependencies_path = get_collection_path(data_path, "dependencies");
 
-    let dependencies = get_dependencies(dependencies_path, versions_to_crates);
+//     let dependencies = get_dependencies(dependencies_path, versions_to_crates);
 
-    println!(
-        "Loaded {} dependencies into database in {} seconds.",
-        count,
-        start.elapsed().as_secs_f64()
-    );
-}
+//     println!(
+//         "Loaded {} dependencies into database in {} seconds.",
+//         count,
+//         start.elapsed().as_secs_f64()
+//     );
+// }
