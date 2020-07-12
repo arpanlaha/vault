@@ -38,7 +38,9 @@ pub async fn load_database(data_path: &str) {
         load_documents::<Keyword>(data_path, "keywords")
     );
 
-    let versioned_crates = create_versioned_crates(data_path, &mut crates);
+    let versions_to_crates = create_versioned_crates(data_path, &mut crates);
+
+    load_dependencies(data_path, &mut crates, versions_to_crates);
 
     // load_documents::<Crate>(&mut client, data_path, "crates").await?;
     // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
@@ -163,8 +165,12 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     versions
 }
 
-fn create_versioned_crates(data_path: &str, crates: &mut HashMap<usize, Crate>) {
+fn create_versioned_crates(
+    data_path: &str,
+    crates: &mut HashMap<usize, Crate>,
+) -> HashMap<usize, usize> {
     let versions = get_versions(data_path);
+    let mut version_to_crates = HashMap::<usize, usize>::new();
     println!("Creating versioned crates...");
 
     let start = Instant::now();
@@ -173,8 +179,8 @@ fn create_versioned_crates(data_path: &str, crates: &mut HashMap<usize, Crate>) 
         crate_id,
         created_at,
         downloads,
+        id,
         num,
-        ..
     } in versions.values()
     {
         let version_crate = crates
@@ -184,98 +190,58 @@ fn create_versioned_crates(data_path: &str, crates: &mut HashMap<usize, Crate>) 
         version_crate.created_at = created_at.to_owned();
         version_crate.downloads = downloads.to_owned();
         version_crate.version = num.to_owned();
+
+        version_to_crates.insert(id.to_owned(), crate_id.to_owned());
     }
-
-    // let versioned_crates: HashMap<usize, VersionedCrate> = crates
-    //     .iter()
-    //     .map(
-    //         |(
-    //             id,
-    //             Crate {
-    //                 description, name, ..
-    //             },
-    //         )| {
-    //             let Version {
-    //                 created_at,
-    //                 downloads,
-    //                 num,
-    //                 ..
-    //             } = versions
-    //                 .get(id)
-    //                 .expect(format!("Crate with id {} not found", id).as_str());
-
-    //             (
-    //                 *id,
-    //                 VersionedCrate {
-    //                     created_at: created_at.clone(),
-    //                     description: description.clone(),
-    //                     downloads: *downloads,
-    //                     id: *id,
-    //                     name: name.clone(),
-    //                     version: num.clone(),
-    //                 },
-    //             )
-    //         },
-    //     )
-    //     .collect();
 
     println!(
         "Created versioned crates in {} seconds.",
         start.elapsed().as_secs_f64()
     );
 
-    // versioned_crates
+    version_to_crates
 }
 
-// fn load_versions(data_path: &str) -> HashMap<usize, usize> {
-//     println!("Loading versions...");
-//     let start = Instant::now();
-//     let mut count = 0usize;
-//     let versions_path = get_collection_path(data_path, "versions");
+fn load_dependencies(
+    data_path: &str,
+    crates: &mut HashMap<usize, Crate>,
+    versions_to_crates: HashMap<usize, usize>,
+) {
+    println!("Loading dependencies...");
+    let start = Instant::now();
+    let mut count = 0usize;
+    let dependencies_path = get_collection_path(data_path, "dependencies");
+    for result in csv::Reader::from_reader(BufReader::new(
+        File::open(Path::new(&dependencies_path))
+            .expect(format!("Unable to open {}", dependencies_path).as_str()),
+    ))
+    .deserialize()
+    {
+        count += 1;
+        let sql_dependency: SqlDependency =
+            result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
+        let SqlDependency { kind, optional, .. } = sql_dependency;
+        let from_version_id = sql_dependency.version_id;
+        let to = sql_dependency.crate_id;
 
-//     let versions = get_versions(versions_path);
-
-//     println!(
-//         "Loaded {} versions into database in {} seconds.",
-//         count,
-//         start.elapsed().as_secs_f64()
-//     );
-
-//     versions
-//         .iter()
-//         .map(|(crate_id, version)| (version.id, *crate_id))
-//         .collect()
-// }
-
-// fn get_dependencies(
-//     filename: String,
-//     versions_to_crates: &HashMap<usize, usize>,
-// ) -> Vec<Dependency> {
-//     let mut dependencies = Vec::with_capacity(versions_to_crates.len());
-//     let mut count = 0usize;
-//     for result in csv::Reader::from_reader(BufReader::new(
-//         File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
-//     ))
-//     .deserialize()
-//     {
-//         count += 1;
-//         let sql_dependency: SqlDependency =
-//             result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
-//         let SqlDependency { kind, optional, .. } = sql_dependency;
-//         let from_version_id = sql_dependency.version_id;
-//         let to = sql_dependency.crate_id;
-
-//         if let Some(&from) = versions_to_crates.get(&from_version_id) {
-//             dependencies.push(Dependency {
-//                 from,
-//                 kind,
-//                 optional: optional == "t",
-//                 to,
-//             });
-//         }
-//     }
-//     dependencies
-// }
+        if let Some(from) = versions_to_crates.get(&from_version_id) {
+            crates
+                .get_mut(from)
+                .expect(format!("Crate with id {} not found", from).as_str())
+                .dependencies
+                .insert(Dependency {
+                    kind,
+                    optional: optional == "t",
+                    to,
+                });
+        }
+    }
+    println!(
+        "Loaded {} dependencies into database in {} seconds.",
+        count,
+        start.elapsed().as_secs_f64()
+    );
+}
 
 // async fn load_dependencies(data_path: &str, versions_to_crates: &HashMap<usize, usize>) {
 //     println!("Loading dependencies...");

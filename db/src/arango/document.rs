@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use semver_parser::version as semver_version;
 use serde::Deserialize;
+use std::cmp::PartialEq;
 use std::collections::HashSet;
 
 #[derive(Deserialize, Debug)]
@@ -45,7 +46,7 @@ pub struct CrateKeyword {
     keyword_id: usize,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Hash, Eq, PartialEq)]
 pub struct Dependency {
     pub kind: usize,
     pub optional: bool,
