@@ -7,8 +7,7 @@ use crate::arango::{
 };
 // use arangors::ClientError;
 // use redisgraph::{Graph, RedisGraphResult};
-use bolt_client::{error::Result as BoltResult, Client, Metadata};
-use bolt_proto::message::{Record, Success};
+use bolt_client::{error::Result as BoltResult, Client};
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
@@ -25,9 +24,12 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 }
 
 async fn create_constraints(client: &mut Client) -> BoltResult<()> {
-    run_query(client, Category::create_constraint().as_str()).await?;
-    run_query(client, Crate::create_constraint().as_str()).await?;
-    run_query(client, Keyword::create_constraint().as_str()).await?;
+    client.begin(None).await?;
+    run_query(client, Category::create_constraint().as_str()).await;
+    run_query(client, Crate::create_constraint().as_str()).await;
+    run_query(client, Keyword::create_constraint().as_str()).await;
+    client.commit().await?;
+
     // db.mutate(Category::create_constraint().as_str())?;
     // db.mutate(Category::create_constraint().as_str())?;
     // db.mutate(Category::create_constraint().as_str())?;
@@ -57,17 +59,49 @@ pub async fn load_database(data_path: &str) -> BoltResult<()> {
     // )
     // .unwrap();
 
-    create_constraints(&mut client).await?;
+    // create_constraints(&mut client).await?;
 
-    load_documents::<Category>(&mut client, data_path, "categories").await?;
-    load_documents::<Crate>(&mut client, data_path, "crates").await?;
-    load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
+    println!("Loading categories");
+    let category_start = Instant::now();
 
-    load_documents::<CrateCategory>(&mut client, data_path, "crates_categories").await?;
-    load_documents::<CrateKeyword>(&mut client, data_path, "crates_keywords").await?;
+    client.begin(None).await?;
+    run_query(
+        &mut client, 
+        format!(r#"
+        CALL apoc.load.csv("{}/categories.csv")
+        YIELD map
+        CREATE (:Category {{ category: map.category, description: map.description, id: toInteger(map.id), path: map.path, slug: map.slug }})
+        "#, data_path).as_str()
+    ).await;
+    client.commit().await?;
 
-    let versions_to_crates = load_versions(&mut client, data_path).await?;
-    load_dependencies(&mut client, data_path, &versions_to_crates).await?;
+    println!("Finished loading categories in {} seconds", category_start.elapsed().as_secs_f64());
+
+    println!("Loading crates");
+
+    let crate_start = Instant::now();
+
+    run_query(
+        &mut client, 
+        format!(r#"
+        USING PERIODIC COMMIT 10000
+        CALL apoc.load.csv("{}/crates.csv")
+        YIELD map
+        CREATE (:Crate {{ description: map.description, id: toInteger(map.id), name: map.name }})
+        "#, data_path).as_str()
+    ).await;
+
+    println!("Finished loading categories in {} seconds", crate_start.elapsed().as_secs_f64());
+
+    // load_documents::<Category>(&mut client, data_path, "categories").await?;
+    // load_documents::<Crate>(&mut client, data_path, "crates").await?;
+    // load_documents::<Keyword>(&mut client, data_path, "keywords").await?;
+
+    // load_documents::<CrateCategory>(&mut client, data_path, "crates_categories").await?;
+    // load_documents::<CrateKeyword>(&mut client, data_path, "crates_keywords").await?;
+
+    // let versions_to_crates = load_versions(&mut client, data_path).await?;
+    // load_dependencies(&mut client, data_path, &versions_to_crates).await?;
 
     println!(
         "Finished loading documents into database in {} seconds.",
@@ -88,6 +122,8 @@ async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
 
     let file_path = get_collection_path(data_path, collection_name);
 
+    client.begin(None).await?;
+
     for result in csv::Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
     ))
@@ -102,8 +138,10 @@ async fn load_documents<T: DeserializeOwned + RedisGraphDocument + Debug>(
             )
             .as_str(),
         );
-        run_query(client, record.get_insert_query().as_str()).await?;
+        run_query(client, record.get_insert_query().as_str()).await;
     }
+
+    client.commit().await?;
 
     println!(
         "Loaded {} {} into database in {} seconds.",
@@ -178,7 +216,7 @@ async fn load_versions(client: &mut Client, data_path: &str) -> BoltResult<HashM
     let versions = get_versions(versions_path);
 
     for version in versions.values() {
-        run_query(client, version.get_insert_query().as_str()).await?;
+        run_query(client, version.get_insert_query().as_str()).await;
         count += 1;
     }
 
@@ -238,7 +276,7 @@ async fn load_dependencies(
     let dependencies = get_dependencies(dependencies_path, versions_to_crates);
 
     for dependency in dependencies {
-        run_query(client, dependency.get_insert_query().as_str()).await?;
+        run_query(client, dependency.get_insert_query().as_str()).await;
         count += 1;
     }
 

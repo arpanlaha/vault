@@ -7,12 +7,14 @@ use std::iter::FromIterator;
 // use bolt_proto::{message::*, value::*, Message, Value};
 
 //BoltResult<(Message, Vec<Record>)>
-pub async fn run_query(client: &mut Client, query: &str) -> BoltResult<Vec<Record>> {
-    Success::try_from(client.run_with_metadata(query, None, None).await?)?;
-    let (pull_response, records) = client.pull(None).await?;
-    Success::try_from(pull_response)?;
-
-    Ok(records)
+pub async fn run_query(client: &mut Client, query: &str) {
+    Success::try_from(
+        client
+            .run_with_metadata(query, None, None)
+            .await
+            .expect(format!("Error executing {}", query).as_str()),
+    )
+    .expect(format!("Error executing {}", query).as_str());
 }
 
 pub async fn get_connection() -> BoltResult<Client> {

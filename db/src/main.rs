@@ -1,16 +1,16 @@
-use vault_db::arango::client::get_connection;
-// use vault_db::ingest::{fs as vault_fs, load as vault_load};
+use vault_db::ingest::{fs as vault_fs, load as vault_load};
 
 #[tokio::main]
 async fn main() {
-    // let temp_dir = vault_fs::fetch_data();
+    let import_path = vault_fs::fetch_data();
 
-    // let data_path = vault_fs::get_data_path(&temp_dir).expect("Unable to locate data path");
+    let mut data_path = vault_fs::get_data_path(&import_path).unwrap();
 
     dotenv::dotenv().unwrap();
 
-    // vault_load::load_database(data_path.as_str()).await.unwrap();
+    vault_load::load_database(data_path.split_off(import_path.len() + 1).as_str())
+        .await
+        .unwrap();
 
-    // vault_fs::clean_tempdir(temp_dir);
-    get_connection().await.unwrap();
+    // vault_fs::clean_tempdir(import_path);
 }
