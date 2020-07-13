@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufRead, BufReader, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::time::Instant;
 use tokio::join;
@@ -190,9 +190,41 @@ fn load_dependencies(
     let start = Instant::now();
     let mut count = 0usize;
     let dependencies_path = get_collection_path(data_path, "dependencies");
-    for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&dependencies_path))
+    let new_dependencies_path = get_collection_path(data_path, "dependencies_mod");
+
+    let mut new_dependencies_file = File::create(&new_dependencies_path)
+        .expect(format!("Unable to create file at path {}", new_dependencies_path).as_str());
+
+    let mut line_count = 0;
+
+    for line in BufReader::new(
+        File::open(&dependencies_path)
             .expect(format!("Unable to open {}", dependencies_path).as_str()),
+    )
+    .lines()
+    {
+        new_dependencies_file
+            .write(format!("{}\n", line.unwrap().replace("{", "[").replace("}", "]")).as_bytes())
+            .expect(format!("Unable to write to {}", new_dependencies_path).as_str());
+
+        line_count += 1;
+    }
+
+    println!("line count: {}", line_count);
+
+    new_dependencies_file
+        .flush()
+        .expect(format!("Unable to flush {}", new_dependencies_path).as_str());
+
+    new_dependencies_file
+        .seek(SeekFrom::Start(0))
+        .expect(format!("Unable to seek {} to start", new_dependencies_path).as_str());
+
+    println!("path: {}", new_dependencies_path);
+
+    for result in Reader::from_reader(BufReader::new(
+        File::open(Path::new(&new_dependencies_path))
+            .expect(format!("Unable to open {}", new_dependencies_path).as_str()),
     ))
     .deserialize()
     {
