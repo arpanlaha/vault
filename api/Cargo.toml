@@ -5,17 +5,10 @@ name    = "vault_api"
 version = "0.1.0"
 
 [dependencies]
-# arangors = "0.3"
-chrono = { version = "0.4", features = ["serde"] }
-csv    = "1.1"
-curl   = "0.4"
-# dotenv = "0.15"
-flate2 = "1.0"
-# redis         = "0.16"
-# redisgraph    = "0.5"
-# rusted_cypher = "1.1"
-# bolt-client   = "0.7"
-# bolt-proto    = "0.8"
+chrono        = { version = "0.4", features = ["serde"] }
+csv           = "1.1"
+curl          = "0.4"
+flate2        = "1.0"
 semver-parser = "0.9"
 serde         = { version = "1.0", features = ["derive"] }
 serde_json    = "1.0"
