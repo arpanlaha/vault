@@ -79,7 +79,7 @@ pub struct Version {
 pub struct SqlDependency {
     pub crate_id: usize,
     pub default_features: String,
-    pub features: Vec<String>,
+    pub features: String,
     pub id: usize,
     pub kind: usize,
     pub optional: String,

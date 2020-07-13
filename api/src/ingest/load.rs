@@ -190,41 +190,41 @@ fn load_dependencies(
     let start = Instant::now();
     let mut count = 0usize;
     let dependencies_path = get_collection_path(data_path, "dependencies");
-    let new_dependencies_path = get_collection_path(data_path, "dependencies_mod");
+    // let new_dependencies_path = get_collection_path(data_path, "dependencies_mod");
 
-    let mut new_dependencies_file = File::create(&new_dependencies_path)
-        .expect(format!("Unable to create file at path {}", new_dependencies_path).as_str());
+    // let mut new_dependencies_file = File::create(&new_dependencies_path)
+    //     .expect(format!("Unable to create file at path {}", new_dependencies_path).as_str());
 
-    let mut line_count = 0;
+    // let mut line_count = 0;
 
-    for line in BufReader::new(
-        File::open(&dependencies_path)
-            .expect(format!("Unable to open {}", dependencies_path).as_str()),
-    )
-    .lines()
-    {
-        new_dependencies_file
-            .write(format!("{}\n", line.unwrap().replace("{", "[").replace("}", "]")).as_bytes())
-            .expect(format!("Unable to write to {}", new_dependencies_path).as_str());
+    // for line in BufReader::new(
+    //     File::open(&dependencies_path)
+    //         .expect(format!("Unable to open {}", dependencies_path).as_str()),
+    // )
+    // .lines()
+    // {
+    //     new_dependencies_file
+    //         .write(format!("{}\n", line.unwrap().replace("{", "[").replace("}", "]")).as_bytes())
+    //         .expect(format!("Unable to write to {}", new_dependencies_path).as_str());
 
-        line_count += 1;
-    }
+    //     line_count += 1;
+    // }
 
-    println!("line count: {}", line_count);
+    // println!("line count: {}", line_count);
 
-    new_dependencies_file
-        .flush()
-        .expect(format!("Unable to flush {}", new_dependencies_path).as_str());
+    // new_dependencies_file
+    //     .flush()
+    //     .expect(format!("Unable to flush {}", new_dependencies_path).as_str());
 
-    new_dependencies_file
-        .seek(SeekFrom::Start(0))
-        .expect(format!("Unable to seek {} to start", new_dependencies_path).as_str());
+    // new_dependencies_file
+    //     .seek(SeekFrom::Start(0))
+    //     .expect(format!("Unable to seek {} to start", new_dependencies_path).as_str());
 
-    println!("path: {}", new_dependencies_path);
+    // println!("path: {}", new_dependencies_path);
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&new_dependencies_path))
-            .expect(format!("Unable to open {}", new_dependencies_path).as_str()),
+        File::open(Path::new(&dependencies_path))
+            .expect(format!("Unable to open {}", dependencies_path).as_str()),
     ))
     .deserialize()
     {
@@ -248,7 +248,11 @@ fn load_dependencies(
                 .dependencies
                 .insert(Dependency {
                     default_features: default_features == "t",
-                    features,
+                    features: String::from(&features[1..features.len()])
+                        .split(",")
+                        .map(|feature_str| String::from(feature_str))
+                        .collect(),
+
                     from: from.to_owned(),
                     kind,
                     optional: optional == "t",

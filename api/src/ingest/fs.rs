@@ -70,8 +70,6 @@ pub fn fetch_data() -> TempDir {
         unpack_start.elapsed().as_secs_f64()
     );
 
-    // TODO: change file permissions
-
     println!(
         "Finished fetching data in {} seconds.",
         fetch_start.elapsed().as_secs_f64()
