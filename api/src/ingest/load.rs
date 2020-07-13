@@ -158,6 +158,7 @@ fn create_versioned_crates(
         crate_id,
         created_at,
         downloads,
+        features,
         id,
         num,
     } in versions.values()
@@ -169,6 +170,8 @@ fn create_versioned_crates(
         version_crate.created_at = created_at.to_owned();
         version_crate.downloads = downloads.to_owned();
         version_crate.version = num.to_owned();
+        version_crate.features = serde_json::from_str(features)
+            .expect(format!("Unable to deserialize {} as HashMap", features).as_str());
 
         version_to_crates.insert(id.to_owned(), crate_id.to_owned());
     }

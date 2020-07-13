@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use semver_parser::version as semver_version;
 use serde::Deserialize;
 use std::cmp::PartialEq;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Deserialize, Debug)]
 pub struct Category {
@@ -26,6 +26,8 @@ pub struct Crate {
     pub description: String,
     #[serde(skip_deserializing, default)]
     pub downloads: usize,
+    #[serde(skip_deserializing, default)]
+    pub features: HashMap<String, Vec<String>>,
     #[serde(skip_deserializing, default)]
     pub keywords: HashSet<usize>,
     pub id: usize,
@@ -71,6 +73,7 @@ pub struct Version {
     #[serde(with = "custom_time")]
     pub created_at: NaiveDateTime,
     pub downloads: usize,
+    pub features: String,
     pub id: usize,
     pub num: String,
 }
