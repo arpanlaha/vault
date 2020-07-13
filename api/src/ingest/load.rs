@@ -2,6 +2,7 @@ use crate::ingest::traits::{
     Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
     Vertex,
 };
+use csv::Reader;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::any;
@@ -52,7 +53,7 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
 
     let mut collection = HashMap::<usize, T>::new();
 
-    for result in csv::Reader::from_reader(BufReader::new(
+    for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
     ))
     .deserialize()
@@ -86,7 +87,7 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     let mut count = 0usize;
     let filename = get_collection_path(data_path, "versions");
 
-    for result in csv::Reader::from_reader(BufReader::new(
+    for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
     ))
     .deserialize()
@@ -189,7 +190,7 @@ fn load_dependencies(
     let start = Instant::now();
     let mut count = 0usize;
     let dependencies_path = get_collection_path(data_path, "dependencies");
-    for result in csv::Reader::from_reader(BufReader::new(
+    for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&dependencies_path))
             .expect(format!("Unable to open {}", dependencies_path).as_str()),
     ))
@@ -215,7 +216,7 @@ fn load_dependencies(
                 .dependencies
                 .insert(Dependency {
                     default_features: default_features == "t",
-                    features: features.into_iter().collect(),
+                    features,
                     from: from.to_owned(),
                     kind,
                     optional: optional == "t",
@@ -241,7 +242,7 @@ fn load_crate_categories(
 
     let file_path = get_collection_path(data_path, "crates_categories");
 
-    for result in csv::Reader::from_reader(BufReader::new(
+    for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
     ))
     .deserialize()
@@ -284,7 +285,7 @@ fn load_crate_keywords(
 
     let file_path = get_collection_path(data_path, "crates_keywords");
 
-    for result in csv::Reader::from_reader(BufReader::new(
+    for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
     ))
     .deserialize()
@@ -306,7 +307,7 @@ fn load_crate_keywords(
             .get_mut(&keyword_id)
             .expect(format!("Keyword with id {} not found", keyword_id).as_str())
             .crates
-            .insert(crate_id);
+            .push(crate_id);
     }
 
     println!(

@@ -59,7 +59,7 @@ pub struct Dependency {
 #[derive(Deserialize, Debug)]
 pub struct Keyword {
     #[serde(skip_deserializing, default)]
-    pub crates: HashSet<usize>,
+    pub crates: Vec<usize>,
     pub crates_cnt: usize,
     pub id: usize,
     pub keyword: String,
@@ -79,7 +79,7 @@ pub struct Version {
 pub struct SqlDependency {
     pub crate_id: usize,
     pub default_features: String,
-    pub features: HashSet<String>,
+    pub features: Vec<String>,
     pub id: usize,
     pub kind: usize,
     pub optional: String,
