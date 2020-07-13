@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Seek, SeekFrom, Write};
+use std::io::BufReader;
 use std::path::Path;
 use std::time::Instant;
 use tokio::join;
@@ -169,9 +169,9 @@ fn create_versioned_crates(
 
         version_crate.created_at = created_at.to_owned();
         version_crate.downloads = downloads.to_owned();
-        version_crate.version = num.to_owned();
         version_crate.features = serde_json::from_str(features)
             .expect(format!("Unable to deserialize {} as HashMap", features).as_str());
+        version_crate.version = num.to_owned();
 
         version_to_crates.insert(id.to_owned(), crate_id.to_owned());
     }
@@ -193,37 +193,6 @@ fn load_dependencies(
     let start = Instant::now();
     let mut count = 0usize;
     let dependencies_path = get_collection_path(data_path, "dependencies");
-    // let new_dependencies_path = get_collection_path(data_path, "dependencies_mod");
-
-    // let mut new_dependencies_file = File::create(&new_dependencies_path)
-    //     .expect(format!("Unable to create file at path {}", new_dependencies_path).as_str());
-
-    // let mut line_count = 0;
-
-    // for line in BufReader::new(
-    //     File::open(&dependencies_path)
-    //         .expect(format!("Unable to open {}", dependencies_path).as_str()),
-    // )
-    // .lines()
-    // {
-    //     new_dependencies_file
-    //         .write(format!("{}\n", line.unwrap().replace("{", "[").replace("}", "]")).as_bytes())
-    //         .expect(format!("Unable to write to {}", new_dependencies_path).as_str());
-
-    //     line_count += 1;
-    // }
-
-    // println!("line count: {}", line_count);
-
-    // new_dependencies_file
-    //     .flush()
-    //     .expect(format!("Unable to flush {}", new_dependencies_path).as_str());
-
-    // new_dependencies_file
-    //     .seek(SeekFrom::Start(0))
-    //     .expect(format!("Unable to seek {} to start", new_dependencies_path).as_str());
-
-    // println!("path: {}", new_dependencies_path);
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&dependencies_path))
@@ -231,7 +200,6 @@ fn load_dependencies(
     ))
     .deserialize()
     {
-        count += 1;
         let sql_dependency: SqlDependency =
             result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
         let SqlDependency {
@@ -245,6 +213,8 @@ fn load_dependencies(
         let to = sql_dependency.crate_id;
 
         if let Some(from) = versions_to_crates.get(&from_version_id) {
+            count += 1;
+
             crates
                 .get_mut(from)
                 .expect(format!("Crate with id {} not found", from).as_str())
