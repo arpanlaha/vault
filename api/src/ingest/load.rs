@@ -198,7 +198,13 @@ fn load_dependencies(
         count += 1;
         let sql_dependency: SqlDependency =
             result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
-        let SqlDependency { kind, optional, .. } = sql_dependency;
+        let SqlDependency {
+            default_features,
+            features,
+            kind,
+            optional,
+            ..
+        } = sql_dependency;
         let from_version_id = sql_dependency.version_id;
         let to = sql_dependency.crate_id;
 
@@ -208,6 +214,9 @@ fn load_dependencies(
                 .expect(format!("Crate with id {} not found", from).as_str())
                 .dependencies
                 .insert(Dependency {
+                    default_features: default_features == "t",
+                    features: features.into_iter().collect(),
+                    from: from.to_owned(),
                     kind,
                     optional: optional == "t",
                     to,

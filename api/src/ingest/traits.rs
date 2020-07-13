@@ -48,6 +48,9 @@ pub struct CrateKeyword {
 
 #[derive(Deserialize, Debug, Hash, Eq, PartialEq)]
 pub struct Dependency {
+    pub default_features: bool,
+    pub features: Vec<String>,
+    pub from: usize,
     pub kind: usize,
     pub optional: bool,
     pub to: usize,
@@ -75,6 +78,8 @@ pub struct Version {
 #[derive(Deserialize, Debug)]
 pub struct SqlDependency {
     pub crate_id: usize,
+    pub default_features: String,
+    pub features: HashSet<String>,
     pub id: usize,
     pub kind: usize,
     pub optional: String,
