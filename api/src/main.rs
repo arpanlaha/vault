@@ -1,8 +1,21 @@
-use std::time::Instant;
-use vault_api::ingest::{fs as vault_fs, load as vault_load};
+use actix_web::{
+    web::{self, Data},
+    App, HttpServer, Responder,
+};
+use std::io::Result as IoResult;
+use tokio::sync::RwLock;
+use vault_api::ingest::{fs as vault_fs, load as vault_load, traits::Graph};
 
-#[tokio::main]
-async fn main() {
+struct AppState {
+    graph: RwLock<Graph>,
+}
+
+async fn index() -> impl Responder {
+    "Hello world!"
+}
+
+#[actix_rt::main]
+async fn main() -> IoResult<()> {
     // let temp_dir = vault_fs::fetch_data();
 
     // let data_path = vault_fs::get_data_path(&temp_dir).unwrap();
@@ -11,15 +24,28 @@ async fn main() {
 
     let graph = vault_load::load_database(data_path.as_str()).await;
 
-    let start = Instant::now();
+    let app_state = Data::new(AppState {
+        graph: RwLock::new(graph),
+    });
 
-    let dependencies = graph.transitive_dependencies(36736).unwrap();
+    HttpServer::new(move || {
+        App::new()
+            .app_data(app_state.clone())
+            .service(web::scope("/").route("/", web::get().to(index)))
+    })
+    .bind("127.0.0.1:5000")?
+    .run()
+    .await
 
-    println!(
-        "Found {} transitive dependencies in {} seconds.",
-        dependencies.len(),
-        start.elapsed().as_secs_f64()
-    );
+    // let start = Instant::now();
+
+    // let dependencies = graph.transitive_dependencies(36736).unwrap();
+
+    // println!(
+    //     "Found {} transitive dependencies in {} seconds.",
+    //     dependencies.len(),
+    //     start.elapsed().as_secs_f64()
+    // );
 
     // vault_fs::clean_tempdir(temp_dir);
 }

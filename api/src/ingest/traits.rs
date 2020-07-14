@@ -218,8 +218,5 @@ impl Graph {
                     self.transitive_dependency_ids(dependency_id, dependency_ids);
                 }
             });
-        // {
-
-        // }
     }
 }
