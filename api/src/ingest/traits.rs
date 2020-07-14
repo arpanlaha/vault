@@ -191,29 +191,28 @@ impl Graph {
     }
 
     pub fn transitive_dependencies(&self, crate_id: usize) -> Option<Vec<&Crate>> {
+        let mut dependency_ids: HashSet<usize> = HashSet::new();
+        self.transitive_dependency_ids(crate_id, &mut dependency_ids);
+
         Some(
-            self.transitive_dependency_ids(crate_id)
+            dependency_ids
                 .iter()
                 .map(|crate_id| self.crates.get(crate_id).unwrap())
                 .collect::<Vec<&Crate>>(),
         )
     }
 
-    fn transitive_dependency_ids(&self, crate_id: usize) -> HashSet<usize> {
+    fn transitive_dependency_ids(&self, crate_id: usize, dependency_ids: &mut HashSet<usize>) {
         let root_crate = self
             .crates
             .get(&crate_id)
             .expect(format!("Unable to find crate with id {}", crate_id).as_str());
-        let mut dependency_ids: HashSet<usize> = HashSet::new();
 
         for dependency in &root_crate.dependencies {
             let dependency_id = dependency.to;
-            if !dependency_ids.contains(&dependency_id) {
-                dependency_ids.insert(dependency_id);
-                dependency_ids.extend(self.transitive_dependency_ids(dependency_id));
+            if dependency_ids.insert(dependency_id) {
+                self.transitive_dependency_ids(dependency_id, dependency_ids);
             }
         }
-
-        dependency_ids
     }
 }
