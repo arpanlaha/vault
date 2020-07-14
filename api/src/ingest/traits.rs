@@ -146,3 +146,74 @@ mod custom_time {
         NaiveDateTime::parse_from_str(&s, FORMAT_2).map_err(serde::de::Error::custom)
     }
 }
+
+pub struct Graph {
+    categories: HashMap<usize, Category>,
+    crates: HashMap<usize, Crate>,
+    keywords: HashMap<usize, Keyword>,
+}
+
+impl Graph {
+    pub fn new(
+        categories: HashMap<usize, Category>,
+        crates: HashMap<usize, Crate>,
+        keywords: HashMap<usize, Keyword>,
+    ) -> Graph {
+        Graph {
+            categories,
+            crates,
+            keywords,
+        }
+    }
+
+    pub fn categories(&self) -> &HashMap<usize, Category> {
+        &self.categories
+    }
+
+    pub fn crates(&self) -> &HashMap<usize, Crate> {
+        &self.crates
+    }
+
+    pub fn keyword(&self) -> &HashMap<usize, Keyword> {
+        &self.keywords
+    }
+
+    pub fn set_categories(&mut self, categories: HashMap<usize, Category>) {
+        self.categories = categories;
+    }
+
+    pub fn set_crates(&mut self, crates: HashMap<usize, Crate>) {
+        self.crates = crates;
+    }
+
+    pub fn set_keywords(&mut self, keywords: HashMap<usize, Keyword>) {
+        self.keywords = keywords;
+    }
+
+    pub fn transitive_dependencies(&self, crate_id: usize) -> Option<Vec<&Crate>> {
+        Some(
+            self.transitive_dependency_ids(crate_id)
+                .iter()
+                .map(|crate_id| self.crates.get(crate_id).unwrap())
+                .collect::<Vec<&Crate>>(),
+        )
+    }
+
+    fn transitive_dependency_ids(&self, crate_id: usize) -> HashSet<usize> {
+        let root_crate = self
+            .crates
+            .get(&crate_id)
+            .expect(format!("Unable to find crate with id {}", crate_id).as_str());
+        let mut dependency_ids: HashSet<usize> = HashSet::new();
+
+        for dependency in &root_crate.dependencies {
+            let dependency_id = dependency.to;
+            if !dependency_ids.contains(&dependency_id) {
+                dependency_ids.insert(dependency_id);
+                dependency_ids.extend(self.transitive_dependency_ids(dependency_id));
+            }
+        }
+
+        dependency_ids
+    }
+}

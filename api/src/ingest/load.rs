@@ -1,6 +1,6 @@
 use crate::ingest::traits::{
-    Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
-    Vertex,
+    Category, Crate, CrateCategory, CrateKeyword, Dependency, Graph, Keyword, SqlDependency,
+    Version, Vertex,
 };
 use csv::Reader;
 use semver_parser::version as semver_version;
@@ -19,7 +19,7 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
     format!("{}/{}.csv", data_path, collection_name)
 }
 
-pub async fn load_database(data_path: &str) {
+pub async fn load_database(data_path: &str) -> Graph {
     let start = Instant::now();
     println!("Loading registry graph...");
 
@@ -39,6 +39,8 @@ pub async fn load_database(data_path: &str) {
         "Finished loading registry graph in {} seconds.",
         start.elapsed().as_secs_f64()
     );
+
+    Graph::new(categories, crates, keywords)
 }
 
 async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(

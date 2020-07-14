@@ -8,7 +8,11 @@ async fn main() {
 
     let data_path = String::from("/datadrive/vault/dump/data");
 
-    vault_load::load_database(data_path.as_str()).await;
+    let graph = vault_load::load_database(data_path.as_str()).await;
+
+    for dependency in graph.transitive_dependencies(463).unwrap() {
+        println!("Dependency: {}", dependency.name);
+    }
 
     // vault_fs::clean_tempdir(temp_dir);
 }
