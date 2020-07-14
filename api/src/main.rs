@@ -12,12 +12,8 @@ async fn main() {
     let graph = vault_load::load_database(data_path.as_str()).await;
 
     let start = Instant::now();
-    // let mut count = 0;
-    // for dependency in graph.transitive_dependencies(463).unwrap() {
-    //     count += 1;
-    //     println!("Dependency: {}", dependency.name);
-    // }
-    let dependencies = graph.transitive_dependencies(463).unwrap();
+
+    let dependencies = graph.transitive_dependencies(36736).unwrap();
 
     println!(
         "Found {} transitive dependencies in {} seconds.",

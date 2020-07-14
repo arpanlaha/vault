@@ -208,11 +208,18 @@ impl Graph {
             .get(&crate_id)
             .expect(format!("Unable to find crate with id {}", crate_id).as_str());
 
-        for dependency in &root_crate.dependencies {
-            let dependency_id = dependency.to;
-            if dependency_ids.insert(dependency_id) {
-                self.transitive_dependency_ids(dependency_id, dependency_ids);
-            }
-        }
+        root_crate
+            .dependencies
+            .iter()
+            .filter(|dependency| dependency.kind == 0)
+            .for_each(|dependency| {
+                let dependency_id = dependency.to;
+                if dependency_ids.insert(dependency_id) {
+                    self.transitive_dependency_ids(dependency_id, dependency_ids);
+                }
+            });
+        // {
+
+        // }
     }
 }
