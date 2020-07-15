@@ -1,4 +1,5 @@
 use actix_web::{
+    middleware::Logger,
     web::{self, Data},
     App, HttpServer, Responder,
 };
@@ -30,10 +31,11 @@ async fn main() -> IoResult<()> {
 
     HttpServer::new(move || {
         App::new()
+            .route("/", web::get().to(index))
             .app_data(app_state.clone())
-            .service(web::scope("/").route("/", web::get().to(index)))
+        // .service(web::scope("/").route("/", web::get().to(index)))
     })
-    .bind("127.0.0.1:5000")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 
