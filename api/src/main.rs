@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{middleware::Compress, web, App, HttpServer};
 use std::io::Result as IoResult;
 use vault_api::server::{crates, graph};
 
@@ -8,6 +8,7 @@ async fn main() -> IoResult<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Compress::default())
             .route(
                 "/{crate_id}",
                 web::get().to(crates::get_transitive_dependencies_by_crate_id),
