@@ -223,8 +223,9 @@ fn load_dependencies(
                 .dependencies
                 .insert(Dependency {
                     default_features: default_features == "t",
-                    features: String::from(&features[1..features.len()])
+                    features: String::from(&features[1..features.len() - 1])
                         .split(",")
+                        .filter(|split| split.len() > 0)
                         .map(|feature_str| String::from(feature_str))
                         .collect(),
 

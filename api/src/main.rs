@@ -1,7 +1,6 @@
 use actix_web::{
-    middleware::Logger,
     web::{self, Data},
-    App, HttpServer, Responder,
+    App, HttpResponse, HttpServer, Responder,
 };
 use std::io::Result as IoResult;
 use tokio::sync::RwLock;
@@ -11,8 +10,17 @@ struct AppState {
     graph: RwLock<Graph>,
 }
 
-async fn index() -> impl Responder {
-    "Hello world!"
+async fn index(data: web::Data<AppState>) -> impl Responder {
+    let graph = data.graph.read().await;
+    let dependencies = graph.transitive_dependencies(463);
+    // .unwrap()
+    // .iter()
+    // .map(|dependency| &dependency.name)
+    // .collect::<Vec<&String>>();
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(serde_json::to_string(&dependencies).unwrap())
+    // "Hello world!"
 }
 
 #[actix_rt::main]

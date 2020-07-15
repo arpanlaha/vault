@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use semver_parser::version as semver_version;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::cmp::PartialEq;
 use std::collections::{HashMap, HashSet};
 
@@ -15,7 +15,7 @@ pub struct Category {
     pub slug: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize)]
 pub struct Crate {
     #[serde(skip_deserializing, default)]
     pub categories: HashSet<usize>,
@@ -48,7 +48,7 @@ pub struct CrateKeyword {
     pub keyword_id: usize,
 }
 
-#[derive(Deserialize, Debug, Hash, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Hash, Eq, PartialEq, Serialize)]
 pub struct Dependency {
     pub default_features: bool,
     pub features: Vec<String>,
