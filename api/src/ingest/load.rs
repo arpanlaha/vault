@@ -1,9 +1,9 @@
-use crate::{
-    ingest::traits::{
+use super::{
+    super::server::graph::Graph,
+    traits::{
         Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
         Vertex,
     },
-    server::graph::Graph,
 };
 use csv::Reader;
 use semver_parser::version as semver_version;
