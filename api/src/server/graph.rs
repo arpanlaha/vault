@@ -68,6 +68,10 @@ impl Graph {
     }
 
     pub fn transitive_dependencies(&self, crate_id: usize) -> Option<Vec<&Crate>> {
+        if !self.crates.contains_key(&crate_id) {
+            return None;
+        }
+
         let mut dependency_ids: HashSet<usize> = HashSet::new();
         self.transitive_dependency_ids(crate_id, &mut dependency_ids);
 
