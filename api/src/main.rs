@@ -1,6 +1,6 @@
 use actix_web::{
     web::{self, Data},
-    App, HttpResponse, HttpServer, Responder,
+    App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use std::io::Result as IoResult;
 use tokio::sync::RwLock;
@@ -10,17 +10,19 @@ struct AppState {
     graph: RwLock<Graph>,
 }
 
-async fn index(data: web::Data<AppState>) -> impl Responder {
-    let graph = data.graph.read().await;
-    let dependencies = graph.transitive_dependencies(463);
-    // .unwrap()
-    // .iter()
-    // .map(|dependency| &dependency.name)
-    // .collect::<Vec<&String>>();
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .body(serde_json::to_string(&dependencies).unwrap())
-    // "Hello world!"
+async fn index(req: HttpRequest, data: web::Data<AppState>) -> impl Responder {
+    HttpResponse::Ok().content_type("application/json").body(
+        serde_json::to_string(
+            &data.graph.read().await.transitive_dependencies(
+                req.match_info()
+                    .get("crate_id")
+                    .expect("crate_id not provided")
+                    .parse()
+                    .expect("Unable to parse crate_id as integer"),
+            ),
+        )
+        .expect("Unable to serialize crates"),
+    )
 }
 
 #[actix_rt::main]
@@ -39,23 +41,12 @@ async fn main() -> IoResult<()> {
 
     HttpServer::new(move || {
         App::new()
-            .route("/", web::get().to(index))
+            .route("/{crate_id}", web::get().to(index))
             .app_data(app_state.clone())
-        // .service(web::scope("/").route("/", web::get().to(index)))
     })
     .bind("0.0.0.0:8080")?
     .run()
     .await
-
-    // let start = Instant::now();
-
-    // let dependencies = graph.transitive_dependencies(36736).unwrap();
-
-    // println!(
-    //     "Found {} transitive dependencies in {} seconds.",
-    //     dependencies.len(),
-    //     start.elapsed().as_secs_f64()
-    // );
 
     // vault_fs::clean_tempdir(temp_dir);
 }
