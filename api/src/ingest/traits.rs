@@ -103,23 +103,35 @@ impl Version {
 }
 
 pub trait Vertex {
-    fn id(&self) -> usize;
+    fn id(&self) -> String;
+    fn sql_id(&self) -> usize;
 }
 
 impl Vertex for Category {
-    fn id(&self) -> usize {
+    fn id(&self) -> String {
+        self.category
+    }
+
+    fn sql_id(&self) -> usize {
         self.id
     }
 }
 
 impl Vertex for Crate {
-    fn id(&self) -> usize {
+    fn id(&self) -> String {
+        self.name
+    }
+
+    fn sql_id(&self) -> usize {
         self.id
     }
 }
 
 impl Vertex for Keyword {
-    fn id(&self) -> usize {
+    fn id(&self) -> String {
+        self.keyword
+    }
+    fn sql_id(&self) -> usize {
         self.id
     }
 }
