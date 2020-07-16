@@ -26,17 +26,33 @@ pub async fn load_database(data_path: &str) -> Graph {
     let start = Instant::now();
     println!("Loading registry graph...");
 
-    let (mut categories, mut crates, mut keywords) = join!(
+    let (
+        (mut categories, category_id_lookup),
+        (mut crates, crate_id_lookup),
+        (mut keywords, keyword_id_lookup),
+    ) = join!(
         load_vertices::<Category>(data_path, "categories"),
         load_vertices::<Crate>(data_path, "crates"),
         load_vertices::<Keyword>(data_path, "keywords")
     );
 
-    let versions_to_crates = create_versioned_crates(data_path, &mut crates);
+    let versions_to_crates = create_versioned_crates(data_path, &mut crates, &crate_id_lookup);
 
-    load_dependencies(data_path, &mut crates, versions_to_crates);
-    load_crate_categories(data_path, &mut crates, &mut categories);
-    load_crate_keywords(data_path, &mut crates, &mut keywords);
+    load_dependencies(data_path, &mut crates, versions_to_crates, &crate_id_lookup);
+    load_crate_categories(
+        data_path,
+        &mut crates,
+        &mut categories,
+        &crate_id_lookup,
+        &category_id_lookup,
+    );
+    load_crate_keywords(
+        data_path,
+        &mut crates,
+        &mut keywords,
+        &crate_id_lookup,
+        &keyword_id_lookup,
+    );
 
     println!(
         "Finished loading registry graph in {} seconds.",
@@ -49,14 +65,15 @@ pub async fn load_database(data_path: &str) -> Graph {
 async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
-) -> HashMap<usize, T> {
+) -> (HashMap<String, T>, HashMap<usize, String>) {
     println!("Loading {}...", collection_name);
     let start = Instant::now();
     let mut count = 0usize;
 
     let file_path = get_collection_path(data_path, collection_name);
 
-    let mut collection = HashMap::<usize, T>::new();
+    let mut collection = HashMap::<String, T>::new();
+    let mut id_lookup = HashMap::<usize, String>::new();
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
@@ -72,7 +89,8 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
             )
             .as_str(),
         );
-        collection.insert(record.id(), record);
+        id_lookup.insert(record.sql_id(), String::from(record.id()));
+        collection.insert(String::from(record.id()), record);
     }
 
     println!(
@@ -82,7 +100,7 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
         start.elapsed().as_secs_f64()
     );
 
-    collection
+    (collection, id_lookup)
 }
 
 fn get_versions(data_path: &str) -> HashMap<usize, Version> {
@@ -151,10 +169,11 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
 
 fn create_versioned_crates(
     data_path: &str,
-    crates: &mut HashMap<usize, Crate>,
-) -> HashMap<usize, usize> {
+    crates: &mut HashMap<String, Crate>,
+    crate_id_lookup: &HashMap<usize, String>,
+) -> HashMap<usize, String> {
     let versions = get_versions(data_path);
-    let mut version_to_crates = HashMap::<usize, usize>::new();
+    let mut version_to_crates = HashMap::<usize, String>::new();
     println!("Creating versioned crates...");
 
     let start = Instant::now();
@@ -168,6 +187,10 @@ fn create_versioned_crates(
         num,
     } in versions.values()
     {
+        let crate_id = crate_id_lookup
+            .get(crate_id)
+            .expect(format!("Crate with SQL id {} does not exist", crate_id).as_str());
+
         let version_crate = crates
             .get_mut(crate_id)
             .expect(format!("Crate with id {} does not exist", crate_id).as_str());
@@ -191,8 +214,9 @@ fn create_versioned_crates(
 
 fn load_dependencies(
     data_path: &str,
-    crates: &mut HashMap<usize, Crate>,
-    versions_to_crates: HashMap<usize, usize>,
+    crates: &mut HashMap<String, Crate>,
+    versions_to_crates: HashMap<usize, String>,
+    crate_id_lookup: &HashMap<usize, String>,
 ) {
     println!("Loading dependencies...");
     let start = Instant::now();
@@ -212,12 +236,11 @@ fn load_dependencies(
             features,
             kind,
             optional,
+            version_id,
             ..
         } = sql_dependency;
-        let from_version_id = sql_dependency.version_id;
-        let to = sql_dependency.crate_id;
 
-        if let Some(from) = versions_to_crates.get(&from_version_id) {
+        if let Some(from) = versions_to_crates.get(&version_id) {
             count += 1;
 
             crates
@@ -235,7 +258,13 @@ fn load_dependencies(
                     from: from.to_owned(),
                     kind,
                     optional: optional == "t",
-                    to,
+                    to: crate_id_lookup
+                        .get(&sql_dependency.crate_id)
+                        .expect(
+                            format!("Unable to find crate with id {}", sql_dependency.crate_id)
+                                .as_str(),
+                        )
+                        .to_owned(),
                 });
         }
     }
@@ -248,8 +277,10 @@ fn load_dependencies(
 
 fn load_crate_categories(
     data_path: &str,
-    crates: &mut HashMap<usize, Crate>,
-    categories: &mut HashMap<usize, Category>,
+    crates: &mut HashMap<String, Crate>,
+    categories: &mut HashMap<String, Category>,
+    crate_id_lookup: &HashMap<usize, String>,
+    category_id_lookup: &HashMap<usize, String>,
 ) {
     println!("Loading crate categories...");
     let start = Instant::now();
@@ -269,17 +300,25 @@ fn load_crate_categories(
         } = result
             .expect(format!("Unable to deserialize entry {} as crate category", count).as_str());
 
+        let category_id = category_id_lookup
+            .get(&category_id)
+            .expect(format!("Unable to find category with id {}", category_id).as_str());
+
+        let crate_id = crate_id_lookup
+            .get(&crate_id)
+            .expect(format!("Unable to find crate with id {}", crate_id).as_str());
+
         crates
-            .get_mut(&crate_id)
+            .get_mut(crate_id)
             .expect(format!("Crate with id {} not found", crate_id).as_str())
             .categories
-            .insert(category_id);
+            .insert(category_id.to_owned());
 
         categories
-            .get_mut(&category_id)
+            .get_mut(category_id)
             .expect(format!("Category with id {} not found", category_id).as_str())
             .crates
-            .insert(crate_id);
+            .insert(crate_id.to_owned());
     }
 
     println!(
@@ -291,8 +330,10 @@ fn load_crate_categories(
 
 fn load_crate_keywords(
     data_path: &str,
-    crates: &mut HashMap<usize, Crate>,
-    keywords: &mut HashMap<usize, Keyword>,
+    crates: &mut HashMap<String, Crate>,
+    keywords: &mut HashMap<String, Keyword>,
+    crate_id_lookup: &HashMap<usize, String>,
+    keyword_id_lookup: &HashMap<usize, String>,
 ) {
     println!("Loading crate keywords...");
     let start = Instant::now();
@@ -312,17 +353,25 @@ fn load_crate_keywords(
         } = result
             .expect(format!("Unable to deserialize entry {} as crate keyword", count).as_str());
 
+        let crate_id = crate_id_lookup
+            .get(&crate_id)
+            .expect(format!("Unable to find crate with id {}", crate_id).as_str());
+
+        let keyword_id = keyword_id_lookup
+            .get(&keyword_id)
+            .expect(format!("Unable to find keyword with id {}", keyword_id).as_str());
+
         crates
-            .get_mut(&crate_id)
+            .get_mut(crate_id)
             .expect(format!("Crate with id {} not found", crate_id).as_str())
             .keywords
-            .insert(keyword_id);
+            .insert(keyword_id.to_owned());
 
         keywords
-            .get_mut(&keyword_id)
+            .get_mut(keyword_id)
             .expect(format!("Keyword with id {} not found", keyword_id).as_str())
             .crates
-            .push(crate_id);
+            .push(crate_id.to_owned());
     }
 
     println!(

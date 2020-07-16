@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 pub struct Category {
     pub category: String,
     #[serde(skip_deserializing, default)]
-    pub crates: HashSet<usize>,
+    pub crates: HashSet<String>,
     pub description: String,
     pub id: usize,
     pub path: String,
@@ -18,7 +18,7 @@ pub struct Category {
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Crate {
     #[serde(skip_deserializing, default)]
-    pub categories: HashSet<usize>,
+    pub categories: HashSet<String>,
     #[serde(skip_deserializing, default = "default_naive_date_time")]
     pub created_at: NaiveDateTime,
     #[serde(skip_deserializing, default)]
@@ -29,7 +29,7 @@ pub struct Crate {
     #[serde(skip_deserializing, default)]
     pub features: HashMap<String, Vec<String>>,
     #[serde(skip_deserializing, default)]
-    pub keywords: HashSet<usize>,
+    pub keywords: HashSet<String>,
     pub id: usize,
     pub name: String,
     #[serde(skip_deserializing, default)]
@@ -52,16 +52,16 @@ pub struct CrateKeyword {
 pub struct Dependency {
     pub default_features: bool,
     pub features: Vec<String>,
-    pub from: usize,
+    pub from: String,
     pub kind: usize,
     pub optional: bool,
-    pub to: usize,
+    pub to: String,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Keyword {
     #[serde(skip_deserializing, default)]
-    pub crates: Vec<usize>,
+    pub crates: Vec<String>,
     pub crates_cnt: usize,
     pub id: usize,
     pub keyword: String,
@@ -103,13 +103,13 @@ impl Version {
 }
 
 pub trait Vertex {
-    fn id(&self) -> String;
+    fn id(&self) -> &str;
     fn sql_id(&self) -> usize;
 }
 
 impl Vertex for Category {
-    fn id(&self) -> String {
-        self.category
+    fn id(&self) -> &str {
+        self.category.as_str()
     }
 
     fn sql_id(&self) -> usize {
@@ -118,8 +118,8 @@ impl Vertex for Category {
 }
 
 impl Vertex for Crate {
-    fn id(&self) -> String {
-        self.name
+    fn id(&self) -> &str {
+        self.name.as_str()
     }
 
     fn sql_id(&self) -> usize {
@@ -128,8 +128,8 @@ impl Vertex for Crate {
 }
 
 impl Vertex for Keyword {
-    fn id(&self) -> String {
-        self.keyword
+    fn id(&self) -> &str {
+        self.keyword.as_str()
     }
     fn sql_id(&self) -> usize {
         self.id
