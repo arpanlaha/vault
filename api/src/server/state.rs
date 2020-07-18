@@ -33,6 +33,12 @@ impl Graph {
         }
     }
 
+    pub fn replace(&mut self, other: Graph) {
+        self.categories = other.categories;
+        self.crates = other.crates;
+        self.keywords = other.keywords;
+    }
+
     pub fn categories(&self) -> &HashMap<String, Category> {
         &self.categories
     }
@@ -41,7 +47,7 @@ impl Graph {
         &self.crates
     }
 
-    pub fn keyword(&self) -> &HashMap<String, Keyword> {
+    pub fn keywords(&self) -> &HashMap<String, Keyword> {
         &self.keywords
     }
 
