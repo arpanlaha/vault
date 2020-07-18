@@ -1,5 +1,12 @@
-use super::graph::AppState;
+use super::{super::ingest::schema::Crate, graph::AppState};
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct TransitiveDependenciesResponse<'a> {
+    count: usize,
+    dependencies: &'a Vec<&'a Crate>,
+}
 
 pub async fn get_transitive_dependencies_by_crate_id(
     req: HttpRequest,
@@ -18,7 +25,10 @@ pub async fn get_transitive_dependencies_by_crate_id(
                 HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
             }
 
-            Some(dependencies) => HttpResponse::Ok().json(dependencies),
+            Some(dependencies) => HttpResponse::Ok().json(TransitiveDependenciesResponse {
+                count: dependencies.len(),
+                dependencies,
+            }),
         },
     }
 }
