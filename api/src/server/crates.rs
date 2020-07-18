@@ -1,4 +1,4 @@
-use super::{super::ingest::schema::Crate, graph::AppState};
+use super::{super::ingest::schema::Crate, state::AppState};
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
 

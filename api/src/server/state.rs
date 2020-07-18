@@ -2,24 +2,9 @@ use super::super::ingest::{
     load as vault_load,
     schema::{Category, Crate, Keyword},
 };
-use actix_web::web::Data;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::RwLock;
 
-pub async fn create_app_state() -> Data<AppState> {
-    // let temp_dir = vault_fs::fetch_data();
-
-    // let data_path = vault_fs::get_data_path(&temp_dir).unwrap();
-
-    let data_path = String::from("/datadrive/vault/dump/data");
-
-    let graph = vault_load::load_database(data_path.as_str()).await;
-    // vault_fs::clean_tempdir(temp_dir);
-
-    Data::new(AppState {
-        graph: RwLock::new(graph),
-    })
-}
 pub struct AppState {
     pub graph: RwLock<Graph>,
 }
@@ -31,11 +16,16 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn new(
-        categories: HashMap<String, Category>,
-        crates: HashMap<String, Crate>,
-        keywords: HashMap<String, Keyword>,
-    ) -> Graph {
+    pub async fn new() -> Graph {
+        // let temp_dir = vault_fs::fetch_data();
+
+        // let data_path = vault_fs::get_data_path(&temp_dir).unwrap();
+
+        let data_path = String::from("/datadrive/vault/dump/data");
+
+        let (categories, crates, keywords) = vault_load::load_database(data_path.as_str()).await;
+        // vault_fs::clean_tempdir(temp_dir);
+
         Graph {
             categories,
             crates,

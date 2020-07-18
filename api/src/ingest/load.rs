@@ -1,9 +1,6 @@
-use super::{
-    super::server::graph::Graph,
-    schema::{
-        Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
-        Vertex,
-    },
+use super::schema::{
+    Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
+    Vertex,
 };
 use csv::Reader;
 use semver_parser::version as semver_version;
@@ -22,7 +19,13 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
     format!("{}/{}.csv", data_path, collection_name)
 }
 
-pub async fn load_database(data_path: &str) -> Graph {
+pub async fn load_database(
+    data_path: &str,
+) -> (
+    HashMap<String, Category>,
+    HashMap<String, Crate>,
+    HashMap<String, Keyword>,
+) {
     let start = Instant::now();
     println!("Loading registry graph...");
 
@@ -59,7 +62,7 @@ pub async fn load_database(data_path: &str) -> Graph {
         start.elapsed().as_secs_f64()
     );
 
-    Graph::new(categories, crates, keywords)
+    (categories, crates, keywords)
 }
 
 async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
