@@ -1,8 +1,9 @@
 use actix_web::{
-    middleware::Compress,
+    middleware::{Compress, Logger},
     web::{self, Data},
     App, HttpServer,
 };
+use env_logger::Env;
 use std::io::Result as IoResult;
 use tokio::sync::RwLock;
 use vault_api::server::{
@@ -16,9 +17,12 @@ async fn main() -> IoResult<()> {
         graph: RwLock::new(Graph::new().await),
     });
 
+    env_logger::from_env(Env::default().default_filter_or("info")).init();
+
     HttpServer::new(move || {
         App::new()
             .wrap(Compress::default())
+            .wrap(Logger::default())
             .route(
                 "dependencies/{crate_id}",
                 web::get().to(crates::get_transitive_dependencies_by_crate_id),
