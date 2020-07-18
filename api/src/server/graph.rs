@@ -79,17 +79,17 @@ impl Graph {
             dependency_ids
                 .iter()
                 .map(|crate_id| self.crates.get(crate_id).unwrap())
-                .collect::<Vec<&Crate>>(),
+                .collect(),
         )
     }
 
     fn transitive_dependency_ids(&self, crate_id: String, dependency_ids: &mut HashSet<String>) {
-        let root_crate = self
+        for dependency in &self
             .crates
             .get(&crate_id)
-            .expect(format!("Unable to find crate with id {}", crate_id).as_str());
-
-        for dependency in &root_crate.dependencies {
+            .expect(format!("Unable to find crate with id {}", crate_id).as_str())
+            .dependencies
+        {
             if dependency.kind == 0 && dependency_ids.insert(dependency.to.to_owned()) {
                 self.transitive_dependency_ids(dependency.to.to_owned(), dependency_ids);
             }
