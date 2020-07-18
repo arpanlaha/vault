@@ -63,8 +63,8 @@ impl Graph {
         self.keywords = keywords;
     }
 
-    pub fn transitive_dependencies(&self, crate_id: String) -> Option<Vec<&Crate>> {
-        if !self.crates.contains_key(&crate_id) {
+    pub fn transitive_dependencies(&self, crate_id: &str) -> Option<Vec<&Crate>> {
+        if !self.crates.contains_key(crate_id) {
             return None;
         }
 
@@ -79,15 +79,15 @@ impl Graph {
         )
     }
 
-    fn transitive_dependency_ids(&self, crate_id: String, dependency_ids: &mut HashSet<String>) {
+    fn transitive_dependency_ids(&self, crate_id: &str, dependency_ids: &mut HashSet<String>) {
         for dependency in &self
             .crates
-            .get(&crate_id)
+            .get(crate_id)
             .expect(format!("Unable to find crate with id {}", crate_id).as_str())
             .dependencies
         {
             if dependency.kind == 0 && dependency_ids.insert(dependency.to.to_owned()) {
-                self.transitive_dependency_ids(dependency.to.to_owned(), dependency_ids);
+                self.transitive_dependency_ids(dependency.to.as_str(), dependency_ids);
             }
         }
     }

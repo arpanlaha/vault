@@ -15,12 +15,7 @@ pub async fn get_transitive_dependencies_by_crate_id(
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),
 
-        Some(crate_id) => match &data
-            .graph
-            .read()
-            .await
-            .transitive_dependencies(String::from(crate_id))
-        {
+        Some(crate_id) => match &data.graph.read().await.transitive_dependencies(crate_id) {
             None => {
                 HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
             }
@@ -29,6 +24,20 @@ pub async fn get_transitive_dependencies_by_crate_id(
                 count: dependencies.len(),
                 dependencies,
             }),
+        },
+    }
+}
+
+pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> impl Responder {
+    match req.match_info().get("crate_id") {
+        None => HttpResponse::BadRequest().json("Crate id must be provided."),
+
+        Some(crate_id) => match &data.graph.read().await.crates().get(crate_id) {
+            None => {
+                HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
+            }
+
+            Some(crate_res) => HttpResponse::Ok().json(crate_res),
         },
     }
 }
