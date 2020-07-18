@@ -15,7 +15,7 @@ pub struct Category {
     /// A set of crates belonging to the category.
     ///
     /// This is not set on deserialization and instead must be populated later when processing crate-category relationships.
-    #[serde(skip_deserializing, default)]
+    #[serde(skip_deserializing, default, skip_serializing)]
     pub crates: HashSet<String>,
 
     // /The description of the category.
@@ -48,7 +48,7 @@ pub struct Crate {
     /// The dependencies of the crate.
     ///
     /// This is not set on deserialization and instead must be populated later when processing dependencies.
-    #[serde(skip_deserializing, default)]
+    #[serde(skip_deserializing, default, skip_serializing)]
     pub dependencies: HashSet<Dependency>,
 
     /// The description of the crate.
@@ -144,7 +144,7 @@ pub struct Keyword {
     /// The crates possessing the keyword.
     ///
     /// This is not set on deserialization and instead must be populated later when processing crate-keyword relationships.
-    #[serde(skip_deserializing, default)]
+    #[serde(skip_deserializing, default, skip_serializing)]
     pub crates: Vec<String>,
 
     /// The number of crates possessing the keyword.
