@@ -242,6 +242,7 @@ fn load_dependencies(
 
         if let Some(from) = versions_to_crates.get(&version_id) {
             count += 1;
+            // TODO: split count by kind -  1.151MB - 1.051MB =100MB
 
             crates
                 .get_mut(from)
