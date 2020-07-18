@@ -297,12 +297,12 @@ mod custom_time {
             return Ok(date_time.naive_utc());
         }
 
-        /// Attempt using format string 1
+        // Attempt using format string 1
         if let Ok(date_time) = NaiveDateTime::parse_from_str(&s, FORMAT_1) {
             return Ok(date_time);
         }
 
-        /// Use format string 2
+        // Use format string 2
         NaiveDateTime::parse_from_str(&s, FORMAT_2).map_err(serde::de::Error::custom)
     }
 }

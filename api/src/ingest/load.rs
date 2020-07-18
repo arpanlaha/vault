@@ -1,6 +1,6 @@
 use super::{
     super::server::graph::Graph,
-    traits::{
+    schema::{
         Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
         Vertex,
     },

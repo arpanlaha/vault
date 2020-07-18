@@ -1,6 +1,6 @@
 use super::super::ingest::{
     load as vault_load,
-    traits::{Category, Crate, Keyword},
+    schema::{Category, Crate, Keyword},
 };
 use actix_web::web::Data;
 use std::collections::{HashMap, HashSet};
@@ -94,15 +94,5 @@ impl Graph {
                 self.transitive_dependency_ids(dependency.to.to_owned(), dependency_ids);
             }
         }
-        // root_crate
-        // .dependencies
-        // .iter()
-        // .filter(|dependency| dependency.kind == 0)
-        // .for_each(|dependency| {
-        //     let dependency_id = dependency.to;
-        //     if dependency_ids.insert(dependency_id) {
-        //         self.transitive_dependency_ids(dependency_id, dependency_ids);
-        //     }
-        // });
     }
 }
