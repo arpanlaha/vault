@@ -90,14 +90,6 @@ impl Graph {
                 .collect(),
             dependencies: dependencies.iter().map(|dependency| *dependency).collect(),
         })
-
-        // Some(
-        //     dependency_ids
-        //         .iter()
-        //         .map(|crate_id| self.crates.get(crate_id).unwrap())
-        //         .collect(),
-        // )
-        // None
     }
 
     fn transitive_dependency_ids<'a>(
@@ -145,17 +137,6 @@ impl Graph {
                 );
             }
         }
-
-        // for dependency in &self
-        //     .crates
-        //     .get(crate_id)
-        //     .expect(format!("Unable to find crate with id {}", crate_id).as_str())
-        //     .dependencies
-        // {
-        //     if dependency.kind == 0 && dependency_ids.insert(dependency.to.to_owned()) {
-        //         self.transitive_dependency_ids(dependency.to.as_str(), dependency_ids);
-        //     }
-        // }
     }
 
     pub fn search(&self, search_term: &str) -> Vec<&Crate> {

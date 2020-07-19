@@ -17,7 +17,7 @@ async fn main() -> IoResult<()> {
         graph: RwLock::new(Graph::new().await),
     });
 
-    env_logger::from_env(Env::default().default_filter_or("info")).init();
+    env_logger::from_env(Env::default().default_filter_or("debug")).init();
 
     HttpServer::new(move || {
         App::new()
