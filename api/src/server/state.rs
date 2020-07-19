@@ -125,37 +125,21 @@ impl Graph {
                 && !dependencies.contains(dependency)
                 && (!dependency.optional || crate_dependency_names.contains(&dependency.to))
             {
-                dependencies.insert(dependency);
-                crates.insert(&dependency.to);
+                let mut transitive_features: Vec<String> = dependency.features.to_owned();
 
-                self.transitive_dependency_ids(
-                    dependency.to.as_str(),
-                    crates,
-                    dependencies,
-                    &dependency.features,
-                    dependency.default_features,
-                );
-            }
-
-            if dependency.kind == 0
-                && !dependencies.contains(dependency)
-                && dependency.optional
-                && crate_dependency_names.contains(&format!("{}/", dependency.to))
-            {
-                let mut transitive_features: Vec<String> = crate_dependency_names
-                    .iter()
-                    .filter(|crate_dependency_name| {
-                        crate_dependency_name.starts_with(&format!("{}/", dependency.to))
-                    })
-                    .map(|crate_dependency_name| {
-                        String::from(crate_dependency_name.split('/').next().unwrap())
-                    })
-                    .collect();
-
-                println!("transitive features: {:?}", transitive_features);
-
-                for feature in &dependency.features {
-                    transitive_features.push(feature.to_owned());
+                if crate_dependency_names.iter().any(|crate_dependency_name| {
+                    crate_dependency_name.starts_with(&format!("{}/", dependency.to))
+                }) {
+                    crate_dependency_names
+                        .iter()
+                        .filter(|crate_dependency_name| {
+                            crate_dependency_name.starts_with(&format!("{}/", dependency.to))
+                        })
+                        .for_each(|crate_dependency_name| {
+                            transitive_features.push(String::from(
+                                crate_dependency_name.split('/').skip(1).next().unwrap(),
+                            ));
+                        });
                 }
 
                 dependencies.insert(dependency);
