@@ -1,7 +1,8 @@
 use super::super::ingest::{
     load as vault_load,
-    schema::{Category, Crate, Keyword},
+    schema::{Category, Crate, Dependency, Keyword},
 };
+use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::RwLock;
 
@@ -13,6 +14,12 @@ pub struct Graph {
     categories: HashMap<String, Category>,
     crates: HashMap<String, Crate>,
     keywords: HashMap<String, Keyword>,
+}
+
+#[derive(Serialize)]
+pub struct DependencyGraph<'a> {
+    crates: Vec<&'a Crate>,
+    dependencies: Vec<&'a Dependency>,
 }
 
 impl Graph {
@@ -63,33 +70,92 @@ impl Graph {
         self.keywords = keywords;
     }
 
-    pub fn transitive_dependencies(&self, crate_id: &str) -> Option<Vec<&Crate>> {
+    pub fn transitive_dependencies(
+        &self,
+        crate_id: &str,
+        features: Vec<String>,
+    ) -> Option<DependencyGraph> {
         if !self.crates.contains_key(crate_id) {
             return None;
         }
 
-        let mut dependency_ids: HashSet<String> = HashSet::new();
-        self.transitive_dependency_ids(crate_id, &mut dependency_ids);
+        let mut crates: HashSet<&String> = HashSet::new();
+        let mut dependencies: HashSet<&Dependency> = HashSet::new();
+        self.transitive_dependency_ids(crate_id, &mut crates, &mut dependencies, &features, true);
 
-        Some(
-            dependency_ids
+        Some(DependencyGraph {
+            crates: crates
                 .iter()
-                .map(|crate_id| self.crates.get(crate_id).unwrap())
+                .map(|crate_id| self.crates.get(crate_id.as_str()).unwrap())
                 .collect(),
-        )
+            dependencies: dependencies.iter().map(|dependency| *dependency).collect(),
+        })
+
+        // Some(
+        //     dependency_ids
+        //         .iter()
+        //         .map(|crate_id| self.crates.get(crate_id).unwrap())
+        //         .collect(),
+        // )
+        // None
     }
 
-    fn transitive_dependency_ids(&self, crate_id: &str, dependency_ids: &mut HashSet<String>) {
-        for dependency in &self
-            .crates
-            .get(crate_id)
-            .expect(format!("Unable to find crate with id {}", crate_id).as_str())
-            .dependencies
-        {
-            if dependency.kind == 0 && dependency_ids.insert(dependency.to.to_owned()) {
-                self.transitive_dependency_ids(dependency.to.as_str(), dependency_ids);
+    fn transitive_dependency_ids<'a>(
+        &'a self,
+        crate_id: &str,
+        crates: &mut HashSet<&'a String>,
+        dependencies: &mut HashSet<&'a Dependency>,
+        features: &Vec<String>,
+        default_features: bool,
+    ) {
+        let crate_val = &self.crates.get(crate_id).unwrap();
+
+        let mut crate_dependency_names: HashSet<&String> = HashSet::new();
+
+        if default_features {
+            if let Some(crate_default_features) = crate_val.features.get("default") {
+                for dependency in crate_default_features {
+                    crate_dependency_names.insert(dependency);
+                }
             }
         }
+
+        for feature in features {
+            if let Some(crate_features) = crate_val.features.get(feature) {
+                for dependency in crate_features {
+                    crate_dependency_names.insert(dependency);
+                }
+            }
+        }
+
+        for dependency in &crate_val.dependencies {
+            if dependency.kind == 0
+                && !dependencies.contains(dependency)
+                && (!dependency.optional || crate_dependency_names.contains(&dependency.to))
+            {
+                dependencies.insert(dependency);
+                crates.insert(&dependency.to);
+
+                self.transitive_dependency_ids(
+                    dependency.to.as_str(),
+                    crates,
+                    dependencies,
+                    &dependency.features,
+                    dependency.default_features,
+                );
+            }
+        }
+
+        // for dependency in &self
+        //     .crates
+        //     .get(crate_id)
+        //     .expect(format!("Unable to find crate with id {}", crate_id).as_str())
+        //     .dependencies
+        // {
+        //     if dependency.kind == 0 && dependency_ids.insert(dependency.to.to_owned()) {
+        //         self.transitive_dependency_ids(dependency.to.as_str(), dependency_ids);
+        //     }
+        // }
     }
 
     pub fn search(&self, search_term: &str) -> Vec<&Crate> {

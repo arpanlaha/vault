@@ -15,15 +15,17 @@ pub async fn get_transitive_dependencies_by_crate_id(
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),
 
-        Some(crate_id) => match &data.graph.read().await.transitive_dependencies(crate_id) {
+        Some(crate_id) => match &data
+            .graph
+            .read()
+            .await
+            .transitive_dependencies(crate_id, vec![])
+        {
             None => {
                 HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
             }
 
-            Some(dependencies) => HttpResponse::Ok().json(CrateListResponse {
-                count: dependencies.len(),
-                crates: dependencies,
-            }),
+            Some(dependency_graph) => HttpResponse::Ok().json(dependency_graph),
         },
     }
 }
