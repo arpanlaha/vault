@@ -110,20 +110,6 @@ impl Graph {
                     results.insert(index, (search_score, crate_res));
                 }
 
-                // results.insert(
-                //     results
-                //         .iter()
-                //         .enumerate()
-                //         .find(|result| {
-                //             search_score > (result.1).0
-                //                 || search_score == (result.1).0
-                //                     && crate_res.downloads > (result.1).1.downloads
-                //         })
-                //         .unwrap()
-                //         .0,
-                //     (search_score, crate_res),
-                // );
-
                 if results.len() > 10 {
                     results.pop();
                 }
