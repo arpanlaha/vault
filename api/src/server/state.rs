@@ -136,6 +136,39 @@ impl Graph {
                     dependency.default_features,
                 );
             }
+
+            if dependency.kind == 0
+                && !dependencies.contains(dependency)
+                && dependency.optional
+                && crate_dependency_names.contains(&format!("{}/", dependency.to))
+            {
+                let mut transitive_features: Vec<String> = crate_dependency_names
+                    .iter()
+                    .filter(|crate_dependency_name| {
+                        crate_dependency_name.starts_with(&format!("{}/", dependency.to))
+                    })
+                    .map(|crate_dependency_name| {
+                        String::from(crate_dependency_name.split('/').next().unwrap())
+                    })
+                    .collect();
+
+                println!("transitive features: {:?}", transitive_features);
+
+                for feature in &dependency.features {
+                    transitive_features.push(feature.to_owned());
+                }
+
+                dependencies.insert(dependency);
+                crates.insert(&dependency.to);
+
+                self.transitive_dependency_ids(
+                    dependency.to.as_str(),
+                    crates,
+                    dependencies,
+                    &transitive_features,
+                    dependency.default_features,
+                );
+            }
         }
     }
 
