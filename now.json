@@ -1,0 +1,33 @@
+{
+  "build": {
+    "env": {
+      "GATSBY_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@now/static-build",
+      "config": {
+        "outDir": "public"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/client/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/client/logo.svg"
+    },
+    {
+      "src": "^((?!robots.txt).)*$",
+      "status": 308,
+      "headers": {
+        "Location": "https://arpanlaha.com/page-not-found"
+      }
+    }
+  ]
+}
