@@ -91,4 +91,45 @@ impl Graph {
             }
         }
     }
+
+    pub fn search(&self, search_term: &str) -> Vec<&Crate> {
+        let mut results: Vec<(f64, &Crate)> = vec![];
+
+        for crate_name in self.crates.keys() {
+            let search_score = strsim::jaro_winkler(crate_name, search_term);
+
+            if results.is_empty() {
+                results.push((search_score, self.crates.get(crate_name).unwrap()))
+            } else if search_score >= results.last().unwrap().0 {
+                let crate_res = self.crates.get(crate_name).unwrap();
+                if let Some((index, _)) = results.iter().enumerate().find(|result| {
+                    search_score > (result.1).0
+                        || search_score == (result.1).0
+                            && crate_res.downloads > (result.1).1.downloads
+                }) {
+                    results.insert(index, (search_score, crate_res));
+                }
+
+                // results.insert(
+                //     results
+                //         .iter()
+                //         .enumerate()
+                //         .find(|result| {
+                //             search_score > (result.1).0
+                //                 || search_score == (result.1).0
+                //                     && crate_res.downloads > (result.1).1.downloads
+                //         })
+                //         .unwrap()
+                //         .0,
+                //     (search_score, crate_res),
+                // );
+
+                if results.len() > 10 {
+                    results.pop();
+                }
+            }
+        }
+
+        results.iter().map(|(_, crate_res)| *crate_res).collect()
+    }
 }

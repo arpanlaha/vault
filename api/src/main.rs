@@ -28,6 +28,7 @@ async fn main() -> IoResult<()> {
                 web::get().to(crates::get_transitive_dependencies_by_crate_id),
             )
             .route("crates/{crate_id}", web::get().to(crates::get_crate))
+            .route("search/{search_term}", web::get().to(crates::search))
             .route("reset", web::put().to(reset::reset_state))
             .app_data(app_state.clone())
     })

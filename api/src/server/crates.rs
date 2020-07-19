@@ -3,9 +3,9 @@ use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
 
 #[derive(Serialize)]
-struct TransitiveDependenciesResponse<'a> {
+struct CrateListResponse<'a> {
     count: usize,
-    dependencies: &'a Vec<&'a Crate>,
+    crates: &'a Vec<&'a Crate>,
 }
 
 pub async fn get_transitive_dependencies_by_crate_id(
@@ -20,9 +20,9 @@ pub async fn get_transitive_dependencies_by_crate_id(
                 HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
             }
 
-            Some(dependencies) => HttpResponse::Ok().json(TransitiveDependenciesResponse {
+            Some(dependencies) => HttpResponse::Ok().json(CrateListResponse {
                 count: dependencies.len(),
-                dependencies,
+                crates: dependencies,
             }),
         },
     }
@@ -39,5 +39,20 @@ pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> impl Responder
 
             Some(crate_res) => HttpResponse::Ok().json(crate_res),
         },
+    }
+}
+
+pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
+    match req.match_info().get("search_term") {
+        None => HttpResponse::BadRequest().json("Search term must be provided."),
+
+        Some(search_term) => {
+            let graph = data.graph.read().await;
+            let search_results = graph.search(search_term);
+            HttpResponse::Ok().json(CrateListResponse {
+                count: search_results.len(),
+                crates: &search_results,
+            })
+        }
     }
 }
