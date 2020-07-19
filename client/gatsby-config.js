@@ -20,7 +20,6 @@ module.exports = {
     "gatsby-plugin-react-helmet",
     "gatsby-plugin-preload-fonts",
     "gatsby-plugin-sass",
-    "gatsby-plugin-sharp",
     "gatsby-plugin-split-css",
     {
       resolve: "gatsby-plugin-typescript",
@@ -29,13 +28,5 @@ module.exports = {
         isTSX: true,
       },
     },
-    {
-      resolve: "gatsby-source-filesystem",
-      options: {
-        name: "images",
-        path: path.join(__dirname, "src", "images"),
-      },
-    },
-    "gatsby-transformer-sharp",
   ],
 };
