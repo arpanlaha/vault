@@ -16,11 +16,8 @@ module.exports = {
         icon: "static/favicon.ico",
       },
     },
-    "gatsby-plugin-offline",
     "gatsby-plugin-react-helmet",
-    "gatsby-plugin-preload-fonts",
     "gatsby-plugin-sass",
-    "gatsby-plugin-split-css",
     {
       resolve: "gatsby-plugin-typescript",
       options: {
