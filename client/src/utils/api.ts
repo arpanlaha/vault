@@ -20,12 +20,15 @@ const wrapResponse = <T>(
             success: true as true,
             result: response.data,
           }
-        : { success: false as false, error: String(response.data) }
+        : {
+            success: false as false,
+            error: String(response.data),
+          }
     )
     .catch((error) => ({
       success: false as false,
       error:
-        error ??
+        error?.response?.data ??
         "Server error - please post an issue at https://github.com/arpanlaha/vault/issues",
     }));
 
