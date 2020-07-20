@@ -1,22 +1,25 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Head } from "../components";
+import { notification } from "antd";
+import { ForceGraph3D } from "react-force-graph";
 import { getDependencyGraph } from "../utils/api";
-import { ForceGraph3D, ForceGraph2D } from "react-force-graph";
 import { DependencyGraph } from "../utils/types";
+
+import "antd/dist/antd.dark.css";
+import "../styles/vault.scss";
 
 export default function Home(): ReactElement {
   const [
     dependencyGraph,
     setDependencyGraph,
   ] = useState<DependencyGraph | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadCrate = async (): Promise<void> => {
       const dependencyGraphRes = await getDependencyGraph("actix-web");
       if (dependencyGraphRes.success) {
         setDependencyGraph(dependencyGraphRes.result);
-        console.log(dependencyGraphRes.result);
       } else {
         setError(dependencyGraphRes.error);
       }
@@ -25,25 +28,34 @@ export default function Home(): ReactElement {
     loadCrate();
   }, []);
 
-  useEffect(() => {
-    if (error !== null) {
-      console.log(error);
-    }
-  }, [error]);
+  useEffect(
+    () =>
+      error !== ""
+        ? notification.error({
+            message: "Error",
+            description: error,
+            key: "error",
+            duration: 0,
+          })
+        : notification.close("error"),
+    [error]
+  );
 
   return (
     <>
       <Head />
       {dependencyGraph !== null && (
-        <ForceGraph3D
-          graphData={{
-            nodes: dependencyGraph.crates,
-            links: dependencyGraph.dependencies,
-          }}
-          nodeId="name"
-          linkSource="from"
-          linkTarget="to"
-        />
+        <div className="dependency-graph">
+          <ForceGraph3D
+            graphData={{
+              nodes: dependencyGraph.crates,
+              links: dependencyGraph.dependencies,
+            }}
+            nodeId="name"
+            linkSource="from"
+            linkTarget="to"
+          />
+        </div>
       )}
     </>
   );

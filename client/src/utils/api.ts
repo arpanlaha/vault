@@ -26,7 +26,7 @@ export const getCrate = (crateId: string): Promise<Response<Crate>> =>
 
 export const getDependencyGraph = (
   crateId: string,
-  features = []
+  features: string[] = []
 ): Promise<Response<DependencyGraph>> =>
   axios
     .get(
