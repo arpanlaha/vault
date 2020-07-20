@@ -70,7 +70,7 @@ impl Graph {
         self.keywords = keywords;
     }
 
-    pub fn transitive_dependencies(
+    pub fn get_dependency_graph(
         &self,
         crate_id: &str,
         features: Vec<String>,
@@ -81,6 +81,7 @@ impl Graph {
 
         let mut crates: HashSet<&String> = HashSet::new();
         let mut dependencies: HashSet<&Dependency> = HashSet::new();
+        crates.insert(&self.crates.get(crate_id).unwrap().name);
         self.transitive_dependency_ids(crate_id, &mut crates, &mut dependencies, &features, true);
 
         Some(DependencyGraph {

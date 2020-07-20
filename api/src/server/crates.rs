@@ -8,10 +8,7 @@ struct CrateListResponse<'a> {
     crates: &'a Vec<&'a Crate>,
 }
 
-pub async fn get_transitive_dependencies_by_crate_id(
-    req: HttpRequest,
-    data: Data<AppState>,
-) -> impl Responder {
+pub async fn get_dependency_graph(req: HttpRequest, data: Data<AppState>) -> impl Responder {
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),
 
@@ -19,7 +16,7 @@ pub async fn get_transitive_dependencies_by_crate_id(
             Err(_) => HttpResponse::BadRequest().json("Bad query string."),
 
             Ok(feature_map) => {
-                match &data.graph.read().await.transitive_dependencies(
+                match &data.graph.read().await.get_dependency_graph(
                     crate_id,
                     match feature_map.get("features") {
                         Some(features) => {

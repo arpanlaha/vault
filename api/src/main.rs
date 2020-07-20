@@ -26,8 +26,8 @@ async fn main() -> IoResult<()> {
             .wrap(Logger::default())
             .wrap(Cors::default())
             .route(
-                "dependencies/{crate_id}",
-                web::get().to(crates::get_transitive_dependencies_by_crate_id),
+                "graph/{crate_id}",
+                web::get().to(crates::get_dependency_graph),
             )
             .route("crates/{crate_id}", web::get().to(crates::get_crate))
             .route("search/{search_term}", web::get().to(crates::search))
@@ -38,4 +38,3 @@ async fn main() -> IoResult<()> {
     .run()
     .await
 }
-

@@ -118,9 +118,11 @@ pub struct Dependency {
     /// If the dependency relies on default features.
     ///
     /// TODO: confirm this is the case.
+    #[serde(skip_serializing)]
     pub default_features: bool,
 
     /// A list of features this dependency uses.
+    #[serde(skip_serializing)]
     pub features: Vec<String>,
 
     /// The source crate of this dependency.
@@ -132,6 +134,7 @@ pub struct Dependency {
     pub kind: usize,
 
     /// If the dependency is optional.
+    #[serde(skip_serializing)]
     pub optional: bool,
 
     /// The destination version of the dependency.
