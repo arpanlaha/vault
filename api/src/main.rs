@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{
     middleware::{Compress, Logger},
     web::{self, Data},
@@ -23,6 +24,7 @@ async fn main() -> IoResult<()> {
         App::new()
             .wrap(Compress::default())
             .wrap(Logger::default())
+            .wrap(Cors::default())
             .route(
                 "dependencies/{crate_id}",
                 web::get().to(crates::get_transitive_dependencies_by_crate_id),
@@ -36,3 +38,4 @@ async fn main() -> IoResult<()> {
     .run()
     .await
 }
+
