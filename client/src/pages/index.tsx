@@ -54,6 +54,11 @@ export default function Home(): ReactElement {
             nodeId="name"
             linkSource="from"
             linkTarget="to"
+            warmupTicks={100}
+            backgroundColor="#000000"
+            cooldownTicks={0}
+            enableNodeDrag={false}
+            controlType="fly"
           />
         </div>
       )}
