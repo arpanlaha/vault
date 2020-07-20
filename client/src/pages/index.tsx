@@ -58,7 +58,6 @@ export default function Home(): ReactElement {
             backgroundColor="#000000"
             cooldownTicks={0}
             enableNodeDrag={false}
-            controlType="fly"
           />
         </div>
       )}
