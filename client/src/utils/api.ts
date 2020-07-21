@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from "axios";
 import { Crate, DependencyGraph } from "./types";
 
-const API_URL = process.env.GATSBY_API_URL;
+const API_URL = "https://api.vault.arpanlaha.com";
 
 type Response<T> =
   | {

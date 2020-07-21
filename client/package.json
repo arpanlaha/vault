@@ -16,6 +16,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@loadable/component": "^5.13.1",
     "antd": "^4.4.2",
     "axios": "^0.19.2",
     "gatsby": "^2.24.4",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@hack4impact-uiuc/eslint-plugin": "^2.0.1",
+    "@types/loadable__component": "^5.13.0",
     "@types/react-helmet": "^5.0.16",
     "eslint": "^7.5.0",
     "markdownlint-cli": "^0.22.0",
