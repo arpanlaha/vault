@@ -15,7 +15,7 @@ export default function Head(props: HeadProps): ReactElement {
       <meta name="description" content={description ?? "App description"} />
       <meta name="keywords" content={keywords ?? "App keywords"} />
       <meta name="author" content="App author" />
-      <title>{title ?? "App title"}</title>
+      <title>Vault</title>
     </Helmet>
   );
 }
