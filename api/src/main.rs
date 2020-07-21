@@ -34,7 +34,7 @@ async fn main() -> IoResult<()> {
         )
         .unwrap();
 
-    env_logger::from_env(Env::default().default_filter_or("debug")).init();
+    env_logger::from_env(Env::default().default_filter_or("info")).init();
 
     HttpServer::new(move || {
         App::new()
