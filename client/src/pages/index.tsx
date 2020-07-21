@@ -1,15 +1,8 @@
-import React, {
-  ReactElement,
-  useEffect,
-  useState,
-  lazy,
-  FunctionComponent,
-} from "react";
-import { Head } from "../components";
+import React, { ReactElement, useEffect, useState } from "react";
+import { Head, ForceGraphWrapper } from "../components";
 import { notification } from "antd";
 import { getDependencyGraph } from "../utils/api";
 import { DependencyGraph } from "../utils/types";
-import { ForceGraphProps } from "../components/ForceGraph";
 import "antd/dist/antd.dark.css";
 import "../styles/vault.scss";
 
@@ -19,9 +12,9 @@ export default function Home(): ReactElement {
     setDependencyGraph,
   ] = useState<DependencyGraph | null>(null);
   const [error, setError] = useState("");
-  const [ForceGraph, setForceGraph] = useState<FunctionComponent<
-    ForceGraphProps
-  > | null>(null);
+  // const [ForceGraph, setForceGraph] = useState<FunctionComponent<
+  //   ForceGraphProps
+  // > | null>(null);
 
   // const ForceGraph =
 
@@ -37,7 +30,6 @@ export default function Home(): ReactElement {
       };
 
       loadCrate();
-      setForceGraph(lazy(() => import("../components/ForceGraph")));
     }
   }, []);
 
@@ -57,9 +49,9 @@ export default function Home(): ReactElement {
   return (
     <>
       <Head />
-      {dependencyGraph !== null && ForceGraph !== null && (
+      {dependencyGraph !== null && (
         <div className="dependency-graph">
-          <ForceGraph dependencyGraph={dependencyGraph} />
+          <ForceGraphWrapper dependencyGraph={dependencyGraph} />
         </div>
       )}
     </>

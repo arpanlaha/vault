@@ -1,0 +1,1 @@
+{"version":3,"sources":["vault.scss"],"names":[],"mappings":"AAAA,KACE,QAAS,CACT,SAAU,CACX,kBAGC,UAAW,CACX,WAAY","file":"main.25f1cf86.chunk.css","sourcesContent":["body {\n  margin: 0;\n  padding: 0;\n}\n\n.dependency-graph {\n  width: 100%;\n  height: 100%;\n}\n"]}

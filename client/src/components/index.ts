@@ -1,4 +1,4 @@
-import ForceGraph from "./ForceGraph";
+import ForceGraphWrapper from "./ForceGraphWrapper";
 import Head from "./Head";
 
-export { ForceGraph, Head };
+export { ForceGraphWrapper, Head };
