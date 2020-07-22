@@ -26,6 +26,14 @@ export default function ForceGraphWrapper(
       backgroundColor="#000000"
       cooldownTicks={0}
       enableNodeDrag={false}
+      nodeAutoColorBy="name"
+      linkAutoColorBy="to"
+      linkLabel={(dependency: any) =>
+        `${dependency.from} depends on ${dependency.to}`
+      }
+      linkWidth={1.5}
+      linkDirectionalParticles={4}
+      linkDirectionalParticleWidth={1}
     />
   );
 }
