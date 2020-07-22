@@ -16,6 +16,7 @@ module.exports = {
         icon: "static/logo.svg",
       },
     },
+    "gatsby-plugin-preload-fonts",
     "gatsby-plugin-react-helmet",
     "gatsby-plugin-sass",
     {
