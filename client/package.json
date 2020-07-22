@@ -1,7 +1,7 @@
 {
-  "name": "gatsby-starter",
-  "version": "1.0.0",
-  "description": "A Gatsby starter with my usual functionality.",
+  "name": "vault-client",
+  "version": "0.1.0",
+  "description": "Interactively visualize your crates.io dependencies.",
   "license": "MIT",
   "scripts": {
     "build": "gatsby clean && gatsby build",
@@ -17,13 +17,13 @@
   },
   "dependencies": {
     "@loadable/component": "^5.13.1",
-    "antd": "^4.4.2",
+    "antd": "^4.4.3",
     "axios": "^0.19.2",
-    "gatsby": "^2.24.4",
-    "gatsby-plugin-manifest": "^2.4.18",
+    "gatsby": "^2.24.9",
+    "gatsby-plugin-manifest": "^2.4.20",
     "gatsby-plugin-react-helmet": "^3.3.10",
     "gatsby-plugin-sass": "^2.3.12",
-    "gatsby-plugin-typescript": "^2.4.15",
+    "gatsby-plugin-typescript": "^2.4.16",
     "node-sass": "^4.14.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -34,13 +34,13 @@
   "devDependencies": {
     "@hack4impact-uiuc/eslint-plugin": "^2.0.1",
     "@types/loadable__component": "^5.13.0",
-    "@types/react-helmet": "^5.0.16",
+    "@types/react-helmet": "^6.0.0",
     "eslint": "^7.5.0",
-    "markdownlint-cli": "^0.22.0",
+    "markdownlint-cli": "^0.23.2",
     "prettier": "^2.0.5"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/arpanlaha/gatsby-starter.git"
+    "url": "git+https://github.com/arpanlaha/vault.git"
   }
 }
