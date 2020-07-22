@@ -62,7 +62,7 @@ pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
 
         Some(search_term) => {
             let graph = data.graph.read().await;
-            let search_results = graph.search(search_term);
+            let search_results = graph.crate_search(search_term);
             HttpResponse::Ok().json(CrateListResponse {
                 count: search_results.len(),
                 crates: &search_results,

@@ -6,6 +6,8 @@ use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::RwLock;
 
+const MAX_SEARCH_LENGTH: usize = 10;
+
 pub struct AppState {
     pub graph: RwLock<Graph>,
 }
@@ -157,27 +159,40 @@ impl Graph {
         }
     }
 
-    pub fn search(&self, search_term: &str) -> Vec<&Crate> {
+    pub fn crate_search(&self, search_term: &str) -> Vec<&Crate> {
         let mut results: Vec<(f64, &Crate)> = vec![];
 
-        for crate_name in self.crates.keys() {
-            let search_score = strsim::jaro_winkler(crate_name, search_term);
+        for Crate {
+            downloads, name, ..
+        } in self.crates.values()
+        {
+            if name != search_term {
+                let search_score =
+                    strsim::jaro_winkler(name, search_term) * (*downloads as f64).log10().sqrt();
 
-            if results.is_empty() {
-                results.push((search_score, self.crates.get(crate_name).unwrap()))
-            } else if search_score >= results.last().unwrap().0 {
-                let crate_res = self.crates.get(crate_name).unwrap();
-                if let Some((index, _)) = results.iter().enumerate().find(|result| {
-                    search_score > (result.1).0
-                        || search_score == (result.1).0
-                            && crate_res.downloads > (result.1).1.downloads
-                }) {
-                    results.insert(index, (search_score, crate_res));
-                }
+                if results.is_empty() {
+                    results.push((search_score, self.crates.get(name).unwrap()))
+                } else if search_score >= results.last().unwrap().0 {
+                    let crate_res = self.crates.get(name).unwrap();
+                    if let Some((index, _)) = results.iter().enumerate().find(|result| {
+                        search_score > (result.1).0
+                            || search_score == (result.1).0
+                                && crate_res.downloads > (result.1).1.downloads
+                    }) {
+                        results.insert(index, (search_score, crate_res));
+                    }
 
-                if results.len() > 10 {
-                    results.pop();
+                    if results.len() > MAX_SEARCH_LENGTH {
+                        results.pop();
+                    }
                 }
+            }
+        }
+
+        if self.crates().contains_key(search_term) {
+            results.insert(0, (0f64, self.crates.get(search_term).unwrap()));
+            if results.len() > MAX_SEARCH_LENGTH {
+                results.pop();
             }
         }
 

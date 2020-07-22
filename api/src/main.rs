@@ -46,7 +46,7 @@ async fn main() -> IoResult<()> {
                 web::get().to(crates::get_dependency_graph),
             )
             .route("crates/{crate_id}", web::get().to(crates::get_crate))
-            .route("search/{search_term}", web::get().to(crates::search))
+            .route("search/crates/{search_term}", web::get().to(crates::search))
             .route("reset", web::put().to(reset::reset_state))
             .app_data(app_state.clone())
     })
