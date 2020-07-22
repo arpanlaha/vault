@@ -3,7 +3,8 @@ import { Head, ForceGraphWrapper } from "../components";
 import { notification, Layout } from "antd";
 import { getDependencyGraph } from "../utils/api";
 import { Crate, Dependency } from "../utils/types";
-import "antd/dist/antd.dark.css";
+import "antd/lib/layout/style/index.css";
+import "antd/lib/notification/style/index.css";
 import "../styles/vault.scss";
 
 const { Content, Sider } = Layout;
@@ -46,7 +47,7 @@ export default function Home(): ReactElement {
     <>
       <Head />
       <Layout>
-        <Sider>
+        <Sider className="sider" width="20%" theme="light">
           <h1>Vault</h1>
         </Sider>
         <Content className="content">

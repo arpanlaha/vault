@@ -3,6 +3,7 @@ import { Crate, Dependency } from "../utils/types";
 import loadable from "@loadable/component";
 
 const ForceGraph = loadable(() => import("./ForceGraph"));
+const DIMENSION_FACTOR = 0.1;
 
 interface ForceGraphWrapperProps {
   crates: Crate[];
@@ -16,8 +17,11 @@ export default function ForceGraphWrapper(
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
-    setHeight(window.innerHeight);
-    setWidth(window.innerWidth - document.querySelector("aside")!.clientWidth);
+    const containerHeight = window.innerHeight;
+    const containerWidth =
+      window.innerWidth - document.querySelector("aside")!.clientWidth;
+    setHeight(containerHeight * (1 - DIMENSION_FACTOR));
+    setWidth(containerWidth - containerHeight * DIMENSION_FACTOR);
   }, []);
 
   const { crates, dependencies } = props;
@@ -30,9 +34,7 @@ export default function ForceGraphWrapper(
       nodeId="name"
       linkSource="from"
       linkTarget="to"
-      warmupTicks={100}
       backgroundColor="#000000"
-      cooldownTicks={0}
       enableNodeDrag={false}
       nodeAutoColorBy="name"
       linkAutoColorBy="to"

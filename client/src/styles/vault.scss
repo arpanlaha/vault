@@ -17,8 +17,22 @@ body {
   font-family: "Nunito Sans", sans-serif !important;
 }
 
+h1 {
+  font-size: 10vmin;
+}
+
 button {
   font-family: "Nunito Sans", sans-serif !important;
+}
+
+canvas {
+  box-shadow: 1vmin 1vmin 2vmin 0 hsla(0, 0, 0, 0.5);
+}
+
+.sider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .content {
@@ -28,4 +42,8 @@ button {
 .dependency-graph {
   width: 100%;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
