@@ -1,22 +1,23 @@
 import React, { ReactElement } from "react";
-import { DependencyGraph } from "../utils/types";
+import { Crate, Dependency } from "../utils/types";
 import loadable from "@loadable/component";
 
 const ForceGraph = loadable(() => import("./ForceGraph"));
 
 interface ForceGraphWrapperProps {
-  dependencyGraph: DependencyGraph;
+  crates: Crate[];
+  dependencies: Dependency[];
 }
 
 export default function ForceGraphWrapper(
   props: ForceGraphWrapperProps
 ): ReactElement {
-  const { dependencyGraph } = props;
+  const { crates, dependencies } = props;
   return (
     <ForceGraph
       graphData={{
-        nodes: dependencyGraph.crates,
-        links: dependencyGraph.dependencies,
+        nodes: crates,
+        links: dependencies,
       }}
       nodeId="name"
       linkSource="from"

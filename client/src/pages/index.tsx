@@ -2,28 +2,22 @@ import React, { ReactElement, useEffect, useState } from "react";
 import { Head, ForceGraphWrapper } from "../components";
 import { notification } from "antd";
 import { getDependencyGraph } from "../utils/api";
-import { DependencyGraph } from "../utils/types";
+import { Crate, Dependency } from "../utils/types";
 import "antd/dist/antd.dark.css";
 import "../styles/vault.scss";
 
 export default function Home(): ReactElement {
-  const [
-    dependencyGraph,
-    setDependencyGraph,
-  ] = useState<DependencyGraph | null>(null);
+  const [crates, setCrates] = useState<Crate[]>([]);
+  const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [error, setError] = useState("");
-  // const [ForceGraph, setForceGraph] = useState<FunctionComponent<
-  //   ForceGraphProps
-  // > | null>(null);
-
-  // const ForceGraph =
 
   useEffect(() => {
     if (typeof window !== undefined) {
       const loadCrate = async (): Promise<void> => {
         const dependencyGraphRes = await getDependencyGraph("actix-web");
         if (dependencyGraphRes.success) {
-          setDependencyGraph(dependencyGraphRes.result);
+          setCrates(dependencyGraphRes.result.crates);
+          setDependencies(dependencyGraphRes.result.dependencies);
         } else {
           setError(dependencyGraphRes.error);
         }
@@ -49,11 +43,9 @@ export default function Home(): ReactElement {
   return (
     <>
       <Head />
-      {dependencyGraph !== null && (
-        <div className="dependency-graph">
-          <ForceGraphWrapper dependencyGraph={dependencyGraph} />
-        </div>
-      )}
+      <div className="dependency-graph">
+        <ForceGraphWrapper crates={crates} dependencies={dependencies} />
+      </div>
     </>
   );
 }
