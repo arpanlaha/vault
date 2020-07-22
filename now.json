@@ -1,7 +1,8 @@
 {
   "build": {
     "env": {
-      "GATSBY_TELEMETRY_DISABLED": "1"
+      "GATSBY_TELEMETRY_DISABLED": "1",
+      "GATSBY_VAULT_API_URL": "@vault_api_url"
     }
   },
   "builds": [
