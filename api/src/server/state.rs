@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::RwLock;
 
-const MAX_SEARCH_LENGTH: usize = 10;
+// const MAX_SEARCH_LENGTH: usize = 10;
 
 pub struct AppState {
     pub graph: RwLock<Graph>,
@@ -157,84 +157,5 @@ impl Graph {
                 );
             }
         }
-    }
-
-    pub fn crate_search(&self, search_term: &str) -> Vec<&Crate> {
-        let mut results: Vec<(f64, &Crate)> = vec![];
-
-        for Crate {
-            downloads, name, ..
-        } in self.crates.values()
-        {
-            if name != search_term {
-                let search_score =
-                    strsim::jaro_winkler(name, search_term) * (*downloads as f64).log10().sqrt();
-
-                if results.is_empty() {
-                    results.push((search_score, self.crates.get(name).unwrap()))
-                } else if search_score >= results.last().unwrap().0 {
-                    let crate_res = self.crates.get(name).unwrap();
-                    if let Some((index, _)) = results
-                        .iter()
-                        .enumerate()
-                        .find(|result| search_score > (result.1).0)
-                    {
-                        results.insert(index, (search_score, crate_res));
-                    }
-
-                    if results.len() > MAX_SEARCH_LENGTH {
-                        results.pop();
-                    }
-                }
-            }
-        }
-
-        if self.crates().contains_key(search_term) {
-            results.insert(0, (0f64, self.crates.get(search_term).unwrap()));
-            if results.len() > MAX_SEARCH_LENGTH {
-                results.pop();
-            }
-        }
-
-        results.iter().map(|(_, crate_res)| *crate_res).collect()
-    }
-
-    pub fn category_search(&self, search_term: &str) -> Vec<&Category> {
-        let mut results: Vec<(f64, &Category)> = vec![];
-
-        for category in self.categories.values() {
-            let name = &category.category;
-
-            if name != search_term {
-                let search_score = strsim::jaro_winkler(name, search_term)
-                    * (category.crates.len() as f64).log10().sqrt();
-
-                if results.is_empty() {
-                    results.push((search_score, self.categories.get(name).unwrap()))
-                } else if search_score >= results.last().unwrap().0 {
-                    let category = self.categories.get(name).unwrap();
-                    if let Some((index, _)) = results
-                        .iter()
-                        .enumerate()
-                        .find(|result| search_score > (result.1).0)
-                    {
-                        results.insert(index, (search_score, category));
-                    }
-
-                    if results.len() > MAX_SEARCH_LENGTH {
-                        results.pop();
-                    }
-                }
-            }
-        }
-
-        if self.crates().contains_key(search_term) {
-            results.insert(0, (0f64, self.categories.get(search_term).unwrap()));
-            if results.len() > MAX_SEARCH_LENGTH {
-                results.pop();
-            }
-        }
-
-        results.iter().map(|(_, category)| *category).collect()
     }
 }

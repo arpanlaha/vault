@@ -1,4 +1,4 @@
-use super::{state::AppState, util::get_query_params};
+use super::{state::AppState, util};
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 
 pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> impl Responder {
@@ -20,7 +20,7 @@ pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
 
         Some(search_term) => {
-            HttpResponse::Ok().json(data.graph.read().await.crate_search(search_term))
+            HttpResponse::Ok().json(util::search(search_term, data.graph.read().await.crates()))
         }
     }
 }
@@ -29,7 +29,7 @@ pub async fn get_dependency_graph(req: HttpRequest, data: Data<AppState>) -> imp
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),
 
-        Some(crate_id) => match get_query_params(req.query_string()) {
+        Some(crate_id) => match util::get_query_params(req.query_string()) {
             Err(_) => HttpResponse::BadRequest().json("Bad query string."),
 
             Ok(feature_map) => {

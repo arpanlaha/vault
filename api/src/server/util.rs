@@ -1,4 +1,7 @@
+use super::super::ingest::schema::Vertex;
 use std::collections::HashMap;
+
+const MAX_SEARCH_LENGTH: usize = 10;
 
 pub enum QueryParamError {
     InvalidQueryString,
@@ -38,4 +41,42 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
 
         return Ok(query_param_map);
     }
+}
+
+pub fn search<'a, T: Vertex>(search_term: &str, collection: &'a HashMap<String, T>) -> Vec<&'a T> {
+    let mut results: Vec<(f64, &T)> = vec![];
+
+    for vertex in collection.values() {
+        let name = vertex.id();
+
+        if name != search_term {
+            let search_score = strsim::jaro_winkler(name, search_term)
+                * (vertex.popularity() as f64).log10().sqrt();
+
+            if results.is_empty() {
+                results.push((search_score, collection.get(name).unwrap()));
+            } else if search_score >= results.last().unwrap().0 {
+                if let Some((index, _)) = results
+                    .iter()
+                    .enumerate()
+                    .find(|result| search_score > (result.1).0)
+                {
+                    results.insert(index, (search_score, vertex))
+                }
+
+                if results.len() > MAX_SEARCH_LENGTH {
+                    results.pop();
+                }
+            }
+        }
+    }
+
+    if let Some(search_vertex) = collection.get(search_term) {
+        results.insert(0, (0f64, search_vertex));
+        if results.len() > MAX_SEARCH_LENGTH {
+            results.pop();
+        }
+    }
+
+    results.iter().map(|(_, vertex)| *vertex).collect()
 }

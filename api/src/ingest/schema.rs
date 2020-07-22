@@ -244,6 +244,9 @@ pub trait Vertex {
 
     /// Returns the unique identifier from the SQL representation.
     fn sql_id(&self) -> usize;
+
+    /// Returns a number corresponding to the popularity of the Vertex.
+    fn popularity(&self) -> usize;
 }
 
 impl Vertex for Category {
@@ -255,6 +258,11 @@ impl Vertex for Category {
     /// Returns the unique identifier from the SQL representation.
     fn sql_id(&self) -> usize {
         self.id
+    }
+
+    /// Returns a number corresponding to the popularity of the Vertex.
+    fn popularity(&self) -> usize {
+        self.crates.len()
     }
 }
 
@@ -268,6 +276,11 @@ impl Vertex for Crate {
     fn sql_id(&self) -> usize {
         self.id
     }
+
+    /// Returns a number corresponding to the popularity of the Vertex.
+    fn popularity(&self) -> usize {
+        self.downloads
+    }
 }
 
 impl Vertex for Keyword {
@@ -278,6 +291,11 @@ impl Vertex for Keyword {
     /// Returns the unique identifier from the SQL representation.
     fn sql_id(&self) -> usize {
         self.id
+    }
+
+    /// Returns a number corresponding to the popularity of the Vertex.
+    fn popularity(&self) -> usize {
+        self.crates.len()
     }
 }
 
