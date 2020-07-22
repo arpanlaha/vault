@@ -1,10 +1,12 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Head, ForceGraphWrapper } from "../components";
-import { notification } from "antd";
+import { notification, Layout } from "antd";
 import { getDependencyGraph } from "../utils/api";
 import { Crate, Dependency } from "../utils/types";
 import "antd/dist/antd.dark.css";
 import "../styles/vault.scss";
+
+const { Content, Sider } = Layout;
 
 export default function Home(): ReactElement {
   const [crates, setCrates] = useState<Crate[]>([]);
@@ -43,9 +45,16 @@ export default function Home(): ReactElement {
   return (
     <>
       <Head />
-      <div className="dependency-graph">
-        <ForceGraphWrapper crates={crates} dependencies={dependencies} />
-      </div>
+      <Layout>
+        <Sider>
+          <h1>Vault</h1>
+        </Sider>
+        <Content className="content">
+          <div className="dependency-graph">
+            <ForceGraphWrapper crates={crates} dependencies={dependencies} />
+          </div>
+        </Content>
+      </Layout>
     </>
   );
 }
