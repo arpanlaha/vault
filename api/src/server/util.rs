@@ -50,8 +50,7 @@ pub fn search<'a, T: Vertex>(search_term: &str, collection: &'a HashMap<String, 
         let name = vertex.id();
 
         if name != search_term {
-            let search_score = strsim::jaro_winkler(name, search_term)
-                * (vertex.popularity() as f64).log10().sqrt();
+            let search_score = strsim::jaro_winkler(name, search_term) * vertex.popularity();
 
             if results.is_empty() {
                 results.push((search_score, collection.get(name).unwrap()));
@@ -59,7 +58,7 @@ pub fn search<'a, T: Vertex>(search_term: &str, collection: &'a HashMap<String, 
                 if let Some((index, _)) = results
                     .iter()
                     .enumerate()
-                    .find(|result| search_score > (result.1).0)
+                    .find(|(_, (other_score, _))| search_score > *other_score)
                 {
                     results.insert(index, (search_score, vertex))
                 }

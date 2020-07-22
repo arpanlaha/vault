@@ -246,7 +246,7 @@ pub trait Vertex {
     fn sql_id(&self) -> usize;
 
     /// Returns a number corresponding to the popularity of the Vertex.
-    fn popularity(&self) -> usize;
+    fn popularity(&self) -> f64;
 }
 
 impl Vertex for Category {
@@ -261,8 +261,8 @@ impl Vertex for Category {
     }
 
     /// Returns a number corresponding to the popularity of the Vertex.
-    fn popularity(&self) -> usize {
-        self.crates.len()
+    fn popularity(&self) -> f64 {
+        (self.crates.len() as f64).log10().log10()
     }
 }
 
@@ -278,8 +278,8 @@ impl Vertex for Crate {
     }
 
     /// Returns a number corresponding to the popularity of the Vertex.
-    fn popularity(&self) -> usize {
-        self.downloads
+    fn popularity(&self) -> f64 {
+        (self.downloads as f64).log10().sqrt()
     }
 }
 
@@ -294,8 +294,8 @@ impl Vertex for Keyword {
     }
 
     /// Returns a number corresponding to the popularity of the Vertex.
-    fn popularity(&self) -> usize {
-        self.crates.len()
+    fn popularity(&self) -> f64 {
+        (self.crates.len() as f64).log10().sqrt()
     }
 }
 
