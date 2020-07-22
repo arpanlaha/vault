@@ -1,11 +1,28 @@
-use super::{super::ingest::schema::Crate, state::AppState, util::get_query_params};
+use super::{state::AppState, util::get_query_params};
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
-use serde::Serialize;
 
-#[derive(Serialize)]
-struct CrateListResponse<'a> {
-    count: usize,
-    crates: &'a Vec<&'a Crate>,
+pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> impl Responder {
+    match req.match_info().get("crate_id") {
+        None => HttpResponse::BadRequest().json("Crate id must be provided."),
+
+        Some(crate_id) => match &data.graph.read().await.crates().get(crate_id) {
+            None => {
+                HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
+            }
+
+            Some(crate_res) => HttpResponse::Ok().json(crate_res),
+        },
+    }
+}
+
+pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
+    match req.match_info().get("search_term") {
+        None => HttpResponse::BadRequest().json("Search term must be provided."),
+
+        Some(search_term) => {
+            HttpResponse::Ok().json(data.graph.read().await.crate_search(search_term))
+        }
+    }
 }
 
 pub async fn get_dependency_graph(req: HttpRequest, data: Data<AppState>) -> impl Responder {
@@ -39,34 +56,5 @@ pub async fn get_dependency_graph(req: HttpRequest, data: Data<AppState>) -> imp
                 }
             }
         },
-    }
-}
-
-pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> impl Responder {
-    match req.match_info().get("crate_id") {
-        None => HttpResponse::BadRequest().json("Crate id must be provided."),
-
-        Some(crate_id) => match &data.graph.read().await.crates().get(crate_id) {
-            None => {
-                HttpResponse::NotFound().json(format!("Crate with id {} does not exist.", crate_id))
-            }
-
-            Some(crate_res) => HttpResponse::Ok().json(crate_res),
-        },
-    }
-}
-
-pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
-    match req.match_info().get("search_term") {
-        None => HttpResponse::BadRequest().json("Search term must be provided."),
-
-        Some(search_term) => {
-            let graph = data.graph.read().await;
-            let search_results = graph.crate_search(search_term);
-            HttpResponse::Ok().json(CrateListResponse {
-                count: search_results.len(),
-                crates: &search_results,
-            })
-        }
     }
 }

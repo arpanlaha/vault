@@ -9,7 +9,7 @@ use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::io::Result as IoResult;
 use tokio::sync::RwLock;
 use vault_api::server::{
-    crates, reset,
+    categories, crates, reset,
     state::{AppState, Graph},
 };
 
@@ -47,6 +47,10 @@ async fn main() -> IoResult<()> {
             )
             .route("crates/{crate_id}", web::get().to(crates::get_crate))
             .route("search/crates/{search_term}", web::get().to(crates::search))
+            .route(
+                "search/categories/{search_term}",
+                web::get().to(categories::search),
+            )
             .route("reset", web::put().to(reset::reset_state))
             .app_data(app_state.clone())
     })
