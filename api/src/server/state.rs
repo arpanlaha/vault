@@ -7,8 +7,6 @@ use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 use tokio::sync::{Mutex, RwLock};
 
-// const MAX_SEARCH_LENGTH: usize = 10;
-
 pub struct AppState {
     pub graph: RwLock<Graph>,
     pub last_updated: Mutex<Instant>,
