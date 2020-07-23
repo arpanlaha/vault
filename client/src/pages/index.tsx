@@ -23,6 +23,8 @@ export default function Home(): ReactElement {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
         setCurrentCrate(randomCrateRes.result.name);
+      } else {
+        setError(randomCrateRes.error);
       }
     };
 
