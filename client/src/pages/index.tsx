@@ -87,24 +87,26 @@ export default function Home(): ReactElement {
     <>
       <Head />
       <Layout>
-        <Sider className="sider" width="20%" theme="light">
-          <h1>Vault</h1>
-          <h2>Current crate: {currentCrate}</h2>
-          <AutoComplete
-            options={
-              searchCrates.map((searchCrate) => ({
-                value: searchCrate.name,
-              })) as any
-            }
-            onSelect={setCurrentCrate}
-            onSearch={setSearchTerm}
-          >
-            <Search
-              placeholder="Search for a crate..."
-              enterButton
-              onClick={handleSearchButton}
-            />
-          </AutoComplete>
+        <Sider width="20%" theme="light">
+          <div className="sider">
+            <h1>Vault</h1>
+            <h2>Current crate: {currentCrate}</h2>
+            <AutoComplete
+              options={
+                searchCrates.map((searchCrate) => ({
+                  value: searchCrate.name,
+                })) as any
+              }
+              onSelect={setCurrentCrate}
+              onSearch={setSearchTerm}
+            >
+              <Search
+                placeholder="Search for a crate..."
+                enterButton
+                onClick={handleSearchButton}
+              />
+            </AutoComplete>
+          </div>
         </Sider>
         <Content className="content">
           <div className="dependency-graph">
