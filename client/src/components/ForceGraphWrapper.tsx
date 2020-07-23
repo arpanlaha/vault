@@ -16,12 +16,17 @@ export default function ForceGraphWrapper(
   const [height, setHeight] = useState(0);
   const [width, setWidth] = useState(0);
 
-  useEffect(() => {
+  const resize = (): void => {
     const containerHeight = window.innerHeight;
     const containerWidth =
       window.innerWidth - document.querySelector("aside")!.clientWidth;
     setHeight(containerHeight * (1 - DIMENSION_FACTOR));
     setWidth(containerWidth - containerHeight * DIMENSION_FACTOR);
+  };
+
+  useEffect(() => {
+    resize();
+    window.addEventListener("resize", resize);
   }, []);
 
   const { crates, dependencies } = props;
