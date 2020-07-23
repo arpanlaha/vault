@@ -37,7 +37,7 @@ export default function ForceGraphWrapper(
       backgroundColor="#000000"
       enableNodeDrag={false}
       nodeAutoColorBy="name"
-      linkAutoColorBy="to"
+      linkAutoColorBy="from"
       linkLabel={(dependency: any) =>
         `${dependency.from} depends on ${dependency.to}`
       }
