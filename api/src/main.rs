@@ -7,7 +7,8 @@ use actix_web::{
 use env_logger::Env;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::io::Result as IoResult;
-use tokio::sync::RwLock;
+use std::time::Instant;
+use tokio::sync::{Mutex, RwLock};
 use vault_api::server::{
     categories, crates, keywords, reset,
     state::{AppState, Graph},
@@ -19,6 +20,7 @@ async fn main() -> IoResult<()> {
 
     let app_state = Data::new(AppState {
         graph: RwLock::new(Graph::new().await),
+        last_updated: Mutex::new(Instant::now()),
     });
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();

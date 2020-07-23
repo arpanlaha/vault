@@ -4,12 +4,14 @@ use super::super::ingest::{
 };
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
-use tokio::sync::RwLock;
+use std::time::Instant;
+use tokio::sync::{Mutex, RwLock};
 
 // const MAX_SEARCH_LENGTH: usize = 10;
 
 pub struct AppState {
     pub graph: RwLock<Graph>,
+    pub last_updated: Mutex<Instant>,
 }
 
 pub struct Graph {
