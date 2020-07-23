@@ -46,3 +46,6 @@ export const getDependencyGraph = (
       }`
     )
   );
+
+export const searchCrate = (searchTerm: string): Promise<Response<Crate[]>> =>
+  wrapResponse(axios.get(`${API_URL}/search/crates/${searchTerm}`));

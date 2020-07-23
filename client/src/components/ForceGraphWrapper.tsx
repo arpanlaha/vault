@@ -44,7 +44,6 @@ export default function ForceGraphWrapper(
       linkWidth={1.5}
       linkDirectionalParticles={4}
       linkDirectionalParticleWidth={1}
-      showNavInfo={false}
       height={height}
       width={width}
     />
