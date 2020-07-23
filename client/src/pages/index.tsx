@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Head, ForceGraphWrapper } from "../components";
 import { AutoComplete, Input, notification, Layout } from "antd";
-import { getDependencyGraph, searchCrate } from "../utils/api";
+import { getDependencyGraph, getRandomCrate, searchCrate } from "../utils/api";
 import { Crate, Dependency } from "../utils/types";
 
 import "../styles/antd.scss";
@@ -11,7 +11,7 @@ const { Search } = Input;
 const { Content, Sider } = Layout;
 
 export default function Home(): ReactElement {
-  const [currentCrate, setCurrentCrate] = useState("actix-web");
+  const [currentCrate, setCurrentCrate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [crates, setCrates] = useState<Crate[]>([]);
@@ -19,17 +19,30 @@ export default function Home(): ReactElement {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadCrate = async (): Promise<void> => {
-      const dependencyGraphRes = await getDependencyGraph(currentCrate);
-      if (dependencyGraphRes.success) {
-        setCrates(dependencyGraphRes.result.crates);
-        setDependencies(dependencyGraphRes.result.dependencies);
-      } else {
-        setError(dependencyGraphRes.error);
+    const loadRandomCrate = async (): Promise<void> => {
+      const randomCrateRes = await getRandomCrate();
+      if (randomCrateRes.success) {
+        setCurrentCrate(randomCrateRes.result.name);
       }
     };
 
-    loadCrate();
+    loadRandomCrate();
+  }, []);
+
+  useEffect(() => {
+    if (currentCrate.length > 0) {
+      const loadCrate = async (): Promise<void> => {
+        const dependencyGraphRes = await getDependencyGraph(currentCrate);
+        if (dependencyGraphRes.success) {
+          setCrates(dependencyGraphRes.result.crates);
+          setDependencies(dependencyGraphRes.result.dependencies);
+        } else {
+          setError(dependencyGraphRes.error);
+        }
+      };
+
+      loadCrate();
+    }
   }, [currentCrate]);
 
   useEffect(
@@ -46,16 +59,16 @@ export default function Home(): ReactElement {
   );
 
   useEffect(() => {
-    const loadSearch = async (): Promise<void> => {
-      const searchCrateRes = await searchCrate(searchTerm);
-      if (searchCrateRes.success) {
-        setSearchCrates(searchCrateRes.result);
-      } else {
-        setError(searchCrateRes.error);
-      }
-    };
-
     if (searchTerm.length > 0) {
+      const loadSearch = async (): Promise<void> => {
+        const searchCrateRes = await searchCrate(searchTerm);
+        if (searchCrateRes.success) {
+          setSearchCrates(searchCrateRes.result);
+        } else {
+          setError(searchCrateRes.error);
+        }
+      };
+
       loadSearch();
     } else {
       setSearchCrates([]);
