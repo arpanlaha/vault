@@ -1,20 +1,19 @@
-import React, { Component, Props, ReactElement } from "react";
+import React, { ReactElement } from "react";
 import { Helmet } from "react-helmet";
 
-interface HeadProps extends Props<Component> {
-  title?: string;
-  description?: string;
-  keywords?: string;
-}
-
-export default function Head(props: HeadProps): ReactElement {
-  const { description, keywords, title } = props;
+export default function Head(): ReactElement {
   return (
     <Helmet htmlAttributes={{ lang: "en" }} defer={false}>
       <meta charSet="UTF-8" />
-      <meta name="description" content={description ?? "App description"} />
-      <meta name="keywords" content={keywords ?? "App keywords"} />
-      <meta name="author" content="App author" />
+      <meta
+        name="description"
+        content="Interactively visualize your crates.io dependencies."
+      />
+      <meta
+        name="keywords"
+        content="Rust, crates, crates.io, package, dependency, registry, graph, visualization."
+      />
+      <meta name="author" content="ARpan Laha" />
       <title>Vault</title>
     </Helmet>
   );
