@@ -12,26 +12,11 @@ const { Content, Sider } = Layout;
 
 export default function Home(): ReactElement {
   const [currentCrate, setCurrentCrate] = useState("actix-web");
+  const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [crates, setCrates] = useState<Crate[]>([]);
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [error, setError] = useState("");
-
-  // useEffect(() => {
-  //   if (typeof window !== undefined) {
-  //     const loadCrate = async (): Promise<void> => {
-  //       const dependencyGraphRes = await getDependencyGraph("actix-web");
-  //       if (dependencyGraphRes.success) {
-  //         setCrates(dependencyGraphRes.result.crates);
-  //         setDependencies(dependencyGraphRes.result.dependencies);
-  //       } else {
-  //         setError(dependencyGraphRes.error);
-  //       }
-  //     };
-
-  //     loadCrate();
-  //   }
-  // }, []);
 
   useEffect(() => {
     const loadCrate = async (): Promise<void> => {
@@ -60,16 +45,26 @@ export default function Home(): ReactElement {
     [error]
   );
 
-  const handleSearch = async (searchTerm: string): Promise<void> => {
-    if (searchTerm.length > 0) {
+  useEffect(() => {
+    const loadSearch = async (): Promise<void> => {
       const searchCrateRes = await searchCrate(searchTerm);
       if (searchCrateRes.success) {
         setSearchCrates(searchCrateRes.result);
       } else {
         setError(searchCrateRes.error);
       }
+    };
+
+    if (searchTerm.length > 0) {
+      loadSearch();
     } else {
       setSearchCrates([]);
+    }
+  }, [searchTerm]);
+
+  const handleSearchButton = (): void => {
+    if (searchTerm.length > 0) {
+      setCurrentCrate(searchTerm);
     }
   };
 
@@ -87,9 +82,13 @@ export default function Home(): ReactElement {
               })) as any
             }
             onSelect={setCurrentCrate}
-            onSearch={handleSearch}
+            onSearch={setSearchTerm}
           >
-            <Search placeholder="Search for a crate..." enterButton />
+            <Search
+              placeholder="Search for a crate..."
+              enterButton
+              onClick={handleSearchButton}
+            />
           </AutoComplete>
         </Sider>
         <Content className="content">
