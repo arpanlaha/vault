@@ -66,6 +66,9 @@ async fn main() -> IoResult<()> {
                 "search/keywords/{search_term}",
                 web::get().to(keywords::search),
             )
+            .route("random/crates", web::get().to(crates::random))
+            .route("random/categories", web::get().to(categories::random))
+            .route("random/keywords", web::get().to(keywords::random))
             .route("reset", web::put().to(reset::reset_state))
             .app_data(app_state.clone())
     })

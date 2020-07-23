@@ -15,6 +15,10 @@ pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> impl Responder
     }
 }
 
+pub async fn random(data: Data<AppState>) -> impl Responder {
+    HttpResponse::Ok().json(util::random(data.graph.read().await.crates()))
+}
+
 pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
     match req.match_info().get("search_term") {
         None => HttpResponse::BadRequest().json("Search term must be provided."),

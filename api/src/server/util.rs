@@ -1,4 +1,5 @@
 use super::super::ingest::schema::Vertex;
+use rand::Rng;
 use std::collections::HashMap;
 
 const MAX_SEARCH_LENGTH: usize = 10;
@@ -78,4 +79,12 @@ pub fn search<'a, T: Vertex>(search_term: &str, collection: &'a HashMap<String, 
     }
 
     results.iter().map(|(_, vertex)| *vertex).collect()
+}
+
+pub fn random<'a, T>(collection: &'a HashMap<String, T>) -> &'a T {
+    collection
+        .values()
+        .skip(rand::thread_rng().gen_range(0, collection.len()))
+        .next()
+        .unwrap()
 }

@@ -41,6 +41,10 @@ pub async fn get_category(req: HttpRequest, data: Data<AppState>) -> impl Respon
     }
 }
 
+pub async fn random(data: Data<AppState>) -> impl Responder {
+    HttpResponse::Ok().json(util::random(data.graph.read().await.categories()))
+}
+
 pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
     match req.match_info().get("search_term") {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
