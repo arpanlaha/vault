@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_web::{
     middleware::{Compress, Logger},
     web::{self, Data},
-    App, HttpServer,
+    App, HttpResponse, HttpServer,
 };
 use dotenv_codegen::dotenv;
 use env_logger::Env;
@@ -68,6 +68,7 @@ async fn main() -> IoResult<()> {
                     .route("keywords/{search_term}", web::get().to(keywords::search)),
             )
             .route("reset", web::put().to(reset::reset_state))
+            .default_service(web::route().to(|| HttpResponse::NotFound().json("Route not found")))
     })
     .bind_openssl("0.0.0.0:443", builder)?
     .run()
