@@ -36,7 +36,7 @@ pub fn fetch_data() -> TempDir {
         .to_str()
         .expect("Tarball path not valid UTF-8");
     let mut tgz_file = File::create(tgz_path.as_path())
-        .expect(format!("Unable to create {}", tgz_path_name).as_str());
+        .unwrap_or_else(|_| panic!("Unable to create {}", tgz_path_name));
 
     println!("Downloading tarballed database dump...");
     let download_start = Instant::now();
@@ -53,7 +53,7 @@ pub fn fetch_data() -> TempDir {
     println!("Unzipping tarballed database dump...");
     let unzip_start = Instant::now();
     let tar = GzDecoder::new(
-        File::open(tgz_path_name).expect(format!("Unable to open {}", tgz_path_name).as_str()),
+        File::open(tgz_path_name).unwrap_or_else(|_| panic!("Unable to open {}", tgz_path_name)),
     );
     println!(
         "Unzipped tarballed database dump into TAR archive in {} seconds.",
@@ -83,7 +83,7 @@ pub fn clean_tempdir(temp_dir: TempDir) {
     let clean_start = Instant::now();
     temp_dir
         .close()
-        .expect("Unable to close temporary directory");
+        .unwrap_or_else(|_| panic!("Unable to close temporary directory"));
     println!(
         "Temporary files and directories removed in {} seconds.",
         clean_start.elapsed().as_secs_f64()

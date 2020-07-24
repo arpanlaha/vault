@@ -91,7 +91,7 @@ impl Graph {
                 .iter()
                 .map(|crate_id| self.crates.get(crate_id.as_str()).unwrap())
                 .collect(),
-            dependencies: dependencies.iter().map(|dependency| *dependency).collect(),
+            dependencies: dependencies.iter().copied().collect(),
         })
     }
 
@@ -100,7 +100,7 @@ impl Graph {
         crate_id: &str,
         crates: &mut HashSet<&'a String>,
         dependencies: &mut HashSet<&'a Dependency>,
-        features: &Vec<String>,
+        features: &[String],
         default_features: bool,
     ) {
         let crate_val = &self.crates.get(crate_id).unwrap();
@@ -130,9 +130,11 @@ impl Graph {
             {
                 let mut transitive_features: Vec<String> = dependency.features.to_owned();
 
-                if crate_dependency_names.iter().any(|crate_dependency_name| {
+                let is_sub_feature = |crate_dependency_name: &&String| {
                     crate_dependency_name.starts_with(&format!("{}/", dependency.to))
-                }) {
+                };
+
+                if crate_dependency_names.iter().any(is_sub_feature) {
                     crate_dependency_names
                         .iter()
                         .filter(|crate_dependency_name| {
@@ -140,7 +142,7 @@ impl Graph {
                         })
                         .for_each(|crate_dependency_name| {
                             transitive_features.push(String::from(
-                                crate_dependency_name.split('/').skip(1).next().unwrap(),
+                                crate_dependency_name.split('/').nth(1).unwrap(),
                             ));
                         });
                 }

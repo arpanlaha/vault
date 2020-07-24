@@ -166,7 +166,7 @@ pub struct Keyword {
 }
 
 /// A version in the crates.io repository.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Version {
     /// The id of the crate the version belongs to.
     pub crate_id: usize,
@@ -231,7 +231,7 @@ impl Version {
     /// This function will panic if the version's num is not SemVer-compliant.
     pub fn is_pre(&self) -> bool {
         !semver_version::parse(self.num.as_str())
-            .expect(format!("{} does not adhere to SemVer", self.num).as_str())
+            .unwrap_or_else(|_| panic!("{} does not adhere to SemVer", self.num))
             .pre
             .is_empty()
     }

@@ -44,7 +44,7 @@ pub async fn get_dependency_graph(req: HttpRequest, data: Data<AppState>) -> imp
                             if features.contains(',') {
                                 features
                                     .split(',')
-                                    .map(|feature| String::from(feature))
+                                    .map(String::from)
                                     .collect::<Vec<String>>()
                             } else {
                                 vec![features.to_owned()]

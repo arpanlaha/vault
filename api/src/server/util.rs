@@ -84,7 +84,6 @@ pub fn search<'a, T: Vertex>(search_term: &str, collection: &'a HashMap<String, 
 pub fn random<'a, T>(collection: &'a HashMap<String, T>) -> &'a T {
     collection
         .values()
-        .skip(rand::thread_rng().gen_range(0, collection.len()))
-        .next()
+        .nth(rand::thread_rng().gen_range(0, collection.len()))
         .unwrap()
 }

@@ -79,19 +79,19 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     let mut id_lookup = HashMap::<usize, String>::new();
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
+        File::open(Path::new(&file_path))
+            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
     ))
     .deserialize()
     {
         count += 1;
-        let record: T = result.expect(
-            format!(
+        let record: T = result.unwrap_or_else(|_| {
+            panic!(
                 "Unable to deserialize entry {} as {}",
                 count,
                 any::type_name::<T>()
             )
-            .as_str(),
-        );
+        });
         id_lookup.insert(record.sql_id(), String::from(record.id()));
         collection.insert(String::from(record.id()), record);
     }
@@ -114,50 +114,58 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     let filename = get_collection_path(data_path, "versions");
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&filename)).expect(format!("Unable to open {}", filename).as_str()),
+        File::open(Path::new(&filename)).unwrap_or_else(|_| panic!("Unable to open {}", filename)),
     ))
     .deserialize()
     {
         count += 1;
         let version: Version =
-            result.expect(format!("Unable to deserialize entry {} as Version", count).as_str());
-        let Version { crate_id, .. } = version;
+            result.unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Version", count));
+        let Version {
+            crate_id,
+            downloads,
+            num,
+            id,
+            created_at,
+            ..
+        } = version.clone();
 
-        if versions.contains_key(&crate_id) {
-            let existing_version = versions.get_mut(&crate_id).unwrap();
-            existing_version.downloads += version.downloads;
+        versions
+            .entry(crate_id)
+            .and_modify(|existing_version| {
+                existing_version.downloads += downloads;
 
-            if let Ok(version_num) = semver_version::parse(version.num.as_str()) {
-                if let Ok(existing_version_num) =
-                    semver_version::parse(existing_version.num.as_str())
-                {
-                    if !version.is_pre() && existing_version.is_pre() {
-                        existing_version.num = version.num;
-                        existing_version.id = version.id;
-                    } else if version.is_pre() == existing_version.is_pre()
-                        && (version_num.major > existing_version_num.major
-                            || (version_num.major == existing_version_num.major
-                                && version_num.minor > existing_version_num.minor)
-                            || (version_num.major == existing_version_num.major
-                                && version_num.minor == existing_version_num.minor
-                                && version_num.patch > existing_version_num.patch))
+                if let Ok(version_num) = semver_version::parse(num.as_str()) {
+                    if let Ok(existing_version_num) =
+                        semver_version::parse(existing_version.num.as_str())
                     {
-                        existing_version.num = version.num;
-                        existing_version.id = version.id;
+                        let version_is_pre = version.is_pre();
+                        let existing_version_is_pre = existing_version.is_pre();
+
+                        if !version_is_pre && existing_version_is_pre
+                            || (version_is_pre == existing_version_is_pre
+                                && (version_num.major > existing_version_num.major
+                                    || (version_num.major == existing_version_num.major
+                                        && version_num.minor > existing_version_num.minor)
+                                    || (version_num.major == existing_version_num.major
+                                        && version_num.minor == existing_version_num.minor
+                                        && version_num.patch > existing_version_num.patch)))
+                        {
+                            existing_version.num = num;
+                            existing_version.id = id;
+                        }
+                    } else {
+                        existing_version.num = num;
+                        existing_version.id = id;
                     }
-                } else {
-                    existing_version.num = version.num;
-                    existing_version.id = version.id;
+                } else if semver_version::parse(existing_version.num.as_str()).is_err()
+                    && created_at.cmp(&existing_version.created_at) == Ordering::Greater
+                {
+                    existing_version.num = num;
+                    existing_version.id = id;
                 }
-            } else if let Err(_) = semver_version::parse(existing_version.num.as_str()) {
-                if version.created_at.cmp(&existing_version.created_at) == Ordering::Greater {
-                    existing_version.num = version.num;
-                    existing_version.id = version.id;
-                }
-            }
-        } else {
-            versions.insert(crate_id, version);
-        }
+            })
+            .or_insert(version);
     }
 
     println!(
@@ -191,16 +199,16 @@ fn create_versioned_crates(
     {
         let crate_id = crate_id_lookup
             .get(crate_id)
-            .expect(format!("Crate with SQL id {} does not exist", crate_id).as_str());
+            .unwrap_or_else(|| panic!("Crate with SQL id {} does not exist", crate_id));
 
         let version_crate = crates
             .get_mut(crate_id)
-            .expect(format!("Crate with id {} does not exist", crate_id).as_str());
+            .unwrap_or_else(|| panic!("Crate with id {} does not exist", crate_id));
 
         version_crate.created_at = created_at.to_owned();
         version_crate.downloads = downloads.to_owned();
         version_crate.features = serde_json::from_str(features)
-            .expect(format!("Unable to deserialize {} as HashMap", features).as_str());
+            .unwrap_or_else(|_| panic!("Unable to deserialize {} as HashMap", features));
         version_crate.version = num.to_owned();
 
         version_to_crates.insert(id.to_owned(), crate_id.to_owned());
@@ -227,12 +235,12 @@ fn load_dependencies(
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&dependencies_path))
-            .expect(format!("Unable to open {}", dependencies_path).as_str()),
+            .unwrap_or_else(|_| panic!("Unable to open {}", dependencies_path)),
     ))
     .deserialize()
     {
-        let sql_dependency: SqlDependency =
-            result.expect(format!("Unable to deserialize entry {} as Dependency", count).as_str());
+        let sql_dependency: SqlDependency = result
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Dependency", count));
         let SqlDependency {
             default_features,
             features,
@@ -242,31 +250,31 @@ fn load_dependencies(
             ..
         } = sql_dependency;
 
+        let sql_dependency_crate_id = sql_dependency.crate_id;
+
         if let Some(from) = versions_to_crates.get(&version_id) {
             count += 1;
-            // TODO: split count by kind -  1.151MB - 1.051MB = 100MB
 
             crates
                 .get_mut(from)
-                .expect(format!("Crate with id {} not found", from).as_str())
+                .unwrap_or_else(|| panic!("Crate with id {} not found", from))
                 .dependencies
                 .insert(Dependency {
                     default_features: default_features == "t",
                     features: String::from(&features[1..features.len() - 1])
-                        .split(",")
-                        .filter(|split| split.len() > 0)
-                        .map(|feature_str| String::from(feature_str))
+                        .split(',')
+                        .filter(|split| split.is_empty())
+                        .map(String::from)
                         .collect(),
 
                     from: from.to_owned(),
                     kind,
                     optional: optional == "t",
                     to: crate_id_lookup
-                        .get(&sql_dependency.crate_id)
-                        .expect(
-                            format!("Unable to find crate with id {}", sql_dependency.crate_id)
-                                .as_str(),
-                        )
+                        .get(&sql_dependency_crate_id)
+                        .unwrap_or_else(|| {
+                            panic!("Crate with id {} not found", sql_dependency_crate_id)
+                        })
                         .to_owned(),
                 });
         }
@@ -292,7 +300,8 @@ fn load_crate_categories(
     let file_path = get_collection_path(data_path, "crates_categories");
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
+        File::open(Path::new(&file_path))
+            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
     ))
     .deserialize()
     {
@@ -301,25 +310,25 @@ fn load_crate_categories(
             category_id,
             crate_id,
         } = result
-            .expect(format!("Unable to deserialize entry {} as crate category", count).as_str());
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as crate category", count));
 
         let category_id = category_id_lookup
             .get(&category_id)
-            .expect(format!("Unable to find category with id {}", category_id).as_str());
+            .unwrap_or_else(|| panic!("Category with id {} not found", category_id));
 
         let crate_id = crate_id_lookup
             .get(&crate_id)
-            .expect(format!("Unable to find crate with id {}", crate_id).as_str());
+            .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id));
 
         crates
             .get_mut(crate_id)
-            .expect(format!("Crate with id {} not found", crate_id).as_str())
+            .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
             .categories
             .insert(category_id.to_owned());
 
         categories
             .get_mut(category_id)
-            .expect(format!("Category with id {} not found", category_id).as_str())
+            .unwrap_or_else(|| panic!("Category with id {} not found", category_id))
             .crates
             .insert(crate_id.to_owned());
     }
@@ -345,7 +354,8 @@ fn load_crate_keywords(
     let file_path = get_collection_path(data_path, "crates_keywords");
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&file_path)).expect(format!("Unable to open {}", file_path).as_str()),
+        File::open(Path::new(&file_path))
+            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
     ))
     .deserialize()
     {
@@ -354,25 +364,25 @@ fn load_crate_keywords(
             crate_id,
             keyword_id,
         } = result
-            .expect(format!("Unable to deserialize entry {} as crate keyword", count).as_str());
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as crate keyword", count));
 
         let crate_id = crate_id_lookup
             .get(&crate_id)
-            .expect(format!("Unable to find crate with id {}", crate_id).as_str());
+            .unwrap_or_else(|| panic!("Unable to find crate with id {}", crate_id));
 
         let keyword_id = keyword_id_lookup
             .get(&keyword_id)
-            .expect(format!("Unable to find keyword with id {}", keyword_id).as_str());
+            .unwrap_or_else(|| panic!("Unable to find keyword with id {}", keyword_id));
 
         crates
             .get_mut(crate_id)
-            .expect(format!("Crate with id {} not found", crate_id).as_str())
+            .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
             .keywords
             .insert(keyword_id.to_owned());
 
         keywords
             .get_mut(keyword_id)
-            .expect(format!("Keyword with id {} not found", keyword_id).as_str())
+            .unwrap_or_else(|| panic!("Keyword with id {} not found", keyword_id))
             .crates
             .push(crate_id.to_owned());
     }
