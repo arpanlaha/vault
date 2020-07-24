@@ -1,6 +1,13 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Head, ForceGraphWrapper } from "../components";
-import { AutoComplete, Input, notification, Layout } from "antd";
+import {
+  AutoComplete,
+  Checkbox,
+  Collapse,
+  Input,
+  notification,
+  Layout,
+} from "antd";
 import { getDependencyGraph, getRandomCrate, searchCrate } from "../utils/api";
 import { Crate, Dependency } from "../utils/types";
 
@@ -9,6 +16,8 @@ import "../styles/vault.scss";
 
 const { Search } = Input;
 const { Content, Sider } = Layout;
+const CheckboxGroup = Checkbox.Group;
+const { Panel } = Collapse;
 
 export default function Home(): ReactElement {
   const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
@@ -108,6 +117,16 @@ export default function Home(): ReactElement {
                 disabled={searchTerm.length === 0}
               />
             </AutoComplete>
+            {currentCrate !== null &&
+              Object.keys(currentCrate.features).length > 0 && (
+                <Collapse>
+                  <Panel header="Features" key="">
+                    <CheckboxGroup
+                      options={Object.keys(currentCrate.features)}
+                    />
+                  </Panel>
+                </Collapse>
+              )}
           </div>
         </Sider>
         <Content className="content">

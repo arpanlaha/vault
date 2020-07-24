@@ -41,6 +41,17 @@ canvas {
   align-items: center;
 }
 
+.ant-collapse {
+  width: 80%;
+  margin: 2vh 0;
+}
+
+.ant-checkbox-group {
+  padding: 0 10%;
+  display: flex;
+  flex-direction: column;
+}
+
 .content {
   overflow: hidden;
 }
