@@ -4,6 +4,7 @@ use actix_web::{
     web::{self, Data},
     App, HttpServer,
 };
+use dotenv_codegen::dotenv;
 use env_logger::Env;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::io::Result as IoResult;
@@ -16,8 +17,6 @@ use vault_api::server::{
 
 #[actix_rt::main]
 async fn main() -> IoResult<()> {
-    dotenv::dotenv().unwrap();
-
     let app_state = Data::new(AppState {
         graph: RwLock::new(Graph::new().await),
         last_updated: Mutex::new(Instant::now()),
@@ -25,15 +24,10 @@ async fn main() -> IoResult<()> {
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
-        .set_private_key_file(
-            dotenv::var("SSL_PRIVATE_KEY_PATH").expect("SSL private key path not provided"),
-            SslFiletype::PEM,
-        )
+        .set_private_key_file(dotenv!("SSL_PRIVATE_KEY_PATH"), SslFiletype::PEM)
         .unwrap();
     builder
-        .set_certificate_chain_file(
-            dotenv::var("SSL_CERT_PATH").expect("SSL certificate chain path not provided"),
-        )
+        .set_certificate_chain_file(dotenv!("SSL_CERT_PATH"))
         .unwrap();
 
     env_logger::from_env(Env::default().default_filter_or("info")).init();
