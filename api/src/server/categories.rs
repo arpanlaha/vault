@@ -1,4 +1,8 @@
-use super::{super::ingest::schema::Category, state::AppState, util};
+use super::{
+    super::ingest::schema::Category,
+    state::AppState,
+    util::{self, Search},
+};
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
 
@@ -49,9 +53,8 @@ pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
     match req.match_info().get("search_term") {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
 
-        Some(search_term) => HttpResponse::Ok().json(util::search(
-            search_term,
-            data.graph.read().await.categories(),
-        )),
+        Some(search_term) => {
+            HttpResponse::Ok().json(data.graph.read().await.categories().search(search_term))
+        }
     }
 }

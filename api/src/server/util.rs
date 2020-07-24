@@ -44,41 +44,47 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
     }
 }
 
-pub fn search<'a, T: Vertex>(search_term: &str, collection: &'a HashMap<String, T>) -> Vec<&'a T> {
-    let mut results: Vec<(f64, &T)> = vec![];
+pub trait Search<T: Vertex> {
+    fn search<'a>(&'a self, search_term: &str) -> Vec<&'a T>;
+}
 
-    for vertex in collection.values() {
-        let name = vertex.id();
+impl<T: Vertex> Search<T> for HashMap<String, T> {
+    fn search<'a>(&'a self, search_term: &str) -> Vec<&'a T> {
+        let mut results: Vec<(f64, &T)> = vec![];
 
-        if name != search_term {
-            let search_score = strsim::jaro_winkler(name, search_term) * vertex.popularity();
+        for vertex in self.values() {
+            let name = vertex.id();
 
-            if results.is_empty() {
-                results.push((search_score, collection.get(name).unwrap()));
-            } else if search_score >= results.last().unwrap().0 {
-                if let Some((index, _)) = results
-                    .iter()
-                    .enumerate()
-                    .find(|(_, (other_score, _))| search_score > *other_score)
-                {
-                    results.insert(index, (search_score, vertex))
-                }
+            if name != search_term {
+                let search_score = strsim::jaro_winkler(name, search_term) * vertex.popularity();
 
-                if results.len() > MAX_SEARCH_LENGTH {
-                    results.pop();
+                if results.is_empty() {
+                    results.push((search_score, self.get(name).unwrap()));
+                } else if search_score >= results.last().unwrap().0 {
+                    if let Some((index, _)) = results
+                        .iter()
+                        .enumerate()
+                        .find(|(_, (other_score, _))| search_score > *other_score)
+                    {
+                        results.insert(index, (search_score, vertex))
+                    }
+
+                    if results.len() > MAX_SEARCH_LENGTH {
+                        results.pop();
+                    }
                 }
             }
         }
-    }
 
-    if let Some(search_vertex) = collection.get(search_term) {
-        results.insert(0, (0f64, search_vertex));
-        if results.len() > MAX_SEARCH_LENGTH {
-            results.pop();
+        if let Some(search_vertex) = self.get(search_term) {
+            results.insert(0, (0f64, search_vertex));
+            if results.len() > MAX_SEARCH_LENGTH {
+                results.pop();
+            }
         }
-    }
 
-    results.iter().map(|(_, vertex)| *vertex).collect()
+        results.iter().map(|(_, vertex)| *vertex).collect()
+    }
 }
 
 pub fn random<'a, T>(collection: &'a HashMap<String, T>) -> &'a T {
