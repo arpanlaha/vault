@@ -13,6 +13,7 @@ import { Crate, Dependency } from "../utils/types";
 
 import "../styles/antd.scss";
 import "../styles/vault.scss";
+import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
 const { Search } = Input;
 const { Content, Sider } = Layout;
@@ -25,6 +26,8 @@ export default function Home(): ReactElement {
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [crates, setCrates] = useState<Crate[]>([]);
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
+  const [indeterminate, setIndeterminate] = useState(true);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -42,8 +45,11 @@ export default function Home(): ReactElement {
 
   useEffect(() => {
     if (currentCrate !== null) {
-      const loadCrate = async (): Promise<void> => {
-        const dependencyGraphRes = await getDependencyGraph(currentCrate.name);
+      const loadCrateDependencies = async (): Promise<void> => {
+        const dependencyGraphRes = await getDependencyGraph(
+          currentCrate.name,
+          selectedFeatures
+        );
         if (dependencyGraphRes.success) {
           setCrates(dependencyGraphRes.result.crates);
           setDependencies(dependencyGraphRes.result.dependencies);
@@ -52,9 +58,9 @@ export default function Home(): ReactElement {
         }
       };
 
-      loadCrate();
+      loadCrateDependencies();
     }
-  }, [currentCrate]);
+  }, [currentCrate, selectedFeatures]);
 
   useEffect(
     () =>
@@ -86,12 +92,30 @@ export default function Home(): ReactElement {
     }
   }, [searchTerm]);
 
+  useEffect(() => {
+    if (currentCrate !== null) {
+      setIndeterminate(
+        selectedFeatures.length > 0 &&
+          selectedFeatures.length < Object.keys(currentCrate.features).length
+      );
+    }
+  }, [currentCrate, selectedFeatures]);
+
   const handleSearchSelect = (selectedCrateName: string): void => {
     setCurrentCrate(
       searchCrates.find(
         (searchCrate) => searchCrate.name === selectedCrateName
       )!
     );
+  };
+
+  const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
+    if (currentCrate !== null) {
+      setSelectedFeatures(
+        e.target.checked ? Object.keys(currentCrate.features) : []
+      );
+      setIndeterminate(false);
+    }
   };
 
   return (
@@ -121,8 +145,20 @@ export default function Home(): ReactElement {
               Object.keys(currentCrate.features).length > 0 && (
                 <Collapse>
                   <Panel header="Features" key="">
+                    <Checkbox
+                      indeterminate={indeterminate}
+                      onChange={handleAllFeatureToggle}
+                      checked={
+                        selectedFeatures.length ===
+                        Object.keys(currentCrate.features).length
+                      }
+                    >
+                      Toggle all features
+                    </Checkbox>
                     <CheckboxGroup
                       options={Object.keys(currentCrate.features)}
+                      value={selectedFeatures}
+                      onChange={setSelectedFeatures as any}
                     />
                   </Panel>
                 </Collapse>
