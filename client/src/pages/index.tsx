@@ -7,26 +7,29 @@ import {
   Input,
   notification,
   Layout,
+  List,
 } from "antd";
 import { getDependencyGraph, getRandomCrate, searchCrate } from "../utils/api";
 import { Crate, Dependency } from "../utils/types";
+import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
 import "../styles/antd.scss";
 import "../styles/vault.scss";
-import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
+const { Panel } = Collapse;
 const { Search } = Input;
 const { Content, Sider } = Layout;
 const CheckboxGroup = Checkbox.Group;
-const { Panel } = Collapse;
+const ListItem = List.Item;
+const ListItemMeta = List.Item.Meta;
 
 export default function Home(): ReactElement {
   const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
   const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
-  const [crates, setCrates] = useState<Crate[]>([]);
-  const [dependencies, setDependencies] = useState<Dependency[]>([]);
+  const [graphNodes, setGraphNodes] = useState<Crate[]>([]);
+  const [graphLinks, setGraphLinks] = useState<Dependency[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
   const [selectedFeatureNames, setSelectedFeatureNames] = useState<string[]>(
     []
@@ -60,8 +63,8 @@ export default function Home(): ReactElement {
           selectedFeatureNames
         );
         if (dependencyGraphRes.success) {
-          setCrates(dependencyGraphRes.result.crates);
-          setDependencies(dependencyGraphRes.result.dependencies);
+          setGraphNodes(dependencyGraphRes.result.crates);
+          setGraphLinks(dependencyGraphRes.result.dependencies);
         } else {
           setError(dependencyGraphRes.error);
         }
@@ -146,25 +149,58 @@ export default function Home(): ReactElement {
                 disabled={searchTerm.length === 0}
               />
             </AutoComplete>
-            {currentCrate !== null && featureNames.length > 0 && (
+            {currentCrate !== null && (
               <Collapse>
-                <Panel
-                  header={`Features (${selectedFeatureNames.length}/${featureNames.length} selected)`}
-                  key=""
-                >
-                  <Checkbox
-                    indeterminate={indeterminate}
-                    onChange={handleAllFeatureToggle}
-                    checked={
-                      selectedFeatureNames.length === featureNames.length
-                    }
+                {featureNames.length > 0 && (
+                  <Panel
+                    header={`Features (${selectedFeatureNames.length}/${featureNames.length} selected)`}
+                    key="features"
                   >
-                    Toggle all features
-                  </Checkbox>
-                  <CheckboxGroup
-                    options={featureNames}
-                    value={selectedFeatureNames}
-                    onChange={setSelectedFeatureNames as any}
+                    <Checkbox
+                      indeterminate={indeterminate}
+                      onChange={handleAllFeatureToggle}
+                      checked={
+                        selectedFeatureNames.length === featureNames.length
+                      }
+                    >
+                      Toggle all features
+                    </Checkbox>
+                    <CheckboxGroup
+                      options={featureNames}
+                      value={selectedFeatureNames}
+                      onChange={setSelectedFeatureNames as any}
+                    />
+                  </Panel>
+                )}
+                <Panel
+                  header={`Included crates (${graphNodes.length})`}
+                  key="crates"
+                >
+                  <List
+                    bordered
+                    dataSource={graphNodes}
+                    renderItem={(crate: Crate) => (
+                      <ListItem>
+                        <ListItemMeta
+                          title={crate.name}
+                          description={crate.description}
+                        />
+                      </ListItem>
+                    )}
+                  />
+                </Panel>
+                <Panel
+                  header={`Dependencies (${graphLinks.length})`}
+                  key="dependencies"
+                >
+                  <List
+                    bordered
+                    dataSource={graphLinks}
+                    renderItem={(dependency: Dependency) => (
+                      <ListItem>
+                        {dependency.from} depends on {dependency.to}
+                      </ListItem>
+                    )}
                   />
                 </Panel>
               </Collapse>
@@ -173,7 +209,7 @@ export default function Home(): ReactElement {
         </Sider>
         <Content className="content">
           <div className="dependency-graph">
-            <ForceGraphWrapper crates={crates} dependencies={dependencies} />
+            <ForceGraphWrapper crates={graphNodes} dependencies={graphLinks} />
           </div>
         </Content>
       </Layout>

@@ -52,6 +52,11 @@ canvas {
   flex-direction: column;
 }
 
+.ant-collapse-content {
+  max-height: 50vh;
+  overflow: scroll;
+}
+
 .content {
   overflow: hidden;
 }
