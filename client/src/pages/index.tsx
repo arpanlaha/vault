@@ -51,6 +51,7 @@ export default function Home(): ReactElement {
 
   useEffect(() => {
     if (currentCrate !== null) {
+      setSelectedFeatureNames([]);
       setFeatureNames(Object.keys(currentCrate.features));
     }
   }, [currentCrate]);
