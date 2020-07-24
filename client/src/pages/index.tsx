@@ -11,7 +11,7 @@ const { Search } = Input;
 const { Content, Sider } = Layout;
 
 export default function Home(): ReactElement {
-  const [currentCrate, setCurrentCrate] = useState("");
+  const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [crates, setCrates] = useState<Crate[]>([]);
@@ -22,7 +22,7 @@ export default function Home(): ReactElement {
     const loadRandomCrate = async (): Promise<void> => {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
-        setCurrentCrate(randomCrateRes.result.name);
+        setCurrentCrate(randomCrateRes.result);
       } else {
         setError(randomCrateRes.error);
       }
@@ -32,9 +32,9 @@ export default function Home(): ReactElement {
   }, []);
 
   useEffect(() => {
-    if (currentCrate.length > 0) {
+    if (currentCrate !== null) {
       const loadCrate = async (): Promise<void> => {
-        const dependencyGraphRes = await getDependencyGraph(currentCrate);
+        const dependencyGraphRes = await getDependencyGraph(currentCrate.name);
         if (dependencyGraphRes.success) {
           setCrates(dependencyGraphRes.result.crates);
           setDependencies(dependencyGraphRes.result.dependencies);
@@ -77,10 +77,12 @@ export default function Home(): ReactElement {
     }
   }, [searchTerm]);
 
-  const handleSearchButton = (): void => {
-    if (searchTerm.length > 0) {
-      setCurrentCrate(searchTerm);
-    }
+  const handleSearchSelect = (selectedCrateName: string): void => {
+    setCurrentCrate(
+      searchCrates.find(
+        (searchCrate) => searchCrate.name === selectedCrateName
+      )!
+    );
   };
 
   return (
@@ -90,20 +92,20 @@ export default function Home(): ReactElement {
         <Sider width="25%" theme="light">
           <div className="sider">
             <h1>Vault</h1>
-            <h2>Current crate: {currentCrate}</h2>
+            <h2>Current crate: {currentCrate?.name}</h2>
             <AutoComplete
               options={
                 searchCrates.map((searchCrate) => ({
                   value: searchCrate.name,
                 })) as any
               }
-              onSelect={setCurrentCrate}
+              onSelect={handleSearchSelect}
               onSearch={setSearchTerm}
             >
               <Search
                 placeholder="Search for a crate..."
-                enterButton
-                onClick={handleSearchButton}
+                onSearch={handleSearchSelect}
+                disabled={searchTerm.length === 0}
               />
             </AutoComplete>
           </div>
