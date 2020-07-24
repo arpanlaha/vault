@@ -22,12 +22,15 @@ const { Panel } = Collapse;
 
 export default function Home(): ReactElement {
   const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
+  const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [crates, setCrates] = useState<Crate[]>([]);
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [selectedFeatureNames, setSelectedFeatureNames] = useState<string[]>(
+    []
+  );
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -45,10 +48,16 @@ export default function Home(): ReactElement {
 
   useEffect(() => {
     if (currentCrate !== null) {
+      setFeatureNames(Object.keys(currentCrate.features));
+    }
+  }, [currentCrate]);
+
+  useEffect(() => {
+    if (currentCrate !== null) {
       const loadCrateDependencies = async (): Promise<void> => {
         const dependencyGraphRes = await getDependencyGraph(
           currentCrate.name,
-          selectedFeatures
+          selectedFeatureNames
         );
         if (dependencyGraphRes.success) {
           setCrates(dependencyGraphRes.result.crates);
@@ -60,7 +69,7 @@ export default function Home(): ReactElement {
 
       loadCrateDependencies();
     }
-  }, [currentCrate, selectedFeatures]);
+  }, [currentCrate, selectedFeatureNames]);
 
   useEffect(
     () =>
@@ -93,13 +102,11 @@ export default function Home(): ReactElement {
   }, [searchTerm]);
 
   useEffect(() => {
-    if (currentCrate !== null) {
-      setIndeterminate(
-        selectedFeatures.length > 0 &&
-          selectedFeatures.length < Object.keys(currentCrate.features).length
-      );
-    }
-  }, [currentCrate, selectedFeatures]);
+    setIndeterminate(
+      selectedFeatureNames.length > 0 &&
+        selectedFeatureNames.length < featureNames.length
+    );
+  }, [featureNames, selectedFeatureNames]);
 
   const handleSearchSelect = (selectedCrateName: string): void => {
     setCurrentCrate(
@@ -111,9 +118,7 @@ export default function Home(): ReactElement {
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
     if (currentCrate !== null) {
-      setSelectedFeatures(
-        e.target.checked ? Object.keys(currentCrate.features) : []
-      );
+      setSelectedFeatureNames(e.target.checked ? featureNames : []);
       setIndeterminate(false);
     }
   };
@@ -141,28 +146,29 @@ export default function Home(): ReactElement {
                 disabled={searchTerm.length === 0}
               />
             </AutoComplete>
-            {currentCrate !== null &&
-              Object.keys(currentCrate.features).length > 0 && (
-                <Collapse>
-                  <Panel header="Features" key="">
-                    <Checkbox
-                      indeterminate={indeterminate}
-                      onChange={handleAllFeatureToggle}
-                      checked={
-                        selectedFeatures.length ===
-                        Object.keys(currentCrate.features).length
-                      }
-                    >
-                      Toggle all features
-                    </Checkbox>
-                    <CheckboxGroup
-                      options={Object.keys(currentCrate.features)}
-                      value={selectedFeatures}
-                      onChange={setSelectedFeatures as any}
-                    />
-                  </Panel>
-                </Collapse>
-              )}
+            {currentCrate !== null && featureNames.length > 0 && (
+              <Collapse>
+                <Panel
+                  header={`Features (${selectedFeatureNames.length}/${featureNames.length} selected)`}
+                  key=""
+                >
+                  <Checkbox
+                    indeterminate={indeterminate}
+                    onChange={handleAllFeatureToggle}
+                    checked={
+                      selectedFeatureNames.length === featureNames.length
+                    }
+                  >
+                    Toggle all features
+                  </Checkbox>
+                  <CheckboxGroup
+                    options={featureNames}
+                    value={selectedFeatureNames}
+                    onChange={setSelectedFeatureNames as any}
+                  />
+                </Panel>
+              </Collapse>
+            )}
           </div>
         </Sider>
         <Content className="content">
