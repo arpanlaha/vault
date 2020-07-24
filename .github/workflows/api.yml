@@ -19,7 +19,7 @@ jobs:
         with:
           path: |
             $HOME/.cargo
-            wasm/target/release
+            api/target
           key: api-cache
 
       - name: Install rust toolchain
@@ -43,7 +43,7 @@ jobs:
         with:
           path: |
             $HOME/.cargo
-            wasm/target/release
+            api/target
           key: api-cache
 
       - name: Install rust toolchain
@@ -67,7 +67,7 @@ jobs:
         with:
           path: |
             $HOME/.cargo
-            wasm/target/release
+            api/target
           key: api-cache
 
       - name: Install rust toolchain
