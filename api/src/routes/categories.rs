@@ -1,7 +1,9 @@
-use super::{
-    super::ingest::schema::Category,
-    state::AppState,
-    util::{Random, Search},
+use super::super::{
+    ingest::schema::Category,
+    utils::{
+        state::AppState,
+        common::{Random, Search},
+    },
 };
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;

@@ -1,6 +1,6 @@
-use super::{
+use super::super::utils::{
+    common::{Random, Search},
     state::AppState,
-    util::{Random, Search},
 };
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 

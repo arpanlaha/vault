@@ -12,6 +12,15 @@ pub struct AppState {
     pub last_updated: Mutex<Instant>,
 }
 
+impl AppState {
+    pub async fn new() -> AppState {
+        AppState {
+            graph: RwLock::new(Graph::new().await),
+            last_updated: Mutex::new(Instant::now()),
+        }
+    }
+}
+
 pub struct Graph {
     categories: HashMap<String, Category>,
     crates: HashMap<String, Crate>,

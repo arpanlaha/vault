@@ -1,4 +1,4 @@
-use super::state::{AppState, Graph};
+use super::super::utils::state::{AppState, Graph};
 use actix_web::{web::Data, HttpResponse, Responder};
 
 const INTERVAL: u64 = 60 * (60 * 23 + 55);

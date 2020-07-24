@@ -1,6 +1,6 @@
-use super::{
+use super::super::utils::{
+    common::{self, Random, Search},
     state::AppState,
-    util::{self, Random, Search},
 };
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 
@@ -36,7 +36,7 @@ pub async fn get_dependency_graph(req: HttpRequest, data: Data<AppState>) -> imp
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),
 
-        Some(crate_id) => match util::get_query_params(req.query_string()) {
+        Some(crate_id) => match common::get_query_params(req.query_string()) {
             Err(_) => HttpResponse::BadRequest().json("Bad query string."),
 
             Ok(feature_map) => {
