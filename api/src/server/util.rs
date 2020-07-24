@@ -20,7 +20,7 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
             return Err(QueryParamError::InvalidQueryString);
         }
 
-        return Ok(query_param_strs
+        Ok(query_param_strs
             .map(|query_param_str| {
                 let mut query_param_split = query_param_str.split('=');
                 (
@@ -28,7 +28,7 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
                     String::from(query_param_split.next().unwrap()),
                 )
             })
-            .collect::<HashMap<String, String>>());
+            .collect::<HashMap<String, String>>())
     } else {
         if !query_str.contains('=') {
             return Err(QueryParamError::InvalidQueryString);
@@ -40,7 +40,7 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
             String::from(query_param_split.next().unwrap()),
         );
 
-        return Ok(query_param_map);
+        Ok(query_param_map)
     }
 }
 

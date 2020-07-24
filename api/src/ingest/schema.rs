@@ -304,8 +304,8 @@ mod custom_time {
     use chrono::{DateTime, NaiveDateTime};
     use serde::{self, Deserialize, Deserializer};
 
-    const FORMAT_1: &'static str = "%Y-%m-%d %H:%M:%S.%f";
-    const FORMAT_2: &'static str = "%Y-%m-%d %H:%M:%S";
+    const FORMAT_1: &str = "%Y-%m-%d %H:%M:%S.%f";
+    const FORMAT_2: &str = "%Y-%m-%d %H:%M:%S";
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
     where

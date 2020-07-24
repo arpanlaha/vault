@@ -134,17 +134,16 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
                     if !version.is_pre() && existing_version.is_pre() {
                         existing_version.num = version.num;
                         existing_version.id = version.id;
-                    } else if version.is_pre() == existing_version.is_pre() {
-                        if version_num.major > existing_version_num.major
+                    } else if version.is_pre() == existing_version.is_pre()
+                        && (version_num.major > existing_version_num.major
                             || (version_num.major == existing_version_num.major
                                 && version_num.minor > existing_version_num.minor)
                             || (version_num.major == existing_version_num.major
                                 && version_num.minor == existing_version_num.minor
-                                && version_num.patch > existing_version_num.patch)
-                        {
-                            existing_version.num = version.num;
-                            existing_version.id = version.id;
-                        }
+                                && version_num.patch > existing_version_num.patch))
+                    {
+                        existing_version.num = version.num;
+                        existing_version.id = version.id;
                     }
                 } else {
                     existing_version.num = version.num;
