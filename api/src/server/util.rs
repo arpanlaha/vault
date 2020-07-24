@@ -44,6 +44,18 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
     }
 }
 
+pub trait Random<T> {
+    fn random(&self) -> &T;
+}
+
+impl<T, U> Random<T> for HashMap<U, T> {
+    fn random(&self) -> &T {
+        self.values()
+            .nth(rand::thread_rng().gen_range(0, self.len()))
+            .unwrap()
+    }
+}
+
 pub trait Search<T: Vertex> {
     fn search<'a>(&'a self, search_term: &str) -> Vec<&'a T>;
 }
@@ -85,11 +97,4 @@ impl<T: Vertex> Search<T> for HashMap<String, T> {
 
         results.iter().map(|(_, vertex)| *vertex).collect()
     }
-}
-
-pub fn random<'a, T>(collection: &'a HashMap<String, T>) -> &'a T {
-    collection
-        .values()
-        .nth(rand::thread_rng().gen_range(0, collection.len()))
-        .unwrap()
 }

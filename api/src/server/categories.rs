@@ -1,7 +1,7 @@
 use super::{
     super::ingest::schema::Category,
     state::AppState,
-    util::{self, Search},
+    util::{Random, Search},
 };
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
@@ -46,7 +46,7 @@ pub async fn get_category(req: HttpRequest, data: Data<AppState>) -> impl Respon
 }
 
 pub async fn random(data: Data<AppState>) -> impl Responder {
-    HttpResponse::Ok().json(util::random(data.graph.read().await.categories()))
+    HttpResponse::Ok().json(data.graph.read().await.categories().random())
 }
 
 pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {

@@ -1,6 +1,6 @@
 use super::{
     state::AppState,
-    util::{self, Search},
+    util::{Random, Search},
 };
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
 
@@ -18,7 +18,7 @@ pub async fn get_keyword(req: HttpRequest, data: Data<AppState>) -> impl Respond
 }
 
 pub async fn random(data: Data<AppState>) -> impl Responder {
-    HttpResponse::Ok().json(util::random(data.graph.read().await.keywords()))
+    HttpResponse::Ok().json(data.graph.read().await.keywords().random())
 }
 
 pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
