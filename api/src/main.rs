@@ -37,6 +37,7 @@ async fn main() -> IoResult<()> {
             .wrap(Compress::default())
             .wrap(Logger::default())
             .wrap(Cors::default())
+            .app_data(app_state.clone())
             .route(
                 "graph/{crate_id}",
                 web::get().to(crates::get_dependency_graph),
@@ -51,20 +52,22 @@ async fn main() -> IoResult<()> {
                 "keywords/{keyword_id}",
                 web::get().to(keywords::get_keyword),
             )
-            .route("search/crates/{search_term}", web::get().to(crates::search))
-            .route(
-                "search/categories/{search_term}",
-                web::get().to(categories::search),
+            .service(
+                web::scope("random")
+                    .route("crates", web::get().to(crates::random))
+                    .route("categories", web::get().to(categories::random))
+                    .route("keywords", web::get().to(keywords::random)),
             )
-            .route(
-                "search/keywords/{search_term}",
-                web::get().to(keywords::search),
+            .service(
+                web::scope("search")
+                    .route("crates/{search_term}", web::get().to(crates::search))
+                    .route(
+                        "categories/{search_term}",
+                        web::get().to(categories::search),
+                    )
+                    .route("keywords/{search_term}", web::get().to(keywords::search)),
             )
-            .route("random/crates", web::get().to(crates::random))
-            .route("random/categories", web::get().to(categories::random))
-            .route("random/keywords", web::get().to(keywords::random))
             .route("reset", web::put().to(reset::reset_state))
-            .app_data(app_state.clone())
     })
     .bind_openssl("0.0.0.0:443", builder)?
     .run()
