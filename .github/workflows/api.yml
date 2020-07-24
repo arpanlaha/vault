@@ -1,0 +1,80 @@
+name: api
+
+on: push
+
+defaults:
+  run:
+    working-directory: api
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    name: Format
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            $HOME/.cargo
+            wasm/target/release
+          key: api-cache
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: stable
+
+      - name: Run rustfmt
+        run: cargo fmt -- --check
+
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            $HOME/.cargo
+            wasm/target/release
+          key: api-cache
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: stable
+
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            $HOME/.cargo
+            wasm/target/release
+          key: api-cache
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: stable
+
+      - name: Build API
+        run: cargo build
