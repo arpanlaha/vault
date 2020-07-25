@@ -324,7 +324,7 @@ fn load_crate_categories(
             .get_mut(crate_id)
             .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
             .categories
-            .insert(category_id.to_owned());
+            .push(category_id.to_owned());
 
         categories
             .get_mut(category_id)
@@ -378,7 +378,7 @@ fn load_crate_keywords(
             .get_mut(crate_id)
             .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
             .keywords
-            .insert(keyword_id.to_owned());
+            .push(keyword_id.to_owned());
 
         keywords
             .get_mut(keyword_id)

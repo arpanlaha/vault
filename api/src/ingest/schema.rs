@@ -35,7 +35,7 @@ pub struct Crate {
     ///
     /// This is not set on deserialization and instead must be populated later when processing crate-category relationships.
     #[serde(skip_deserializing, default)]
-    pub categories: HashSet<String>,
+    pub categories: Vec<String>,
 
     /// The time at which the most recent stable version (if available) of the crate was created.
     ///
@@ -70,7 +70,7 @@ pub struct Crate {
     ///
     /// This is not set on deserialization and instead must be populated later when processing crate-keyword relationships.
     #[serde(skip_deserializing, default)]
-    pub keywords: HashSet<String>,
+    pub keywords: Vec<String>,
 
     /// The SQL id of the crate.
     ///
