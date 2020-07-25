@@ -253,30 +253,30 @@ fn load_dependencies(
         let sql_dependency_crate_id = sql_dependency.crate_id;
 
         if let Some(from) = versions_to_crates.get(&version_id) {
-            count += 1;
+            if kind == 0 {
+                count += 1;
 
-            crates
-                .get_mut(from)
-                .unwrap_or_else(|| panic!("Crate with id {} not found", from))
-                .dependencies
-                .insert(Dependency {
-                    default_features: default_features == "t",
-                    features: String::from(&features[1..features.len() - 1])
-                        .split(',')
-                        .filter(|split| split.is_empty())
-                        .map(String::from)
-                        .collect(),
-
-                    from: from.to_owned(),
-                    kind,
-                    optional: optional == "t",
-                    to: crate_id_lookup
-                        .get(&sql_dependency_crate_id)
-                        .unwrap_or_else(|| {
-                            panic!("Crate with id {} not found", sql_dependency_crate_id)
-                        })
-                        .to_owned(),
-                });
+                crates
+                    .get_mut(from)
+                    .unwrap_or_else(|| panic!("Crate with id {} not found", from))
+                    .dependencies
+                    .insert(Dependency {
+                        default_features: default_features == "t",
+                        features: String::from(&features[1..features.len() - 1])
+                            .split(',')
+                            .filter(|split| split.is_empty())
+                            .map(String::from)
+                            .collect(),
+                        from: from.to_owned(),
+                        optional: optional == "t",
+                        to: crate_id_lookup
+                            .get(&sql_dependency_crate_id)
+                            .unwrap_or_else(|| {
+                                panic!("Crate with id {} not found", sql_dependency_crate_id)
+                            })
+                            .to_owned(),
+                    });
+            }
         }
     }
     println!(

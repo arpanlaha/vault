@@ -128,11 +128,6 @@ pub struct Dependency {
     /// The source crate of this dependency.
     pub from: String,
 
-    /// The kind of the dependency.
-    ///
-    /// 0: standard dependency, 1: dev dependency, 2: build dependency.
-    pub kind: usize,
-
     /// If the dependency is optional.
     #[serde(skip_serializing)]
     pub optional: bool,

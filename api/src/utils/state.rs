@@ -133,8 +133,7 @@ impl Graph {
         }
 
         for dependency in &crate_val.dependencies {
-            if dependency.kind == 0
-                && !dependencies.contains(dependency)
+            if !dependencies.contains(dependency)
                 && (!dependency.optional || crate_dependency_names.contains(&dependency.to))
             {
                 let mut transitive_features: Vec<String> = dependency.features.to_owned();

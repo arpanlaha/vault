@@ -11,7 +11,6 @@ export interface Crate {
 
 export interface Dependency {
   from: string;
-  // kind: 0 | 1 | 2;
   to: string;
 }
 
