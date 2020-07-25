@@ -3,6 +3,9 @@ authors = ["Arpan Laha <arpanlaha99@gmail.com>"]
 edition = "2018"
 name = "vault_api"
 version = "0.1.0"
+description = "Interactively visualize your crates.io dependencies."
+license = "MIT"
+repository = "https://github.com/arpanlaha/vault.git"
 
 [dependencies]
 actix-cors = "0.2"

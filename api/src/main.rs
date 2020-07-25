@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 use actix_cors::Cors;
 use actix_web::{
     middleware::{Compress, Logger},
