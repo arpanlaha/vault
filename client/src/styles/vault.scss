@@ -41,6 +41,14 @@ canvas {
   align-items: center;
 }
 
+.crate-picker {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 80%;
+}
+
 .ant-collapse {
   width: 80%;
   margin: 2vh 0;

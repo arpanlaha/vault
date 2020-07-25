@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react";
 import { Head, ForceGraphWrapper } from "../components";
 import {
   AutoComplete,
+  Button,
   Checkbox,
   Collapse,
   Input,
@@ -12,6 +13,8 @@ import {
 import { getDependencyGraph, getRandomCrate, searchCrate } from "../utils/api";
 import { Crate, Dependency } from "../utils/types";
 import { CheckboxChangeEvent } from "antd/lib/checkbox";
+
+import { RedoOutlined } from "@ant-design/icons";
 
 import "../styles/antd.scss";
 import "../styles/vault.scss";
@@ -36,7 +39,7 @@ export default function Home(): ReactElement {
   );
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const setRandomCrate = (): void => {
     const loadRandomCrate = async (): Promise<void> => {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
@@ -47,7 +50,9 @@ export default function Home(): ReactElement {
     };
 
     loadRandomCrate();
-  }, []);
+  };
+
+  useEffect(setRandomCrate, []);
 
   useEffect(() => {
     if (currentCrate !== null) {
@@ -135,21 +140,26 @@ export default function Home(): ReactElement {
           <div className="sider">
             <h1>Vault</h1>
             <h2>Current crate: {currentCrate?.name}</h2>
-            <AutoComplete
-              options={
-                searchCrates.map((searchCrate) => ({
-                  value: searchCrate.name,
-                })) as any
-              }
-              onSelect={handleSearchSelect}
-              onSearch={setSearchTerm}
-            >
-              <Search
-                placeholder="Search for a crate..."
-                onSearch={handleSearchSelect}
-                disabled={searchTerm.length === 0}
-              />
-            </AutoComplete>
+            <div className="crate-picker">
+              <AutoComplete
+                options={
+                  searchCrates.map((searchCrate) => ({
+                    value: searchCrate.name,
+                  })) as any
+                }
+                onSelect={handleSearchSelect}
+                onSearch={setSearchTerm}
+              >
+                <Search
+                  placeholder="Search for a crate..."
+                  onSearch={handleSearchSelect}
+                  disabled={searchTerm.length === 0}
+                />
+              </AutoComplete>
+              <Button onClick={setRandomCrate} icon={<RedoOutlined />}>
+                Random
+              </Button>
+            </div>
             {currentCrate !== null && (
               <Collapse accordion>
                 {featureNames.length > 0 && (
