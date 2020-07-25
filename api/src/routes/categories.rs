@@ -17,7 +17,7 @@ struct CategoryResponse<'a> {
 pub async fn get_categories(data: Data<AppState>) -> impl Responder {
     let graph = data.graph.read().await;
     let mut categories = graph.categories().values().collect::<Vec<&Category>>();
-    categories.sort_by(|a, b| a.category.partial_cmp(&b.category).unwrap());
+    categories.sort_unstable_by_key(|category| category.category.as_str());
 
     HttpResponse::Ok().json(categories)
 }
