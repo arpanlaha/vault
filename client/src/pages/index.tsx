@@ -44,6 +44,7 @@ export default function Home(): ReactElement {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
         setCurrentCrate(randomCrateRes.result);
+        setSearchTerm(randomCrateRes.result.name);
       } else {
         setError(randomCrateRes.error);
       }
@@ -117,7 +118,13 @@ export default function Home(): ReactElement {
     );
   }, [featureNames, selectedFeatureNames]);
 
+  const handleRandomButton = (): void => {
+    setRandomCrate();
+    setSearchTerm("");
+  };
+
   const handleSearchSelect = (selectedCrateName: string): void => {
+    setSearchTerm(selectedCrateName);
     setCurrentCrate(
       searchCrates.find(
         (searchCrate) => searchCrate.name === selectedCrateName
@@ -149,14 +156,16 @@ export default function Home(): ReactElement {
                 }
                 onSelect={handleSearchSelect}
                 onSearch={setSearchTerm}
+                value={searchTerm}
               >
                 <Search
                   placeholder="Search for a crate..."
                   onSearch={handleSearchSelect}
                   disabled={searchTerm.length === 0}
+                  allowClear
                 />
               </AutoComplete>
-              <Button onClick={setRandomCrate} icon={<RedoOutlined />}>
+              <Button onClick={handleRandomButton} icon={<RedoOutlined />}>
                 Random
               </Button>
             </div>
