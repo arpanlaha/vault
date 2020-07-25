@@ -151,7 +151,7 @@ export default function Home(): ReactElement {
               />
             </AutoComplete>
             {currentCrate !== null && (
-              <Collapse>
+              <Collapse accordion>
                 {featureNames.length > 0 && (
                   <Panel
                     header={`Features (${selectedFeatureNames.length}/${featureNames.length} selected)`}
@@ -183,7 +183,16 @@ export default function Home(): ReactElement {
                     renderItem={(crate: Crate) => (
                       <ListItem>
                         <ListItemMeta
-                          title={crate.name}
+                          title={
+                            <a
+                              href={`https://crates.io/crates/${crate.name}`}
+                              key="crates.io-link"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {crate.name}
+                            </a>
+                          }
                           description={crate.description}
                         />
                       </ListItem>
