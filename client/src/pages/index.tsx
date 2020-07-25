@@ -164,8 +164,9 @@ export default function Home(): ReactElement {
               <Collapse accordion>
                 {featureNames.length > 0 && (
                   <Panel
-                    header={`Features (${selectedFeatureNames.length}/${featureNames.length} selected)`}
+                    header="Features"
                     key="features"
+                    extra={`${selectedFeatureNames.length}/${featureNames.length}`}
                   >
                     <Checkbox
                       indeterminate={indeterminate}
@@ -184,8 +185,9 @@ export default function Home(): ReactElement {
                   </Panel>
                 )}
                 <Panel
-                  header={`Included crates (${graphNodes.length})`}
+                  header="Included crates"
                   key="crates"
+                  extra={graphNodes.length}
                 >
                   <List
                     bordered
@@ -210,8 +212,9 @@ export default function Home(): ReactElement {
                   />
                 </Panel>
                 <Panel
-                  header={`Dependencies (${graphLinks.length})`}
+                  header="Dependencies"
                   key="dependencies"
+                  extra={graphLinks.length}
                 >
                   <List
                     bordered
