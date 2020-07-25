@@ -1,8 +1,8 @@
 use super::super::{
     ingest::schema::Category,
     utils::{
-        state::AppState,
         common::{Random, Search},
+        state::AppState,
     },
 };
 use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
