@@ -260,7 +260,7 @@ fn load_dependencies(
                     .get_mut(from)
                     .unwrap_or_else(|| panic!("Crate with id {} not found", from))
                     .dependencies
-                    .insert(Dependency {
+                    .push(Dependency {
                         default_features: default_features == "t",
                         features: String::from(&features[1..features.len() - 1])
                             .split(',')

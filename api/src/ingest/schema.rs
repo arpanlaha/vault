@@ -49,7 +49,7 @@ pub struct Crate {
     ///
     /// This is not set on deserialization and instead must be populated later when processing dependencies.
     #[serde(skip_deserializing, default, skip_serializing)]
-    pub dependencies: HashSet<Dependency>,
+    pub dependencies: Vec<Dependency>,
 
     /// The description of the crate.
     pub description: String,
