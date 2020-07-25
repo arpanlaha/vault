@@ -131,7 +131,7 @@ export default function Home(): ReactElement {
     <>
       <Head />
       <Layout>
-        <Sider width="25%" theme="light">
+        <Sider width="30%" theme="light">
           <div className="sider">
             <h1>Vault</h1>
             <h2>Current crate: {currentCrate?.name}</h2>

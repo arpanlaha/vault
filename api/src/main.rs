@@ -53,7 +53,7 @@ async fn main() -> IoResult<()> {
                     .route("keywords/{search_term}", web::get().to(keywords::search)),
             )
             .route("reset", web::put().to(reset::reset_state))
-            .default_service(web::route().to(|| HttpResponse::NotFound().json("Route not found")))
+            .default_service(web::route().to(|| HttpResponse::NotFound().json("Route not found.")))
     })
     .bind_openssl("0.0.0.0:443", ssl::get_ssl_builder())?
     .run()
