@@ -1,5 +1,5 @@
 use super::super::ingest::{
-    load as vault_load,
+    fs as vault_fs, load as vault_load,
     schema::{Category, Crate, Dependency, Keyword},
 };
 use serde::Serialize;
@@ -35,14 +35,14 @@ pub struct DependencyGraph<'a> {
 
 impl Graph {
     pub async fn new() -> Graph {
-        // let temp_dir = vault_fs::fetch_data();
+        let temp_dir = vault_fs::fetch_data();
 
-        // let data_path = vault_fs::get_data_path(&temp_dir).unwrap();
+        let data_path = vault_fs::get_data_path(&temp_dir).unwrap();
 
-        let data_path = String::from("/datadrive/vault/dump/data");
+        // let data_path = String::from("/datadrive/vault/dump/data");
 
         let (categories, crates, keywords) = vault_load::load_database(data_path.as_str()).await;
-        // vault_fs::clean_tempdir(temp_dir);
+        vault_fs::clean_tempdir(temp_dir);
 
         Graph {
             categories,

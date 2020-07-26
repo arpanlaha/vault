@@ -1,9 +1,6 @@
-use curl::easy::Easy;
-use flate2::read::GzDecoder;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
+use std::process::Command;
 use std::time::Instant;
-use tar::Archive;
 use tempfile::TempDir;
 
 pub fn get_data_path(temp_dir: &TempDir) -> Option<String> {
@@ -35,36 +32,51 @@ pub fn fetch_data() -> TempDir {
         .as_path()
         .to_str()
         .expect("Tarball path not valid UTF-8");
-    let mut tgz_file = File::create(tgz_path.as_path())
-        .unwrap_or_else(|_| panic!("Unable to create {}", tgz_path_name));
 
     println!("Downloading tarballed database dump...");
     let download_start = Instant::now();
-    let mut curl = Easy::new();
-    curl.url("https://static.crates.io/db-dump.tar.gz").unwrap();
-    curl.write_function(move |data| Ok(tgz_file.write(data).unwrap()))
-        .unwrap();
-    curl.perform().unwrap();
+    Command::new("curl")
+        .arg("https://static.crates.io/db-dump.tar.gz")
+        .arg("-o")
+        .arg(tgz_path_name)
+        .output()
+        .expect("Unable to fetch Crates database dump");
     println!(
-        "Tarballed database dump downloaded in {} seconds.",
+        "Downloaded tarballed database dump in {} seconds.",
         download_start.elapsed().as_secs_f64()
     );
 
-    println!("Unzipping tarballed database dump...");
-    let unzip_start = Instant::now();
-    let tar = GzDecoder::new(
-        File::open(tgz_path_name).unwrap_or_else(|_| panic!("Unable to open {}", tgz_path_name)),
-    );
-    println!(
-        "Unzipped tarballed database dump into TAR archive in {} seconds.",
-        unzip_start.elapsed().as_secs_f64()
-    );
-
-    println!("Unpacking database dump TAR archive...");
+    println!("Unpacking tarballed database dump...");
     let unpack_start = Instant::now();
-    Archive::new(tar)
-        .unpack(temp_dir.path())
-        .expect("Unable to unpack database dump TAR archive");
+
+    Command::new("tar")
+        .arg("-xzf")
+        .arg(&tgz_path)
+        .arg("--exclude")
+        .arg("*/badges.csv")
+        .arg("--exclude")
+        .arg("*/crate_owners.csv")
+        .arg("--exclude")
+        .arg("*/metadata.csv")
+        .arg("--exclude")
+        .arg("*/reserved_crate_names.csv")
+        .arg("--exclude")
+        .arg("*/teams.csv")
+        .arg("--exclude")
+        .arg("*/users.csv")
+        .arg("--exclude")
+        .arg("*/version_*.csv")
+        .arg("--exclude")
+        .arg("*.sql")
+        .arg("--exclude")
+        .arg("*.json")
+        .arg("--exclude")
+        .arg("*.md")
+        .arg("-C")
+        .arg(temp_dir.path().to_str().unwrap())
+        .output()
+        .expect("Unable to fetch Crates database dump");
+
     println!(
         "Unpacked database dump TAR archive in {} seconds.",
         unpack_start.elapsed().as_secs_f64()
