@@ -174,7 +174,7 @@ pub struct Version {
     pub downloads: usize,
 
     /// The features the version exposes.
-    pub features: String,
+    pub features: HashMap<String, Vec<String>>,
 
     /// The id of the version.
     pub id: usize,
