@@ -2,6 +2,7 @@ use super::super::ingest::{
     fs as vault_fs, load as vault_load,
     schema::{Category, Crate, Dependency, Keyword},
 };
+use chrono::NaiveDateTime;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
@@ -28,8 +29,70 @@ pub struct Graph {
 }
 
 #[derive(Serialize)]
+pub struct CrateDistance<'a> {
+    /// A list of categories the crate belongs to.
+    pub categories: &'a Vec<String>,
+
+    /// The time at which the most recent stable version (if available) of the crate was created.
+    pub created_at: &'a NaiveDateTime,
+
+    /// The description of the crate.
+    pub description: &'a String,
+
+    pub distance: usize,
+
+    /// The number of downloads of the crate.
+    pub downloads: &'a usize,
+
+    /// The features exposed by the crate.
+    pub features: &'a HashMap<String, Vec<String>>,
+
+    /// The keywords belonging to the crate.
+    pub keywords: &'a Vec<String>,
+
+    /// The name of the crate.
+    pub name: &'a String,
+
+    /// The most recent stable version (if available) of the crate.
+    pub version: &'a String,
+}
+
+impl<'a> CrateDistance<'a> {
+    pub fn new(
+        crate_distance_tuple: &(&&String, &usize),
+        crates: &'a HashMap<String, Crate>,
+    ) -> CrateDistance<'a> {
+        let (crate_id, crate_distance) = *crate_distance_tuple;
+        let crate_val = crates.get(crate_id.as_str()).unwrap();
+        let Crate {
+            categories,
+            created_at,
+            description,
+            downloads,
+            features,
+            keywords,
+            name,
+            version,
+            ..
+        } = &crate_val;
+
+        CrateDistance {
+            categories,
+            created_at,
+            description,
+            distance: *crate_distance,
+            downloads,
+            features,
+            keywords,
+            name,
+            version,
+        }
+    }
+}
+
+#[derive(Serialize)]
 pub struct DependencyGraph<'a> {
-    crates: Vec<&'a Crate>,
+    crates: Vec<CrateDistance<'a>>,
     dependencies: Vec<&'a Dependency>,
 }
 
@@ -90,27 +153,45 @@ impl Graph {
             return None;
         }
 
-        let mut crates: HashSet<&String> = HashSet::new();
+        // TODO: BFS
+
+        let mut crates: HashMap<&String, usize> = HashMap::new();
         let mut dependencies: HashSet<&Dependency> = HashSet::new();
-        crates.insert(&self.crates.get(crate_id).unwrap().name);
-        self.transitive_dependency_ids(crate_id, &mut crates, &mut dependencies, &features, true);
+        crates.insert(&self.crates.get(crate_id).unwrap().name, 0);
+        self.transitive_dependency_ids(
+            crate_id,
+            &mut crates,
+            &mut dependencies,
+            &features,
+            true,
+            1,
+        );
+
+        let mut crates_distance_vec: Vec<(&&String, &usize)> = crates.iter().collect();
+        crates_distance_vec.sort_unstable_by_key(|(name, _)| name.as_str());
+        crates_distance_vec.sort_by_key(|(_, distance)| *distance);
+
+        let mut dependency_vec: Vec<&Dependency> = dependencies.iter().copied().collect();
+        dependency_vec.sort_unstable_by_key(|dependency| dependency.from.as_str());
+        dependency_vec.sort_by_key(|dependency| *crates.get(&dependency.from).unwrap());
 
         Some(DependencyGraph {
-            crates: crates
+            crates: crates_distance_vec
                 .iter()
-                .map(|crate_id| self.crates.get(crate_id.as_str()).unwrap())
+                .map(|crate_distance_tuple| CrateDistance::new(crate_distance_tuple, &self.crates))
                 .collect(),
-            dependencies: dependencies.iter().copied().collect(),
+            dependencies: dependency_vec,
         })
     }
 
     fn transitive_dependency_ids<'a>(
         &'a self,
         crate_id: &str,
-        crates: &mut HashSet<&'a String>,
+        crates: &mut HashMap<&'a String, usize>,
         dependencies: &mut HashSet<&'a Dependency>,
         features: &[String],
         default_features: bool,
+        distance: usize,
     ) {
         let crate_val = &self.crates.get(crate_id).unwrap();
 
@@ -156,7 +237,14 @@ impl Graph {
                 }
 
                 dependencies.insert(dependency);
-                crates.insert(&dependency.to);
+                crates
+                    .entry(&dependency.to)
+                    .and_modify(|dependency_distance| {
+                        if distance < *dependency_distance {
+                            *dependency_distance = distance;
+                        }
+                    })
+                    .or_insert(distance);
 
                 self.transitive_dependency_ids(
                     dependency.to.as_str(),
@@ -164,6 +252,7 @@ impl Graph {
                     dependencies,
                     &transitive_features,
                     dependency.default_features,
+                    distance + 1,
                 );
             }
         }
