@@ -56,6 +56,7 @@ pub async fn load_database(
         &crate_id_lookup,
         &keyword_id_lookup,
     );
+    alphabetize_crate_contents(&mut crates);
 
     println!(
         "Finished loading registry graph in {} seconds.",
@@ -390,6 +391,24 @@ fn load_crate_keywords(
     println!(
         "Loaded {} crate keywords in {} seconds.",
         count,
+        start.elapsed().as_secs_f64()
+    );
+}
+
+fn alphabetize_crate_contents(crates: &mut HashMap<String, Crate>) {
+    println!("Alphabetizing crate contents...");
+    let start = Instant::now();
+
+    for crate_val in crates.values_mut() {
+        crate_val.categories.sort_unstable();
+        crate_val.keywords.sort_unstable();
+        crate_val
+            .dependencies
+            .sort_unstable_by_key(|dependency| dependency.to.to_owned());
+    }
+
+    println!(
+        "Alphabetized crate contents in {} seconds.",
         start.elapsed().as_secs_f64()
     );
 }
