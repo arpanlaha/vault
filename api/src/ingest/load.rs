@@ -15,10 +15,19 @@ use std::path::Path;
 use std::time::Instant;
 use tokio::join;
 
+/// Returns the path of the file containing rows for the specified collection.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
+/// * `collection_name` - the name of the collection.
 fn get_collection_path(data_path: &str, collection_name: &str) -> String {
     format!("{}/{}.csv", data_path, collection_name)
 }
 
+/// Returns a tuple containing the categories, crates, and keywords loaded from a crates.io database dump.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
 pub async fn load_database(
     data_path: &str,
 ) -> (
@@ -42,6 +51,7 @@ pub async fn load_database(
     let versions_to_crates = create_versioned_crates(data_path, &mut crates, &crate_id_lookup);
 
     load_dependencies(data_path, &mut crates, versions_to_crates, &crate_id_lookup);
+
     load_crate_categories(
         data_path,
         &mut crates,
@@ -49,6 +59,7 @@ pub async fn load_database(
         &crate_id_lookup,
         &category_id_lookup,
     );
+
     load_crate_keywords(
         data_path,
         &mut crates,
@@ -56,6 +67,7 @@ pub async fn load_database(
         &crate_id_lookup,
         &keyword_id_lookup,
     );
+
     alphabetize_crate_contents(&mut crates);
 
     println!(
@@ -66,6 +78,13 @@ pub async fn load_database(
     (categories, crates, keywords)
 }
 
+/// Loads vertices (categories, crates, keywords) from a CSV file in the database dump.
+///
+/// Returns a tuple containing a map from names to vertices and a map from SQL ids to names.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
+/// * `collection_name` - the name of the vertex collection.
 async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
@@ -76,7 +95,10 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
 
     let file_path = get_collection_path(data_path, collection_name);
 
+    // map names to objects
     let mut collection = HashMap::<String, T>::new();
+
+    // map SQL ids to names
     let mut id_lookup = HashMap::<usize, String>::new();
 
     for result in Reader::from_reader(BufReader::new(
@@ -86,6 +108,7 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     .deserialize()
     {
         count += 1;
+
         let record: T = result.unwrap_or_else(|_| {
             panic!(
                 "Unable to deserialize entry {} as {}",
@@ -93,6 +116,7 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
                 any::type_name::<T>()
             )
         });
+
         id_lookup.insert(record.sql_id(), String::from(record.id()));
         collection.insert(String::from(record.id()), record);
     }
@@ -107,6 +131,13 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     (collection, id_lookup)
 }
 
+/// Returns a map of SQL ids to versions.
+///
+/// Only the most recent stable version of each crate is kept, if a crate has a stable version.
+/// If the crate does not have a stable version, then the most recent version is used.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
 fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     println!("Loading versions...");
     let start = Instant::now();
@@ -134,17 +165,20 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
         versions
             .entry(crate_id)
             .and_modify(|existing_version| {
+                // if the crate has a version already
                 existing_version.downloads += downloads;
 
                 if let Ok(version_num) = semver_version::parse(num.as_str()) {
                     if let Ok(existing_version_num) =
                         semver_version::parse(existing_version.num.as_str())
                     {
+                        // if both versions are SemVer adherent
+
                         let version_is_pre = version.is_pre();
                         let existing_version_is_pre = existing_version.is_pre();
 
-                        if !version_is_pre && existing_version_is_pre
-                            || (version_is_pre == existing_version_is_pre
+                        if !version_is_pre && existing_version_is_pre // if is stable and existing one isn't
+                            || (version_is_pre == existing_version_is_pre // otherwise if the two are the same and the current one is a newer release
                                 && (version_num.major > existing_version_num.major
                                     || (version_num.major == existing_version_num.major
                                         && version_num.minor > existing_version_num.minor)
@@ -156,12 +190,14 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
                             existing_version.id = id;
                         }
                     } else {
+                        // if existing version is not SemVer adherent but current one is
                         existing_version.num = num;
                         existing_version.id = id;
                     }
                 } else if semver_version::parse(existing_version.num.as_str()).is_err()
                     && created_at.cmp(&existing_version.created_at) == Ordering::Greater
                 {
+                    // if both are not SemVer adherent and current was created more recent
                     existing_version.num = num;
                     existing_version.id = id;
                 }
@@ -178,6 +214,12 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     versions
 }
 
+/// Assign versions to crates, returning a map of version ids to crate names.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
+/// * `crates` - a map of crate names to values.
+/// * `crate_id_lookup` - a map of crate SQL ids to names.
 fn create_versioned_crates(
     data_path: &str,
     crates: &mut HashMap<String, Crate>,
@@ -222,6 +264,13 @@ fn create_versioned_crates(
     version_to_crates
 }
 
+/// Loads dependencies from a crates.io database dump.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
+/// * `crates` - a map of crate names to values.
+/// * `versions_to_crates` - a map of version ids to crate names.
+/// * `crate_id_lookup` - a map of crate SQL ids to names.
 fn load_dependencies(
     data_path: &str,
     crates: &mut HashMap<String, Crate>,
@@ -262,7 +311,7 @@ fn load_dependencies(
                     .dependencies
                     .push(Dependency {
                         default_features: default_features == "t",
-                        features: String::from(&features[1..features.len() - 1])
+                        features: String::from(&features[1..features.len() - 1]) // convert brace array to array ({a, b, c} => [a, b, c])
                             .split(',')
                             .filter(|split| split.is_empty())
                             .map(String::from)
@@ -286,6 +335,14 @@ fn load_dependencies(
     );
 }
 
+/// Loads crate-category relationships from a crates.io database dump.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
+/// * `crates` - a map of crate names to values.
+/// * `categories` - a map of category names to values.
+/// * `crate_id_lookup` - a map of crate SQL ids to names.
+/// * `category_id_lookup` - a map of category SQL ids to names.
 fn load_crate_categories(
     data_path: &str,
     crates: &mut HashMap<String, Crate>,
@@ -340,6 +397,14 @@ fn load_crate_categories(
     );
 }
 
+/// Loads crate-keywords relationships from a crates.io database dump.
+///
+/// # Arguments
+/// * `data_path` - the path to the `data` directory inside the database dump.
+/// * `crates` - a map of crate names to values.
+/// * `keywords` - a map of keyword names to values.
+/// * `crate_id_lookup` - a map of crate SQL ids to names.
+/// * `keyword_id_lookup` - a map of keyword SQL ids to names.
 fn load_crate_keywords(
     data_path: &str,
     crates: &mut HashMap<String, Crate>,
@@ -394,6 +459,10 @@ fn load_crate_keywords(
     );
 }
 
+/// Alphabetize crate category, dependency, and keyword lists.
+///
+/// # Arguments
+/// * `crates` - a map of crate names to values.
 fn alphabetize_crate_contents(crates: &mut HashMap<String, Crate>) {
     println!("Alphabetizing crate contents...");
     let start = Instant::now();
