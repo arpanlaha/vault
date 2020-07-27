@@ -45,6 +45,7 @@ export default function Home(): ReactElement {
       if (randomCrateRes.success) {
         setCurrentCrate(randomCrateRes.result);
         setSearchTerm(randomCrateRes.result.name);
+        setError("");
       } else {
         setError(randomCrateRes.error);
       }
@@ -72,6 +73,7 @@ export default function Home(): ReactElement {
         if (dependencyGraphRes.success) {
           setGraphNodes(dependencyGraphRes.result.crates);
           setGraphLinks(dependencyGraphRes.result.dependencies);
+          setError("");
         } else {
           setError(dependencyGraphRes.error);
         }
@@ -100,6 +102,7 @@ export default function Home(): ReactElement {
         const searchCrateRes = await searchCrate(searchTerm);
         if (searchCrateRes.success) {
           setSearchCrates(searchCrateRes.result);
+          setError("");
         } else {
           setError(searchCrateRes.error);
         }

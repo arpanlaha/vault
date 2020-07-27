@@ -1,4 +1,3 @@
 
 Check when features expose other features
 Profile search performance
-Close error on success
