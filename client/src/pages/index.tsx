@@ -26,17 +26,19 @@ const CheckboxGroup = Checkbox.Group;
 const ListItem = List.Item;
 const ListItemMeta = List.Item.Meta;
 
+interface CrateInfo {
+  crate: Crate;
+  selectedFeatures: string[];
+}
+
 export default function Home(): ReactElement {
-  const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
+  const [currentCrate, setCurrentCrate] = useState<CrateInfo | null>(null);
   const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [graphNodes, setGraphNodes] = useState<CrateDistance[]>([]);
   const [graphLinks, setGraphLinks] = useState<Dependency[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
-  const [selectedFeatureNames, setSelectedFeatureNames] = useState<string[]>(
-    []
-  );
   const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -44,7 +46,7 @@ export default function Home(): ReactElement {
     const loadRandomCrate = async (): Promise<void> => {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
-        setCurrentCrate(randomCrateRes.result);
+        setCurrentCrate({ crate: randomCrateRes.result, selectedFeatures: [] });
         setSearchTerm(randomCrateRes.result.name);
         setError("");
       } else {
@@ -59,8 +61,7 @@ export default function Home(): ReactElement {
 
   useEffect(() => {
     if (currentCrate !== null) {
-      setSelectedFeatureNames([]);
-      setFeatureNames(Object.keys(currentCrate.features));
+      setFeatureNames(Object.keys(currentCrate.crate.features));
     }
   }, [currentCrate]);
 
@@ -68,8 +69,8 @@ export default function Home(): ReactElement {
     if (currentCrate !== null) {
       const loadCrateDependencies = async (): Promise<void> => {
         const dependencyGraphRes = await getDependencyGraph(
-          currentCrate.name,
-          selectedFeatureNames
+          currentCrate.crate.name,
+          currentCrate.selectedFeatures
         );
         if (dependencyGraphRes.success) {
           setGraphNodes(dependencyGraphRes.result.crates);
@@ -82,7 +83,7 @@ export default function Home(): ReactElement {
 
       loadCrateDependencies();
     }
-  }, [currentCrate, selectedFeatureNames]);
+  }, [currentCrate]);
 
   useEffect(
     () =>
@@ -98,47 +99,51 @@ export default function Home(): ReactElement {
   );
 
   useEffect(() => {
-    if (searchTerm.length > 0) {
-      const loadSearch = async (): Promise<void> => {
-        const searchCrateRes = await searchCrate(searchTerm);
-        if (searchCrateRes.success) {
-          setSearchCrates(searchCrateRes.result);
-        } else {
-          setError(searchCrateRes.error);
-        }
-      };
+    if (currentCrate !== null) {
+      setIndeterminate(
+        currentCrate.selectedFeatures.length > 0 &&
+          currentCrate.selectedFeatures.length < featureNames.length
+      );
+    }
+  }, [featureNames, currentCrate]);
 
-      loadSearch();
+  const handleSearch = async (searchInput: string): Promise<void> => {
+    if (searchInput.length > 0) {
+      const searchCrateRes = await searchCrate(searchInput);
+      if (searchCrateRes.success) {
+        setSearchCrates(searchCrateRes.result);
+      } else {
+        setError(searchCrateRes.error);
+      }
     } else {
       setSearchCrates([]);
     }
-  }, [searchTerm]);
-
-  useEffect(() => {
-    setIndeterminate(
-      selectedFeatureNames.length > 0 &&
-        selectedFeatureNames.length < featureNames.length
-    );
-  }, [featureNames, selectedFeatureNames]);
-
-  const handleRandomButton = (): void => {
-    setRandomCrate();
-    setSearchTerm("");
+    setSearchTerm(searchInput);
   };
 
   const handleSearchSelect = (selectedCrateName: string): void => {
     setSearchTerm(selectedCrateName);
-    setCurrentCrate(
-      searchCrates.find(
+    setCurrentCrate({
+      crate: searchCrates.find(
         (searchCrate) => searchCrate.name === selectedCrateName
-      )!
-    );
+      )!,
+      selectedFeatures: [],
+    });
   };
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
     if (currentCrate !== null) {
-      setSelectedFeatureNames(e.target.checked ? featureNames : []);
+      setCurrentCrate({
+        ...currentCrate,
+        selectedFeatures: e.target.checked ? featureNames : [],
+      });
       setIndeterminate(false);
+    }
+  };
+
+  const handleCheckboxGroup = (checked: string[]): void => {
+    if (currentCrate !== null) {
+      setCurrentCrate({ ...currentCrate, selectedFeatures: checked });
     }
   };
 
@@ -152,7 +157,7 @@ export default function Home(): ReactElement {
         <Sider width="30%" theme="light">
           <div className="sider">
             <h1>Vault</h1>
-            <h2>Current crate: {currentCrate?.name}</h2>
+            <h2>Current crate: {currentCrate?.crate.name}</h2>
             <div className="crate-picker">
               <AutoComplete
                 options={
@@ -161,7 +166,7 @@ export default function Home(): ReactElement {
                   })) as any
                 }
                 onSelect={handleSearchSelect}
-                onSearch={setSearchTerm}
+                onSearch={handleSearch}
                 value={searchTerm}
               >
                 <Search
@@ -171,7 +176,7 @@ export default function Home(): ReactElement {
                   allowClear
                 />
               </AutoComplete>
-              <Button onClick={handleRandomButton} icon={<RedoOutlined />}>
+              <Button onClick={setRandomCrate} icon={<RedoOutlined />}>
                 Random
               </Button>
             </div>
@@ -181,21 +186,22 @@ export default function Home(): ReactElement {
                   <Panel
                     header="Features"
                     key="features"
-                    extra={`${selectedFeatureNames.length}/${featureNames.length}`}
+                    extra={`${currentCrate.selectedFeatures.length}/${featureNames.length}`}
                   >
                     <Checkbox
                       indeterminate={indeterminate}
                       onChange={handleAllFeatureToggle}
                       checked={
-                        selectedFeatureNames.length === featureNames.length
+                        currentCrate.selectedFeatures.length ===
+                        featureNames.length
                       }
                     >
                       Toggle all features
                     </Checkbox>
                     <CheckboxGroup
                       options={featureNames}
-                      value={selectedFeatureNames}
-                      onChange={setSelectedFeatureNames as any}
+                      value={currentCrate.selectedFeatures}
+                      onChange={handleCheckboxGroup as any}
                     />
                   </Panel>
                 )}
