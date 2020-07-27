@@ -102,7 +102,6 @@ export default function Home(): ReactElement {
         const searchCrateRes = await searchCrate(searchTerm);
         if (searchCrateRes.success) {
           setSearchCrates(searchCrateRes.result);
-          setError("");
         } else {
           setError(searchCrateRes.error);
         }
