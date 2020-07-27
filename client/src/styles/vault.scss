@@ -69,6 +69,19 @@ canvas {
   overflow: hidden;
 }
 
+.crate-list-button {
+  cursor: pointer;
+  padding: 0 24px;
+  margin: 0;
+  background-color: #fff;
+  height: auto;
+  white-space: normal;
+}
+
+.ant-list-item-meta-description {
+  text-align: left;
+}
+
 .row {
   display: flex;
   flex-direction: row;

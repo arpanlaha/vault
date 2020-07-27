@@ -205,27 +205,32 @@ export default function Home(): ReactElement {
                   extra={graphNodes.length}
                 >
                   <List
-                    bordered
                     dataSource={graphNodes}
                     renderItem={(crate: CrateDistance) => (
-                      <ListItem onClick={() => handleListClick(crate)}>
-                        <ListItemMeta
-                          title={
-                            <div className="row">
-                              <a
-                                href={`https://crates.io/crates/${crate.name}`}
-                                key="crates.io-link"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {crate.name}
-                              </a>
-                              <div>Depth: {crate.distance}</div>
-                            </div>
-                          }
-                          description={crate.description}
-                        />
-                      </ListItem>
+                      <Button
+                        className="crate-list-button"
+                        onClick={() => handleListClick(crate)}
+                        block
+                      >
+                        <ListItem>
+                          <ListItemMeta
+                            title={
+                              <div className="row">
+                                <a
+                                  href={`https://crates.io/crates/${crate.name}`}
+                                  key="crates.io-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {crate.name}
+                                </a>
+                                <div>Depth: {crate.distance}</div>
+                              </div>
+                            }
+                            description={crate.description}
+                          />
+                        </ListItem>
+                      </Button>
                     )}
                   />
                 </Panel>
