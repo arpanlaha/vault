@@ -150,12 +150,14 @@ fn dependency_graph_helper(
                                 dependency_feature_list.push(feature_dependency_transitive_feature);
                             }
                         })
-                        .or_insert(vec![String::from(&feature_dependency[slash_index + 1..])]);
+                        .or_insert_with(|| {
+                            vec![String::from(&feature_dependency[slash_index + 1..])]
+                        });
                 } else {
                     // if features not enabled, insert dependency if not already present
                     dependencies_to_check
                         .entry(feature_dependency.to_owned())
-                        .or_insert(vec![]);
+                        .or_insert_with(Vec::new);
                 }
             }
         }
@@ -176,8 +178,6 @@ impl Graph {
         let temp_dir = vault_fs::fetch_data();
 
         let data_path = vault_fs::get_data_path(&temp_dir).unwrap();
-
-        // let data_path = String::from("/datadrive/vault/dump/data");
 
         let (categories, crates, keywords) = vault_load::load_database(data_path.as_str()).await;
         vault_fs::clean_tempdir(temp_dir);
@@ -267,9 +267,11 @@ impl Graph {
 
                     match crates_seen.get_mut(&to_crate_val.name) {
                         Some(crate_feature_names) => {
-                            if to_feature_names.iter().any(|dependency_feature_name| {
+                            let is_feature_unseen = |dependency_feature_name| {
                                 !crate_feature_names.contains(dependency_feature_name)
-                            }) {
+                            };
+
+                            if to_feature_names.iter().any(is_feature_unseen) {
                                 dependency_graph_helper(
                                     &to_crate_val,
                                     to_feature_names,
