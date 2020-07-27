@@ -203,18 +203,21 @@ export default function Home(): ReactElement {
                   <List
                     bordered
                     dataSource={graphNodes}
-                    renderItem={(crate: Crate) => (
+                    renderItem={(crate: CrateDistance) => (
                       <ListItem>
                         <ListItemMeta
                           title={
-                            <a
-                              href={`https://crates.io/crates/${crate.name}`}
-                              key="crates.io-link"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {crate.name}
-                            </a>
+                            <div className="row">
+                              <a
+                                href={`https://crates.io/crates/${crate.name}`}
+                                key="crates.io-link"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {crate.name}
+                              </a>
+                              <div>Depth: {crate.distance}</div>
+                            </div>
                           }
                           description={crate.description}
                         />
@@ -222,21 +225,23 @@ export default function Home(): ReactElement {
                     )}
                   />
                 </Panel>
-                <Panel
-                  header="Dependencies"
-                  key="dependencies"
-                  extra={graphLinks.length}
-                >
-                  <List
-                    bordered
-                    dataSource={graphLinks}
-                    renderItem={(dependency: Dependency) => (
-                      <ListItem>
-                        {dependency.from} depends on {dependency.to}
-                      </ListItem>
-                    )}
-                  />
-                </Panel>
+                {graphLinks.length > 0 && (
+                  <Panel
+                    header="Dependencies"
+                    key="dependencies"
+                    extra={graphLinks.length}
+                  >
+                    <List
+                      bordered
+                      dataSource={graphLinks}
+                      renderItem={(dependency: Dependency) => (
+                        <ListItem>
+                          {dependency.from} depends on {dependency.to}
+                        </ListItem>
+                      )}
+                    />
+                  </Panel>
+                )}
               </Collapse>
             )}
           </div>

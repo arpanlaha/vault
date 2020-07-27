@@ -69,6 +69,13 @@ canvas {
   overflow: hidden;
 }
 
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .dependency-graph {
   width: 100%;
   height: 100vh;
