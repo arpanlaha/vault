@@ -1,20 +1,28 @@
 import React, { ReactElement, useState, useEffect } from "react";
-import { Crate, Dependency } from "../utils/types";
+import { CrateDistance, Dependency } from "../utils/types";
 import loadable from "@loadable/component";
 
 const ForceGraph = loadable(() => import("./ForceGraph"));
 const DIMENSION_FACTOR = 0.1;
 
 interface ForceGraphWrapperProps {
-  crates: Crate[];
+  crates: CrateDistance[];
   dependencies: Dependency[];
 }
 
 export default function ForceGraphWrapper(
   props: ForceGraphWrapperProps
 ): ReactElement {
+  const { crates, dependencies } = props;
+
   const [height, setHeight] = useState(0);
   const [width, setWidth] = useState(0);
+  const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
+
+  const RED = "hsl(0, 100%, 50%)";
+  const GREEN = "hsl(120, 100%, 50%)";
+  const BLUE = "hsl(216, 100%, 50%)";
+  const GRAY = "hsl(0, 0%, 50%)";
 
   const resize = (): void => {
     const containerHeight = window.innerHeight;
@@ -29,7 +37,47 @@ export default function ForceGraphWrapper(
     window.addEventListener("resize", resize);
   }, []);
 
-  const { crates, dependencies } = props;
+  useEffect(() => setClickedCrateName(null), [crates, dependencies]);
+
+  const handleLinkLabel = (dependency: Dependency): string =>
+    `${dependency.from} depends on ${dependency.to}`;
+
+  const handleNodeClick = (crate: CrateDistance): void =>
+    setClickedCrateName(crate.name);
+
+  const handleBackgroundClick = (): void => setClickedCrateName(null);
+
+  const handleNodeColor = (crate: CrateDistance): string => {
+    const { name } = crate;
+    if (name === clickedCrateName) {
+      return GREEN;
+    } else if (
+      dependencies.some(
+        (dependency) =>
+          dependency.from === name && dependency.to === clickedCrateName
+      )
+    ) {
+      return RED;
+    } else if (
+      dependencies.some(
+        (dependency) =>
+          dependency.from === clickedCrateName && dependency.to === name
+      )
+    ) {
+      return BLUE;
+    }
+    return GRAY;
+  };
+
+  const handleLinkColor = (dependency: Dependency): string => {
+    if (dependency.to === clickedCrateName) {
+      return RED;
+    } else if (dependency.from === clickedCrateName) {
+      return BLUE;
+    }
+    return GRAY;
+  };
+
   return (
     <ForceGraph
       graphData={{
@@ -43,14 +91,16 @@ export default function ForceGraphWrapper(
       enableNodeDrag={false}
       nodeAutoColorBy="name"
       linkAutoColorBy="from"
-      linkLabel={(dependency: any) =>
-        `${dependency.from} depends on ${dependency.to}`
-      }
+      linkLabel={handleLinkLabel as any}
       linkWidth={1.5}
       linkDirectionalParticles={4}
       linkDirectionalParticleWidth={1}
       height={height}
       width={width}
+      onNodeClick={handleNodeClick as any}
+      onBackgroundClick={handleBackgroundClick}
+      nodeColor={clickedCrateName === null ? "color" : (handleNodeColor as any)}
+      linkColor={clickedCrateName === null ? "color" : (handleLinkColor as any)}
     />
   );
 }

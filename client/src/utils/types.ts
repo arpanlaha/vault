@@ -9,12 +9,16 @@ export interface Crate {
   version: string;
 }
 
+export interface CrateDistance extends Crate {
+  distance: number;
+}
+
 export interface Dependency {
   from: string;
   to: string;
 }
 
 export interface DependencyGraph {
-  crates: Crate[];
+  crates: CrateDistance[];
   dependencies: Dependency[];
 }

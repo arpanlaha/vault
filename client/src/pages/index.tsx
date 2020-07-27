@@ -11,7 +11,7 @@ import {
   List,
 } from "antd";
 import { getDependencyGraph, getRandomCrate, searchCrate } from "../utils/api";
-import { Crate, Dependency } from "../utils/types";
+import { Crate, CrateDistance, Dependency } from "../utils/types";
 import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
 import { RedoOutlined } from "@ant-design/icons";
@@ -31,7 +31,7 @@ export default function Home(): ReactElement {
   const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
-  const [graphNodes, setGraphNodes] = useState<Crate[]>([]);
+  const [graphNodes, setGraphNodes] = useState<CrateDistance[]>([]);
   const [graphLinks, setGraphLinks] = useState<Dependency[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
   const [selectedFeatureNames, setSelectedFeatureNames] = useState<string[]>(
