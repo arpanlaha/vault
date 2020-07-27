@@ -43,7 +43,7 @@ export default function ForceGraphWrapper(
     `${dependency.from} depends on ${dependency.to}`;
 
   const handleNodeClick = (crate: CrateDistance): void =>
-    setClickedCrateName(crate.name);
+    setClickedCrateName(crate.name !== clickedCrateName ? crate.name : null);
 
   const handleBackgroundClick = (): void => setClickedCrateName(null);
 
