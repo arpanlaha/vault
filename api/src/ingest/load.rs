@@ -155,7 +155,6 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
             result.unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Version", count));
         let Version {
             crate_id,
-            downloads,
             num,
             id,
             created_at,
@@ -166,7 +165,6 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
             .entry(crate_id)
             .and_modify(|existing_version| {
                 // if the crate has a version already
-                existing_version.downloads += downloads;
 
                 if let Ok(version_num) = semver_version::parse(num.as_str()) {
                     if let Ok(existing_version_num) =
@@ -234,7 +232,6 @@ fn create_versioned_crates(
     for Version {
         crate_id,
         created_at,
-        downloads,
         features,
         id,
         num,
@@ -249,7 +246,6 @@ fn create_versioned_crates(
             .unwrap_or_else(|| panic!("Crate with id {} does not exist", crate_id));
 
         version_crate.created_at = created_at.to_owned();
-        version_crate.downloads = downloads.to_owned();
         version_crate.features = serde_json::from_str(features)
             .unwrap_or_else(|_| panic!("Unable to deserialize {} as HashMap", features));
         version_crate.version = num.to_owned();

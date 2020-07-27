@@ -55,9 +55,6 @@ pub struct Crate {
     pub description: String,
 
     /// The number of downloads of the crate.
-    ///
-    /// This is not set on deserialization and instead must be populated later when assigning versions to crates.
-    #[serde(skip_deserializing, default)]
     pub downloads: usize,
 
     /// The features exposed by the crate.
@@ -169,9 +166,6 @@ pub struct Version {
     /// The time at which the crate was created.
     #[serde(with = "custom_time")]
     pub created_at: NaiveDateTime,
-
-    /// The number of downloads of the version.
-    pub downloads: usize,
 
     /// The features the version exposes.
     pub features: String,
