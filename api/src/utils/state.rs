@@ -96,6 +96,13 @@ pub struct DependencyGraph<'a> {
     pub dependencies: Vec<&'a Dependency>,
 }
 
+struct QueueDependency {
+    pub from: String,
+    pub to: String,
+    pub to_feature_names: Vec<String>,
+    pub to_distance: usize,
+}
+
 fn dependency_graph_helper(
     crate_val: &Crate,
     feature_names: Vec<String>,
@@ -112,9 +119,19 @@ fn dependency_graph_helper(
         }
     }
 
+    let default_string = String::from("default");
+    let default_features_enabled = feature_names.contains(&default_string);
+    let default_features = match crate_val.features.get(&default_string) {
+        Some(default_features) => default_features.to_owned(),
+        None => vec![],
+    };
+
     // add dependencies enabled by features
     for (feature_name, feature_dependencies) in &crate_val.features {
-        if feature_names.contains(feature_name) {
+        if feature_name != "default"
+            && (feature_names.contains(feature_name)
+                || (default_features_enabled && default_features.contains(feature_name)))
+        {
             for feature_dependency in feature_dependencies {
                 if let Some(slash_index) = feature_dependency.find('/') {
                     // if features enabled
@@ -152,13 +169,6 @@ fn dependency_graph_helper(
             to_distance: distance + 1,
         });
     }
-}
-
-struct QueueDependency {
-    pub from: String,
-    pub to: String,
-    pub to_feature_names: Vec<String>,
-    pub to_distance: usize,
 }
 
 impl Graph {
@@ -237,18 +247,21 @@ impl Graph {
                 }) = dependency_queue.pop_front()
                 {
                     let from_crate_val = self.crates.get(&from).unwrap();
-                    let to_crate_val = self.crates.get(&to).unwrap();
+                    let to_crate_val = self.crates.get(&to).unwrap_or_else(|| {
+                        panic!("crate {} does not have dependency {}", from, to)
+                    });
                     let dependency_tuple =
                         (from_crate_val.name.to_owned(), to_crate_val.name.to_owned());
 
                     if !dependencies_seen.contains(&dependency_tuple) {
-                        dependencies.push(
-                            from_crate_val
-                                .dependencies
-                                .iter()
-                                .find(|dependency| dependency.to == to)
-                                .unwrap(),
-                        );
+                        if let Some(dependency) = from_crate_val
+                            .dependencies
+                            .iter()
+                            .find(|dependency| dependency.to == to)
+                        {
+                            dependencies.push(dependency);
+                        }
+
                         dependencies_seen.insert(dependency_tuple);
                     }
 
