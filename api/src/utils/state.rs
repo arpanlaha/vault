@@ -4,7 +4,7 @@ use super::super::ingest::{
 };
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::time::Instant;
 use tokio::sync::{Mutex, RwLock};
 
@@ -92,8 +92,73 @@ impl<'a> CrateDistance<'a> {
 
 #[derive(Serialize)]
 pub struct DependencyGraph<'a> {
-    crates: Vec<CrateDistance<'a>>,
-    dependencies: Vec<&'a Dependency>,
+    pub crates: Vec<CrateDistance<'a>>,
+    pub dependencies: Vec<&'a Dependency>,
+}
+
+fn dependency_graph_helper(
+    crate_val: &Crate,
+    feature_names: Vec<String>,
+    dependency_queue: &mut VecDeque<QueueDependency>,
+    distance: usize,
+) {
+    // dependencies included in traversal
+    let mut dependencies_to_check: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    // add mandatory dependencies
+    for dependency in &crate_val.dependencies {
+        if !dependency.optional {
+            dependencies_to_check.insert(dependency.to.to_owned(), dependency.features.to_owned());
+        }
+    }
+
+    // add dependencies enabled by features
+    for (feature_name, feature_dependencies) in &crate_val.features {
+        if feature_names.contains(feature_name) {
+            for feature_dependency in feature_dependencies {
+                if let Some(slash_index) = feature_dependency.find('/') {
+                    // if features enabled
+                    let feature_dependency_name = String::from(&feature_dependency[..slash_index]);
+                    let feature_dependency_transitive_feature =
+                        String::from(&feature_dependency[slash_index + 1..]);
+
+                    // if dependency already added, add feature if feature was not added
+                    // otherwise add dependency and feature
+                    dependencies_to_check
+                        .entry(feature_dependency_name)
+                        .and_modify(|dependency_feature_list| {
+                            if !dependency_feature_list
+                                .contains(&feature_dependency_transitive_feature)
+                            {
+                                dependency_feature_list.push(feature_dependency_transitive_feature);
+                            }
+                        })
+                        .or_insert(vec![String::from(&feature_dependency[slash_index + 1..])]);
+                } else {
+                    // if features not enabled, insert dependency if not already present
+                    dependencies_to_check
+                        .entry(feature_dependency.to_owned())
+                        .or_insert(vec![]);
+                }
+            }
+        }
+    }
+
+    for (dependency_name, dependency_features) in dependencies_to_check {
+        dependency_queue.push_back(QueueDependency {
+            from: crate_val.name.to_owned(),
+            to: dependency_name,
+            to_feature_names: dependency_features,
+            to_distance: distance + 1,
+        });
+    }
+}
+
+struct QueueDependency {
+    pub from: String,
+    pub to: String,
+    pub to_feature_names: Vec<String>,
+    pub to_distance: usize,
 }
 
 impl Graph {
@@ -149,111 +214,79 @@ impl Graph {
         crate_id: &str,
         features: Vec<String>,
     ) -> Option<DependencyGraph> {
-        if !self.crates.contains_key(crate_id) {
-            return None;
-        }
+        match self.crates().get(crate_id) {
+            None => None,
+            Some(crate_val) => {
+                let mut crate_distance_vec: Vec<(&String, usize)> = vec![];
+                let mut crates_seen: HashMap<&String, Vec<String>> = HashMap::new();
 
-        // TODO: BFS
+                let mut dependencies: Vec<&Dependency> = vec![];
+                let mut dependencies_seen: HashSet<(String, String)> = HashSet::new();
+                let mut dependency_queue: VecDeque<QueueDependency> = VecDeque::new();
 
-        let mut crates: HashMap<&String, usize> = HashMap::new();
-        let mut dependencies: HashSet<&Dependency> = HashSet::new();
-        crates.insert(&self.crates.get(crate_id).unwrap().name, 0);
-        self.transitive_dependency_ids(
-            crate_id,
-            &mut crates,
-            &mut dependencies,
-            &features,
-            true,
-            1,
-        );
+                crate_distance_vec.push((&crate_val.name, 0));
+                crates_seen.insert(&crate_val.name, features.to_owned());
 
-        let mut crates_distance_vec: Vec<(&&String, &usize)> = crates.iter().collect();
-        crates_distance_vec.sort_unstable_by_key(|(name, _)| name.as_str());
-        crates_distance_vec.sort_by_key(|(_, distance)| *distance);
+                dependency_graph_helper(crate_val, features, &mut dependency_queue, 0);
 
-        let mut dependency_vec: Vec<&Dependency> = dependencies.iter().copied().collect();
-        dependency_vec.sort_unstable_by_key(|dependency| dependency.from.as_str());
-        dependency_vec.sort_by_key(|dependency| *crates.get(&dependency.from).unwrap());
+                while let Some(QueueDependency {
+                    from,
+                    to,
+                    to_feature_names,
+                    to_distance,
+                }) = dependency_queue.pop_front()
+                {
+                    let from_crate_val = self.crates.get(&from).unwrap();
+                    let to_crate_val = self.crates.get(&to).unwrap();
+                    let dependency_tuple =
+                        (from_crate_val.name.to_owned(), to_crate_val.name.to_owned());
 
-        Some(DependencyGraph {
-            crates: crates_distance_vec
-                .iter()
-                .map(|crate_distance_tuple| CrateDistance::new(crate_distance_tuple, &self.crates))
-                .collect(),
-            dependencies: dependency_vec,
-        })
-    }
+                    if !dependencies_seen.contains(&dependency_tuple) {
+                        dependencies.push(
+                            from_crate_val
+                                .dependencies
+                                .iter()
+                                .find(|dependency| dependency.to == to)
+                                .unwrap(),
+                        );
+                        dependencies_seen.insert(dependency_tuple);
+                    }
 
-    fn transitive_dependency_ids<'a>(
-        &'a self,
-        crate_id: &str,
-        crates: &mut HashMap<&'a String, usize>,
-        dependencies: &mut HashSet<&'a Dependency>,
-        features: &[String],
-        default_features: bool,
-        distance: usize,
-    ) {
-        let crate_val = &self.crates.get(crate_id).unwrap();
-
-        let mut crate_dependency_names: HashSet<&String> = HashSet::new();
-
-        if default_features {
-            if let Some(crate_default_features) = crate_val.features.get("default") {
-                for dependency in crate_default_features {
-                    crate_dependency_names.insert(dependency);
-                }
-            }
-        }
-
-        for feature in features {
-            if let Some(crate_features) = crate_val.features.get(feature) {
-                for dependency in crate_features {
-                    crate_dependency_names.insert(dependency);
-                }
-            }
-        }
-
-        for dependency in &crate_val.dependencies {
-            if !dependencies.contains(dependency)
-                && (!dependency.optional || crate_dependency_names.contains(&dependency.to))
-            {
-                let mut transitive_features: Vec<String> = dependency.features.to_owned();
-
-                let is_sub_feature = |crate_dependency_name: &&String| {
-                    crate_dependency_name.starts_with(&format!("{}/", dependency.to))
-                };
-
-                if crate_dependency_names.iter().any(is_sub_feature) {
-                    crate_dependency_names
-                        .iter()
-                        .filter(|crate_dependency_name| {
-                            crate_dependency_name.starts_with(&format!("{}/", dependency.to))
-                        })
-                        .for_each(|crate_dependency_name| {
-                            transitive_features.push(String::from(
-                                crate_dependency_name.split('/').nth(1).unwrap(),
-                            ));
-                        });
-                }
-
-                dependencies.insert(dependency);
-                crates
-                    .entry(&dependency.to)
-                    .and_modify(|dependency_distance| {
-                        if distance < *dependency_distance {
-                            *dependency_distance = distance;
+                    match crates_seen.get_mut(&to_crate_val.name) {
+                        Some(crate_feature_names) => {
+                            if to_feature_names.iter().any(|dependency_feature_name| {
+                                !crate_feature_names.contains(dependency_feature_name)
+                            }) {
+                                dependency_graph_helper(
+                                    &to_crate_val,
+                                    to_feature_names,
+                                    &mut dependency_queue,
+                                    to_distance,
+                                );
+                            }
                         }
-                    })
-                    .or_insert(distance);
+                        None => {
+                            crate_distance_vec.push((&to_crate_val.name, to_distance));
+                            crates_seen.insert(&to_crate_val.name, to_feature_names.to_owned());
+                            dependency_graph_helper(
+                                &to_crate_val,
+                                to_feature_names,
+                                &mut dependency_queue,
+                                to_distance,
+                            );
+                        }
+                    }
+                }
 
-                self.transitive_dependency_ids(
-                    dependency.to.as_str(),
-                    crates,
+                Some(DependencyGraph {
+                    crates: crate_distance_vec
+                        .iter()
+                        .map(|(crate_name, crate_distance)| {
+                            CrateDistance::new(&(crate_name, crate_distance), &self.crates)
+                        })
+                        .collect(),
                     dependencies,
-                    &transitive_features,
-                    dependency.default_features,
-                    distance + 1,
-                );
+                })
             }
         }
     }
