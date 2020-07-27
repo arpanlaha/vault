@@ -1,6 +1,6 @@
 use super::super::ingest::schema::Vertex;
 use rand::Rng;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 const MAX_SEARCH_LENGTH: usize = 10;
 
@@ -62,27 +62,30 @@ pub trait Search<T: Vertex> {
 
 impl<T: Vertex> Search<T> for HashMap<String, T> {
     fn search<'a>(&'a self, search_term: &str) -> Vec<&'a T> {
-        let mut results: Vec<(f64, &T)> = vec![];
+        let mut results: VecDeque<(f64, &T)> = VecDeque::new();
 
         for vertex in self.values() {
             let name = vertex.id();
 
             if name != search_term {
-                let search_score = strsim::jaro_winkler(name, search_term) * vertex.popularity();
+                let similarity = strsim::jaro_winkler(name, search_term);
+                if similarity > 0.5 {
+                    let search_score = similarity * vertex.popularity();
 
-                if results.is_empty() {
-                    results.push((search_score, self.get(name).unwrap()));
-                } else if search_score >= results.last().unwrap().0 {
-                    if let Some((index, _)) = results
-                        .iter()
-                        .enumerate()
-                        .find(|(_, (other_score, _))| search_score > *other_score)
-                    {
-                        results.insert(index, (search_score, vertex))
-                    }
+                    if results.is_empty() {
+                        results.push_back((search_score, self.get(name).unwrap()));
+                    } else if search_score >= results.back().unwrap().0 {
+                        if let Some((index, _)) = results
+                            .iter()
+                            .enumerate()
+                            .find(|(_, (other_score, _))| search_score > *other_score)
+                        {
+                            results.insert(index, (search_score, vertex))
+                        }
 
-                    if results.len() > MAX_SEARCH_LENGTH {
-                        results.pop();
+                        if results.len() > MAX_SEARCH_LENGTH {
+                            results.pop_back();
+                        }
                     }
                 }
             }
@@ -91,7 +94,7 @@ impl<T: Vertex> Search<T> for HashMap<String, T> {
         if let Some(search_vertex) = self.get(search_term) {
             results.insert(0, (0f64, search_vertex));
             if results.len() > MAX_SEARCH_LENGTH {
-                results.pop();
+                results.pop_back();
             }
         }
 
