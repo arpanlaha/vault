@@ -105,7 +105,7 @@ struct QueueDependency {
 
 fn dependency_graph_helper(
     crate_val: &Crate,
-    feature_names: Vec<String>,
+    mut feature_names: Vec<String>,
     dependency_queue: &mut VecDeque<QueueDependency>,
     distance: usize,
 ) {
@@ -133,27 +133,45 @@ fn dependency_graph_helper(
                 || (default_features_enabled && default_features.contains(feature_name)))
         {
             for feature_dependency in feature_dependencies {
-                if let Some(slash_index) = feature_dependency.find('/') {
+                if crate_val.features.contains_key(feature_dependency) {
+                    // if feature enables another feature
+                    if !feature_names.contains(feature_dependency) {
+                        // if the enabled feature is not already included
+                        feature_names.push(feature_dependency.to_owned());
+                    }
+                } else if let Some(slash_index) = feature_dependency.find('/') {
                     // if features enabled
                     let feature_dependency_name = String::from(&feature_dependency[..slash_index]);
-                    let feature_dependency_transitive_feature =
-                        String::from(&feature_dependency[slash_index + 1..]);
 
-                    // if dependency already added, add feature if feature was not added
-                    // otherwise add dependency and feature
-                    dependencies_to_check
-                        .entry(feature_dependency_name)
-                        .and_modify(|dependency_feature_list| {
-                            if !dependency_feature_list
-                                .contains(&feature_dependency_transitive_feature)
-                            {
-                                dependency_feature_list.push(feature_dependency_transitive_feature);
-                            }
-                        })
-                        .or_insert_with(|| {
-                            vec![String::from(&feature_dependency[slash_index + 1..])]
-                        });
-                } else {
+                    if crate_val
+                        .dependencies
+                        .iter()
+                        .any(|dependency| dependency.to == feature_dependency_name)
+                    {
+                        let feature_dependency_transitive_feature =
+                            String::from(&feature_dependency[slash_index + 1..]);
+
+                        // if dependency already added, add feature if feature was not added
+                        // otherwise add dependency and feature
+                        dependencies_to_check
+                            .entry(feature_dependency_name)
+                            .and_modify(|dependency_feature_list| {
+                                if !dependency_feature_list
+                                    .contains(&feature_dependency_transitive_feature)
+                                {
+                                    dependency_feature_list
+                                        .push(feature_dependency_transitive_feature);
+                                }
+                            })
+                            .or_insert_with(|| {
+                                vec![String::from(&feature_dependency[slash_index + 1..])]
+                            });
+                    }
+                } else if crate_val
+                    .dependencies
+                    .iter()
+                    .any(|dependency| dependency.to == *feature_dependency)
+                {
                     // if features not enabled, insert dependency if not already present
                     dependencies_to_check
                         .entry(feature_dependency.to_owned())
@@ -163,7 +181,16 @@ fn dependency_graph_helper(
         }
     }
 
-    for (dependency_name, dependency_features) in dependencies_to_check {
+    for (dependency_name, mut dependency_features) in dependencies_to_check {
+        if let Some(dependency) = crate_val
+            .dependencies
+            .iter()
+            .find(|dependency| dependency.to == dependency_name)
+        {
+            if dependency.default_features {
+                dependency_features.push(default_string.to_owned());
+            }
+        }
         dependency_queue.push_back(QueueDependency {
             from: crate_val.name.to_owned(),
             to: dependency_name,
@@ -247,20 +274,18 @@ impl Graph {
                 }) = dependency_queue.pop_front()
                 {
                     let from_crate_val = self.crates.get(&from).unwrap();
-                    let to_crate_val = self.crates.get(&to).unwrap_or_else(|| {
-                        panic!("crate {} does not have dependency {}", from, to)
-                    });
+                    let to_crate_val = self.crates.get(&to).unwrap();
                     let dependency_tuple =
                         (from_crate_val.name.to_owned(), to_crate_val.name.to_owned());
 
                     if !dependencies_seen.contains(&dependency_tuple) {
-                        if let Some(dependency) = from_crate_val
-                            .dependencies
-                            .iter()
-                            .find(|dependency| dependency.to == to)
-                        {
-                            dependencies.push(dependency);
-                        }
+                        dependencies.push(
+                            from_crate_val
+                                .dependencies
+                                .iter()
+                                .find(|dependency| dependency.to == to)
+                                .unwrap(),
+                        );
 
                         dependencies_seen.insert(dependency_tuple);
                     }
