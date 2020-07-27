@@ -37,6 +37,7 @@ export default function Home(): ReactElement {
   const [selectedFeatureNames, setSelectedFeatureNames] = useState<string[]>(
     []
   );
+  const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const setRandomCrate = (): void => {
@@ -141,6 +142,9 @@ export default function Home(): ReactElement {
     }
   };
 
+  const handleListClick = (crate: CrateDistance): void =>
+    setClickedCrateName(crate.name !== clickedCrateName ? crate.name : null);
+
   return (
     <>
       <Head />
@@ -204,7 +208,7 @@ export default function Home(): ReactElement {
                     bordered
                     dataSource={graphNodes}
                     renderItem={(crate: CrateDistance) => (
-                      <ListItem>
+                      <ListItem onClick={() => handleListClick(crate)}>
                         <ListItemMeta
                           title={
                             <div className="row">
@@ -248,7 +252,12 @@ export default function Home(): ReactElement {
         </Sider>
         <Content className="content">
           <div className="dependency-graph">
-            <ForceGraphWrapper crates={graphNodes} dependencies={graphLinks} />
+            <ForceGraphWrapper
+              crates={graphNodes}
+              dependencies={graphLinks}
+              clickedCrateName={clickedCrateName}
+              setClickedCrateName={setClickedCrateName}
+            />
           </div>
         </Content>
       </Layout>

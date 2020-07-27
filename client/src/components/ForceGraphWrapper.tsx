@@ -1,4 +1,10 @@
-import React, { ReactElement, useState, useEffect } from "react";
+import React, {
+  Dispatch,
+  ReactElement,
+  SetStateAction,
+  useState,
+  useEffect,
+} from "react";
 import { CrateDistance, Dependency } from "../utils/types";
 import loadable from "@loadable/component";
 
@@ -6,18 +12,19 @@ const ForceGraph = loadable(() => import("./ForceGraph"));
 const DIMENSION_FACTOR = 0.1;
 
 interface ForceGraphWrapperProps {
+  clickedCrateName: string | null;
   crates: CrateDistance[];
   dependencies: Dependency[];
+  setClickedCrateName: Dispatch<SetStateAction<string | null>>;
 }
 
 export default function ForceGraphWrapper(
   props: ForceGraphWrapperProps
 ): ReactElement {
-  const { crates, dependencies } = props;
+  const { clickedCrateName, crates, dependencies, setClickedCrateName } = props;
 
   const [height, setHeight] = useState(0);
   const [width, setWidth] = useState(0);
-  const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
 
   const RED = "hsl(0, 100%, 50%)";
   const GREEN = "hsl(120, 100%, 50%)";
@@ -37,7 +44,11 @@ export default function ForceGraphWrapper(
     window.addEventListener("resize", resize);
   }, []);
 
-  useEffect(() => setClickedCrateName(null), [crates, dependencies]);
+  useEffect(() => setClickedCrateName(null), [
+    crates,
+    dependencies,
+    setClickedCrateName,
+  ]);
 
   const handleLinkLabel = (dependency: Dependency): string =>
     `${dependency.from} depends on ${dependency.to}`;
