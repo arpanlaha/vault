@@ -9,7 +9,7 @@ defaults:
 jobs:
   bench:
     runs-on: ubuntu-latest
-    name: Bench
+    name: bench
     steps:
       - name: Check out repo
         uses: actions/checkout@v2
@@ -34,7 +34,7 @@ jobs:
 
   format:
     runs-on: ubuntu-latest
-    name: Format
+    name: format
     steps:
       - name: Check out repo
         uses: actions/checkout@v2
@@ -59,7 +59,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    name: Lint
+    name: lint
     steps:
       - name: Check out repo
         uses: actions/checkout@v2
