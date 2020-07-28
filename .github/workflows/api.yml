@@ -21,12 +21,12 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             api/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-nightly
+          key: vault-api-nightly
 
       - name: Install rust toolchain (nightly)
         uses: actions-rs/toolchain@v1
         with:
-          profile: default
+          profile: minimal
           toolchain: nightly
 
       - name: Run benchmarks
@@ -46,7 +46,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             api/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-stable
+          key: vault-api-stable
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
@@ -71,7 +71,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             api/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-stable
+          key: vault-api-stable
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
