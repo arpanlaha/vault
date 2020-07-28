@@ -1,12 +1,37 @@
-name: api
+name: graph
 
 on: push
 
 defaults:
   run:
-    working-directory: api
+    working-directory: graph
 
 jobs:
+  bench:
+    runs-on: ubuntu-latest
+    name: bench
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            graph/target
+          key: vault-graph-nightly
+
+      - name: Install rust toolchain (nightly)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+
+      - name: Run benchmarks
+        run: cargo +nightly bench --tests
+
   format:
     runs-on: ubuntu-latest
     name: format
@@ -20,12 +45,12 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            api/target
-          key: vault-api
+            graph/target
+          key: vault-graph
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
-        with:
+       with:
           profile: minimal
           toolchain: stable
           components: rustfmt
@@ -46,8 +71,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            api/target
-          key: vault-api
+            graph/target
+          key: vault-graph
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
