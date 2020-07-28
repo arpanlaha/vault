@@ -1,9 +1,9 @@
 use super::super::utils::state::{AppState, Graph};
-use actix_web::{web::Data, HttpResponse, Responder};
+use actix_web::{web::Data, HttpResponse};
 
 const INTERVAL: u64 = 60 * (60 * 23 + 55);
 
-pub async fn reset_state(data: Data<AppState>) -> impl Responder {
+pub async fn reset_state(data: Data<AppState>) -> HttpResponse {
     let mut last_updated = data.last_updated.lock().await;
     if last_updated.elapsed().as_secs() >= INTERVAL {
         let graph = Graph::new().await;

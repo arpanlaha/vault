@@ -5,7 +5,7 @@ use super::super::{
         state::AppState,
     },
 };
-use actix_web::{web::Data, HttpRequest, HttpResponse, Responder};
+use actix_web::{web::Data, HttpRequest, HttpResponse};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -14,7 +14,7 @@ struct CategoryResponse<'a> {
     children: Vec<&'a Category>,
 }
 
-pub async fn get_categories(data: Data<AppState>) -> impl Responder {
+pub async fn get_categories(data: Data<AppState>) -> HttpResponse {
     let graph = data.graph.read().await;
     let mut categories = graph.categories().values().collect::<Vec<&Category>>();
     categories.sort_unstable_by_key(|category| category.category.as_str());
@@ -22,7 +22,7 @@ pub async fn get_categories(data: Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json(categories)
 }
 
-pub async fn get_category(req: HttpRequest, data: Data<AppState>) -> impl Responder {
+pub async fn get_category(req: HttpRequest, data: Data<AppState>) -> HttpResponse {
     match req.match_info().get("category_id") {
         None => HttpResponse::BadRequest().json("Category id must be provided."),
 
@@ -47,11 +47,11 @@ pub async fn get_category(req: HttpRequest, data: Data<AppState>) -> impl Respon
     }
 }
 
-pub async fn random(data: Data<AppState>) -> impl Responder {
+pub async fn random(data: Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(data.graph.read().await.categories().random())
 }
 
-pub async fn search(req: HttpRequest, data: Data<AppState>) -> impl Responder {
+pub async fn search(req: HttpRequest, data: Data<AppState>) -> HttpResponse {
     match req.match_info().get("search_term") {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
 
