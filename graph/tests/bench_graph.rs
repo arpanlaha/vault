@@ -1,11 +1,9 @@
 #![feature(test)]
 extern crate test;
 
-mod common;
-
 use futures::executor::block_on;
 use test::Bencher;
-use vault_api::utils::state::Graph;
+use vault_graph::Graph;
 
 #[bench]
 fn bench_graph_actix_web(b: &mut Bencher) {

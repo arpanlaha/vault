@@ -1,11 +1,9 @@
 #![feature(test)]
 extern crate test;
 
-mod common;
-
 use futures::executor::block_on;
 use test::Bencher;
-use vault_api::utils::{common::Search, state::Graph};
+use vault_graph::{Graph, Search};
 
 #[bench]
 fn bench_search_crates_a(b: &mut Bencher) {

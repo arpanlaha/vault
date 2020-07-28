@@ -1,8 +1,6 @@
-use super::super::utils::{
-    common::{Random, Search},
-    state::AppState,
-};
+use super::super::utils::state::AppState;
 use actix_web::{web::Data, HttpRequest, HttpResponse};
+use vault_graph::{Random, Search};
 
 pub async fn get_keyword(req: HttpRequest, data: Data<AppState>) -> HttpResponse {
     match req.match_info().get("keyword_id") {

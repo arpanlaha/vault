@@ -1,12 +1,7 @@
-use super::super::{
-    ingest::schema::Category,
-    utils::{
-        common::{Random, Search},
-        state::AppState,
-    },
-};
+use super::super::utils::state::AppState;
 use actix_web::{web::Data, HttpRequest, HttpResponse};
 use serde::Serialize;
+use vault_graph::{Category, Random, Search};
 
 #[derive(Serialize)]
 struct CategoryResponse<'a> {

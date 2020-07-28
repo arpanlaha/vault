@@ -1,11 +1,9 @@
 #![feature(test)]
 extern crate test;
 
-mod common;
-
 use futures::executor::block_on;
 use test::Bencher;
-use vault_api::utils::{common::Random, state::Graph};
+use vault_graph::{Graph, Random};
 
 #[bench]
 fn bench_random_crates(b: &mut Bencher) {

@@ -1,5 +1,6 @@
-use super::super::utils::state::{AppState, Graph};
+use super::super::utils::state::AppState;
 use actix_web::{web::Data, HttpResponse};
+use vault_graph::Graph;
 
 const INTERVAL: u64 = 60 * (60 * 23 + 55);
 

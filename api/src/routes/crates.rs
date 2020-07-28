@@ -1,8 +1,6 @@
-use super::super::utils::{
-    common::{self, Random, Search},
-    state::AppState,
-};
+use super::super::utils::{common, state::AppState};
 use actix_web::{web::Data, HttpRequest, HttpResponse};
+use vault_graph::{Random, Search};
 
 pub async fn get_crate(req: HttpRequest, data: Data<AppState>) -> HttpResponse {
     match req.match_info().get("crate_id") {

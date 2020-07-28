@@ -1,6 +1,8 @@
-use super::schema::{
-    Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
-    Vertex,
+use super::{
+    schema::{
+        Category, Crate, CrateCategory, CrateKeyword, Dependency, Keyword, SqlDependency, Version,
+    },
+    traits::Vertex,
 };
 use csv::Reader;
 use semver_parser::version as semver_version;
