@@ -1,3 +1,6 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::cast_precision_loss)]
+
 mod fs;
 mod load;
 mod schema;
@@ -41,6 +44,7 @@ pub struct CrateDistance<'a> {
 }
 
 impl<'a> CrateDistance<'a> {
+    #[must_use]
     pub fn new(
         crate_distance_tuple: &(&&String, &usize),
         crates: &'a HashMap<String, Crate>,
@@ -190,22 +194,22 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub async fn new() -> Graph {
+    pub async fn new() -> Self {
         let temp_dir = fs::fetch_data();
 
         let data_path = fs::get_data_path(&temp_dir).unwrap();
 
-        let (categories, crates, keywords) = load::load_database(data_path.as_str()).await;
+        let (categories, crates, keywords) = load::get_data(data_path.as_str()).await;
         fs::clean_tempdir(temp_dir);
 
-        Graph {
+        Self {
             categories,
             crates,
             keywords,
         }
     }
 
-    pub async fn test() -> Graph {
+    pub async fn test() -> Self {
         let data_path = "./tests/data";
 
         if File::open(data_path).is_err() {
@@ -218,30 +222,33 @@ impl Graph {
                 .unwrap();
         }
 
-        let (categories, crates, keywords) = load::load_database(data_path).await;
+        let (categories, crates, keywords) = load::get_data(data_path).await;
 
-        Graph {
+        Self {
             categories,
             crates,
             keywords,
         }
     }
 
-    pub fn replace(&mut self, other: Graph) {
+    pub fn replace(&mut self, other: Self) {
         self.categories = other.categories;
         self.crates = other.crates;
         self.keywords = other.keywords;
     }
 
-    pub fn categories(&self) -> &HashMap<String, Category> {
+    #[must_use]
+    pub const fn categories(&self) -> &HashMap<String, Category> {
         &self.categories
     }
 
-    pub fn crates(&self) -> &HashMap<String, Crate> {
+    #[must_use]
+    pub const fn crates(&self) -> &HashMap<String, Crate> {
         &self.crates
     }
 
-    pub fn keywords(&self) -> &HashMap<String, Keyword> {
+    #[must_use]
+    pub const fn keywords(&self) -> &HashMap<String, Keyword> {
         &self.keywords
     }
 
@@ -257,6 +264,7 @@ impl Graph {
         self.keywords = keywords;
     }
 
+    #[must_use]
     pub fn get_dependency_graph(
         &self,
         crate_id: &str,
@@ -301,31 +309,28 @@ impl Graph {
                         dependencies_seen.insert(dependency_tuple);
                     }
 
-                    match crates_seen.get_mut(&to_crate_val.name) {
-                        Some(crate_feature_names) => {
-                            let is_feature_unseen = |dependency_feature_name| {
-                                !crate_feature_names.contains(dependency_feature_name)
-                            };
+                    if let Some(crate_feature_names) = crates_seen.get_mut(&to_crate_val.name) {
+                        let is_feature_unseen = |dependency_feature_name| {
+                            !crate_feature_names.contains(dependency_feature_name)
+                        };
 
-                            if to_feature_names.iter().any(is_feature_unseen) {
-                                dependency_graph_helper(
-                                    &to_crate_val,
-                                    to_feature_names,
-                                    &mut dependency_queue,
-                                    to_distance,
-                                );
-                            }
-                        }
-                        None => {
-                            crate_distance_vec.push((&to_crate_val.name, to_distance));
-                            crates_seen.insert(&to_crate_val.name, to_feature_names.to_owned());
+                        if to_feature_names.iter().any(is_feature_unseen) {
                             dependency_graph_helper(
-                                &to_crate_val,
+                                to_crate_val,
                                 to_feature_names,
                                 &mut dependency_queue,
                                 to_distance,
                             );
                         }
+                    } else {
+                        crate_distance_vec.push((&to_crate_val.name, to_distance));
+                        crates_seen.insert(&to_crate_val.name, to_feature_names.to_owned());
+                        dependency_graph_helper(
+                            to_crate_val,
+                            to_feature_names,
+                            &mut dependency_queue,
+                            to_distance,
+                        );
                     }
                 }
 

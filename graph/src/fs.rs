@@ -6,7 +6,7 @@ use tempfile::TempDir;
 /// Returns the location of the `data` directory inside the crates.io database dump.
 ///
 /// # Arguments
-/// * `temp_dir` - the TempDir in which to search for the directory.
+/// * `temp_dir` - the `TempDir` in which to search for the directory.
 pub fn get_data_path(temp_dir: &TempDir) -> Option<String> {
     for dir_entry in fs::read_dir(temp_dir.path()).expect("Unable to read temporary directory") {
         let dir_entry = dir_entry.unwrap();
@@ -103,7 +103,7 @@ pub fn fetch_data() -> TempDir {
 /// Cleans up a temporary directory.
 ///
 /// # Arguments
-/// * `temp_dir` - the TempDir to clean up.
+/// * `temp_dir` - the `TempDir` to clean up.
 pub fn clean_tempdir(temp_dir: TempDir) {
     println!("Cleaning up temporary files and directories...");
     let clean_start = Instant::now();

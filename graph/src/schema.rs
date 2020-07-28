@@ -109,7 +109,7 @@ pub struct CrateKeyword {
 
 /// A dependency between crates.
 ///
-/// This is not directly obtained from the SQL dump - for that, see the SqlDependency struct.
+/// This is not directly obtained from the SQL dump - for that, see the `SqlDependency` struct.
 #[derive(Deserialize, Debug, Hash, Eq, PartialEq, Serialize)]
 pub struct Dependency {
     /// If the dependency relies on default features.
@@ -205,9 +205,9 @@ pub struct SqlDependency {
     pub version_id: usize,
 }
 
-/// An implementation of a default constructor for the NaiveDateTime struct.
+/// An implementation of a default constructor for the `NaiveDateTime` struct.
 ///
-/// This creates a NaiveDateTime with 0 seconds and 0 nanoseconds since January 1, 1970.
+/// This creates a `NaiveDateTime` with 0 seconds and 0 nanoseconds since January 1, 1970.
 fn default_naive_date_time() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(0, 0)
 }

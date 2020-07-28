@@ -30,7 +30,7 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 ///
 /// # Arguments
 /// * `data_path` - the path to the `data` directory inside the database dump.
-pub async fn load_database(
+pub async fn get_data(
     data_path: &str,
 ) -> (
     HashMap<String, Category>,
@@ -52,7 +52,12 @@ pub async fn load_database(
 
     let versions_to_crates = create_versioned_crates(data_path, &mut crates, &crate_id_lookup);
 
-    load_dependencies(data_path, &mut crates, versions_to_crates, &crate_id_lookup);
+    load_dependencies(
+        data_path,
+        &mut crates,
+        &versions_to_crates,
+        &crate_id_lookup,
+    );
 
     load_crate_categories(
         data_path,
@@ -93,7 +98,7 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
 ) -> (HashMap<String, T>, HashMap<usize, String>) {
     println!("Loading {}...", collection_name);
     let start = Instant::now();
-    let mut count = 0usize;
+    let mut count = 0_usize;
 
     let file_path = get_collection_path(data_path, collection_name);
 
@@ -144,7 +149,7 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     println!("Loading versions...");
     let start = Instant::now();
     let mut versions = HashMap::<usize, Version>::new();
-    let mut count = 0usize;
+    let mut count = 0_usize;
     let filename = get_collection_path(data_path, "versions");
 
     for result in Reader::from_reader(BufReader::new(
@@ -273,12 +278,12 @@ fn create_versioned_crates(
 fn load_dependencies(
     data_path: &str,
     crates: &mut HashMap<String, Crate>,
-    versions_to_crates: HashMap<usize, String>,
+    versions_to_crates: &HashMap<usize, String>,
     crate_id_lookup: &HashMap<usize, String>,
 ) {
     println!("Loading dependencies...");
     let start = Instant::now();
-    let mut count = 0usize;
+    let mut count = 0_usize;
     let dependencies_path = get_collection_path(data_path, "dependencies");
 
     for result in Reader::from_reader(BufReader::new(
@@ -312,8 +317,13 @@ fn load_dependencies(
                         default_features: default_features == "t",
                         features: String::from(&features[1..features.len() - 1]) // convert brace array to array ({a, b, c} => [a, b, c])
                             .split(',')
-                            .filter(|split| split.is_empty())
-                            .map(String::from)
+                            .filter_map(|split| {
+                                if split.is_empty() {
+                                    None
+                                } else {
+                                    Some(String::from(split))
+                                }
+                            })
                             .collect(),
                         from: from.to_owned(),
                         optional: optional == "t",
@@ -351,7 +361,7 @@ fn load_crate_categories(
 ) {
     println!("Loading crate categories...");
     let start = Instant::now();
-    let mut count = 0usize;
+    let mut count = 0_usize;
 
     let file_path = get_collection_path(data_path, "crates_categories");
 
@@ -413,7 +423,7 @@ fn load_crate_keywords(
 ) {
     println!("Loading crate keywords...");
     let start = Instant::now();
-    let mut count = 0usize;
+    let mut count = 0_usize;
 
     let file_path = get_collection_path(data_path, "crates_keywords");
 

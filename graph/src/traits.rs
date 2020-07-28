@@ -1,6 +1,7 @@
 use super::schema::{Category, Crate, Keyword};
 use rand::Rng;
 use std::collections::{HashMap, VecDeque};
+use std::hash::BuildHasher;
 
 const MAX_SEARCH_LENGTH: usize = 10;
 
@@ -70,7 +71,7 @@ pub trait Random<T> {
     fn random(&self) -> &T;
 }
 
-impl<T, U> Random<T> for HashMap<U, T> {
+impl<T, U, S: BuildHasher> Random<T> for HashMap<U, T, S> {
     fn random(&self) -> &T {
         self.values()
             .nth(rand::thread_rng().gen_range(0, self.len()))
@@ -82,7 +83,7 @@ pub trait Search<T: Vertex> {
     fn search<'a>(&'a self, search_term: &str) -> Vec<&'a T>;
 }
 
-impl<T: Vertex> Search<T> for HashMap<String, T> {
+impl<T: Vertex, S: BuildHasher> Search<T> for HashMap<String, T, S> {
     fn search<'a>(&'a self, search_term: &str) -> Vec<&'a T> {
         let mut results: VecDeque<(f64, &T)> = VecDeque::new();
 
@@ -114,7 +115,7 @@ impl<T: Vertex> Search<T> for HashMap<String, T> {
         }
 
         if let Some(search_vertex) = self.get(search_term) {
-            results.insert(0, (0f64, search_vertex));
+            results.insert(0, (0_f64, search_vertex));
             if results.len() > MAX_SEARCH_LENGTH {
                 results.pop_back();
             }
