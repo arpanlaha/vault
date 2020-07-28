@@ -7,6 +7,31 @@ defaults:
     working-directory: api
 
 jobs:
+  bench:
+    runs-on: ubuntu-latest
+    name: Bench
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            api/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install rust toolchain (nightly)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: nightly
+
+      - name: Run benchmarks
+        run: cargo bench --tests
+
   format:
     runs-on: ubuntu-latest
     name: Format
