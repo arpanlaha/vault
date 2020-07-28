@@ -5,6 +5,8 @@ use super::super::ingest::{
 use chrono::NaiveDateTime;
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::fs::File;
+use std::process::Command;
 use std::time::Instant;
 use tokio::sync::{Mutex, RwLock};
 
@@ -20,12 +22,13 @@ impl AppState {
             last_updated: Mutex::new(Instant::now()),
         }
     }
-}
 
-pub struct Graph {
-    categories: HashMap<String, Category>,
-    crates: HashMap<String, Crate>,
-    keywords: HashMap<String, Keyword>,
+    pub async fn test() -> AppState {
+        AppState {
+            graph: RwLock::new(Graph::test().await),
+            last_updated: Mutex::new(Instant::now()),
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -200,6 +203,12 @@ fn dependency_graph_helper(
     }
 }
 
+pub struct Graph {
+    categories: HashMap<String, Category>,
+    crates: HashMap<String, Crate>,
+    keywords: HashMap<String, Keyword>,
+}
+
 impl Graph {
     pub async fn new() -> Graph {
         let temp_dir = vault_fs::fetch_data();
@@ -208,6 +217,28 @@ impl Graph {
 
         let (categories, crates, keywords) = vault_load::load_database(data_path.as_str()).await;
         vault_fs::clean_tempdir(temp_dir);
+
+        Graph {
+            categories,
+            crates,
+            keywords,
+        }
+    }
+
+    pub async fn test() -> Graph {
+        let data_path = "./tests/data";
+
+        if File::open(data_path).is_err() {
+            Command::new("tar")
+                .arg("-xzf")
+                .arg("./tests/data.tar.gz")
+                .arg("-C")
+                .arg("tests")
+                .output()
+                .unwrap();
+        }
+
+        let (categories, crates, keywords) = vault_load::load_database(data_path).await;
 
         Graph {
             categories,
