@@ -1,3 +1,3 @@
 # vault
 
-WIP, server will likely be unactivated.
+Interactively visualize your crates.io dependencies.
