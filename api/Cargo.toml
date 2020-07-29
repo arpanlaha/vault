@@ -10,9 +10,8 @@ repository = "https://github.com/arpanlaha/vault.git"
 [dependencies]
 actix-cors = "0.2"
 actix-rt = "1.1"
-actix-web = { version = "2.0", features = ["openssl"] }
+actix-web = { version = "2.0" }
 env_logger = "0.7"
-openssl = { version = "0.10" }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "0.2", features = ["sync"] }
 vault_graph = { path = "../graph" }

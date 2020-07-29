@@ -7,14 +7,29 @@ use actix_web::{
     App, HttpResponse, HttpServer,
 };
 use env_logger::Env;
+use std::env;
 use std::io::Result as IoResult;
 use vault_api::{
     routes::{categories, crates, keywords, reset},
-    utils::{ssl, state::AppState},
+    utils::state::AppState,
 };
 
 #[actix_rt::main]
 async fn main() -> IoResult<()> {
+    let mut args = env::args();
+
+    let port = args.nth(1).unwrap_or_else(|| String::from("8080"));
+    port.parse::<u16>()
+        .unwrap_or_else(|_| panic!("{} is not a valid port number", port));
+
+    let address = args.next().map_or("0.0.0.0", |arg| {
+        if arg == "--local" || arg == "-l" {
+            "127.0.0.1"
+        } else {
+            "0.0.0.0"
+        }
+    });
+
     let app_state = Data::new(AppState::new().await);
 
     env_logger::from_env(Env::default().default_filter_or("info")).init();
@@ -57,7 +72,7 @@ async fn main() -> IoResult<()> {
             .route("reset", web::put().to(reset::reset_state))
             .default_service(web::route().to(|| HttpResponse::NotFound().json("Route not found.")))
     })
-    .bind_openssl("0.0.0.0:443", ssl::get_ssl_builder())?
+    .bind(format!("{}:{}", address, port))?
     .run()
     .await
 }
