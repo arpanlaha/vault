@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod common;
+
 use actix_web::{
     dev::ServiceResponse,
     http::StatusCode,
@@ -8,7 +10,6 @@ use actix_web::{
     web::{self, Data},
     App,
 };
-use futures::executor;
 use serde::Deserialize;
 use std::str;
 use vault_api::{
@@ -17,7 +18,7 @@ use vault_api::{
 };
 
 lazy_static! {
-    static ref DATA: Data<AppState> = Data::new(executor::block_on(AppState::test()));
+    static ref DATA: Data<AppState> = common::get_data();
 }
 
 #[derive(Deserialize)]
