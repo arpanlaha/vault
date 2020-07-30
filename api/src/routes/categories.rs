@@ -1,12 +1,30 @@
 use super::super::utils::state::AppState;
 use actix_web::{web::Data, HttpRequest, HttpResponse};
 use serde::Serialize;
-use vault_graph::{Category, Random, Search};
+use vault_graph::{Category, Graph, Random, Search};
 
 #[derive(Serialize)]
-struct CategoryResponse<'a> {
+pub struct CategoryResponse<'a> {
     category: &'a Category,
     children: Vec<&'a Category>,
+}
+
+impl<'a> CategoryResponse<'a> {
+    pub fn new(category: &'a Category, graph: &'a Graph) -> CategoryResponse<'a> {
+        CategoryResponse {
+            category,
+            children: graph
+                .categories()
+                .values()
+                .filter(|list_category| {
+                    list_category.category != category.category
+                        && list_category
+                            .category
+                            .starts_with(category.category.as_str())
+                })
+                .collect(),
+        }
+    }
 }
 
 pub async fn get_categories(data: Data<AppState>) -> HttpResponse {
@@ -27,23 +45,17 @@ pub async fn get_category(req: HttpRequest, data: Data<AppState>) -> HttpRespons
                 None => HttpResponse::NotFound()
                     .json(format!("Category with id {} does not exist.", category_id)),
 
-                Some(category) => HttpResponse::Ok().json(CategoryResponse {
-                    category,
-                    children: graph
-                        .categories()
-                        .values()
-                        .filter(|Category { category, .. }| {
-                            category != category_id && category.starts_with(category_id)
-                        })
-                        .collect(),
-                }),
+                Some(category) => HttpResponse::Ok().json(CategoryResponse::new(category, &graph)),
             }
         }
     }
 }
 
 pub async fn random(data: Data<AppState>) -> HttpResponse {
-    HttpResponse::Ok().json(data.graph.read().await.categories().random())
+    let graph = data.graph.read().await;
+    let category = graph.categories().random();
+
+    HttpResponse::Ok().json(CategoryResponse::new(category, &graph))
 }
 
 pub async fn search(req: HttpRequest, data: Data<AppState>) -> HttpResponse {
