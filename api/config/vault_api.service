@@ -1,0 +1,15 @@
+[Unit]
+Description=The Vault API
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/sbin/vault_api 8285 -l
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=vault_api
+
+[Install]
+WantedBy=multi-user.target
