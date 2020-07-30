@@ -8,7 +8,7 @@ use actix_web::{
     web::{self, Data},
     App,
 };
-use futures::executor::block_on;
+use futures::executor;
 use serde::Deserialize;
 use std::str;
 use vault_api::{
@@ -17,7 +17,7 @@ use vault_api::{
 };
 
 lazy_static! {
-    static ref DATA: Data<AppState> = Data::new(block_on(AppState::test()));
+    static ref DATA: Data<AppState> = Data::new(executor::block_on(AppState::test()));
 }
 
 #[derive(Deserialize)]
@@ -49,6 +49,9 @@ async fn test_get_categories() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
+    assert!(
+        serde_json::from_str::<Vec<TestCategory>>(get_body_as_string(resp).await.as_str()).is_ok()
+    );
 }
 
 #[actix_rt::test]
@@ -71,7 +74,7 @@ async fn test_get_category_no_id() {
 }
 
 #[actix_rt::test]
-async fn test_get_category_nonexistent_crate() {
+async fn test_get_category_nonexistent() {
     let mut app = test::init_service(
         App::new()
             .route(
@@ -137,7 +140,6 @@ async fn test_random_category() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-
     assert!(
         serde_json::from_str::<TestCategoryResponse>(get_body_as_string(resp).await.as_str())
             .is_ok()
@@ -157,7 +159,6 @@ async fn test_search_category_no_search_term() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-
     assert_eq!(
         get_body_as_string(resp).await,
         "\"Search term must be provided.\""
@@ -182,7 +183,6 @@ async fn test_search_category_ok() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-
     assert!(
         serde_json::from_str::<Vec<TestCategory>>(get_body_as_string(resp).await.as_str()).is_ok()
     );

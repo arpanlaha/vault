@@ -1,24 +1,28 @@
 #![feature(test)]
 extern crate test;
 
-use futures::executor::block_on;
+#[macro_use]
+extern crate lazy_static;
+
+use futures::executor;
 use test::Bencher;
 use vault_graph::{Graph, Random};
 
+lazy_static! {
+    static ref GRAPH: Graph = executor::block_on(Graph::test());
+}
+
 #[bench]
 fn bench_random_crates(b: &mut Bencher) {
-    let graph = block_on(Graph::test());
-    b.iter(|| graph.crates().random());
+    b.iter(|| GRAPH.crates().random());
 }
 
 #[bench]
 fn bench_random_categories(b: &mut Bencher) {
-    let graph = block_on(Graph::test());
-    b.iter(|| graph.categories().random());
+    b.iter(|| GRAPH.categories().random());
 }
 
 #[bench]
 fn bench_random_keywords(b: &mut Bencher) {
-    let graph = block_on(Graph::test());
-    b.iter(|| graph.keywords().random());
+    b.iter(|| GRAPH.keywords().random());
 }
