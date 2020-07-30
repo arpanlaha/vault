@@ -58,3 +58,28 @@ jobs:
 
       - name: Run clippy
         run: cargo +stable clippy -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+    name: test
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            api/target
+          key: vault-api-test
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Run tests
+        run: cargo +stable test --no-fail-fast --test tests
