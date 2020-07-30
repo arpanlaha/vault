@@ -4,7 +4,6 @@ extern crate lazy_static;
 mod common;
 
 use actix_web::{
-    dev::ServiceResponse,
     http::StatusCode,
     test::{self, TestRequest},
     web::{self, Data},
@@ -28,10 +27,6 @@ struct TestCrate {
     pub version: String,
 }
 
-async fn get_body_as_string(resp: ServiceResponse) -> String {
-    String::from_utf8(test::read_body(resp).await.to_vec()).unwrap()
-}
-
 #[actix_rt::test]
 async fn test_get_crate_no_id() {
     let mut app = test::init_service(
@@ -46,7 +41,7 @@ async fn test_get_crate_no_id() {
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Crate id must be provided.\""
     );
 }
@@ -65,7 +60,7 @@ async fn test_get_crate_nonexistent() {
 
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Crate with id nonexistent does not exist.\""
     );
 }
@@ -86,7 +81,7 @@ async fn test_get_crate_ok() {
 
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
-        get_body_as_string(resp).await.as_str(),
+        common::get_body_as_string(resp).await.as_str(),
         serde_json::to_string(graph.crates().get("actix-web").unwrap()).unwrap()
     )
 }
@@ -104,7 +99,9 @@ async fn test_random_category() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(serde_json::from_str::<TestCrate>(get_body_as_string(resp).await.as_str()).is_ok());
+    assert!(
+        serde_json::from_str::<TestCrate>(common::get_body_as_string(resp).await.as_str()).is_ok()
+    );
 }
 
 #[actix_rt::test]
@@ -121,7 +118,7 @@ async fn test_search_crate_no_search_term() {
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Search term must be provided.\""
     );
 }
@@ -142,9 +139,10 @@ async fn test_search_crates_ok() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<Vec<TestCrate>>(get_body_as_string(resp).await.as_str()).is_ok()
-    );
+    assert!(serde_json::from_str::<Vec<TestCrate>>(
+        common::get_body_as_string(resp).await.as_str()
+    )
+    .is_ok());
 }
 
 #[actix_rt::test]
@@ -161,7 +159,7 @@ async fn test_graph_no_id() {
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Crate id must be provided.\""
     );
 }
@@ -184,7 +182,10 @@ async fn test_graph_bad_query_string() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(get_body_as_string(resp).await, "\"Bad query string.\"");
+    assert_eq!(
+        common::get_body_as_string(resp).await,
+        "\"Bad query string.\""
+    );
 }
 
 #[actix_rt::test]
@@ -204,7 +205,7 @@ async fn test_graph_ok() {
 
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         serde_json::to_string(
             &DATA
                 .graph
@@ -236,7 +237,7 @@ async fn test_graph_ok_features() {
 
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         serde_json::to_string(
             &DATA
                 .graph

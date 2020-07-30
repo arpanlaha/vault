@@ -4,7 +4,6 @@ extern crate lazy_static;
 mod common;
 
 use actix_web::{
-    dev::ServiceResponse,
     http::StatusCode,
     test::{self, TestRequest},
     web::{self, Data},
@@ -33,10 +32,6 @@ struct TestCategoryResponse {
     pub children: Vec<TestCategory>,
 }
 
-async fn get_body_as_string(resp: ServiceResponse) -> String {
-    String::from_utf8(test::read_body(resp).await.to_vec()).unwrap()
-}
-
 #[actix_rt::test]
 async fn test_get_categories() {
     let mut app = test::init_service(
@@ -50,9 +45,10 @@ async fn test_get_categories() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<Vec<TestCategory>>(get_body_as_string(resp).await.as_str()).is_ok()
-    );
+    assert!(serde_json::from_str::<Vec<TestCategory>>(
+        common::get_body_as_string(resp).await.as_str()
+    )
+    .is_ok());
 }
 
 #[actix_rt::test]
@@ -69,7 +65,7 @@ async fn test_get_category_no_id() {
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Category id must be provided.\""
     );
 }
@@ -93,7 +89,7 @@ async fn test_get_category_nonexistent() {
 
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Category with id nonexistent does not exist.\""
     );
 }
@@ -119,7 +115,7 @@ async fn test_get_category_ok() {
 
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
-        get_body_as_string(resp).await.as_str(),
+        common::get_body_as_string(resp).await.as_str(),
         serde_json::to_string(&CategoryResponse::new(
             graph.categories().get("WebAssembly").unwrap(),
             &graph
@@ -141,10 +137,10 @@ async fn test_random_category() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<TestCategoryResponse>(get_body_as_string(resp).await.as_str())
-            .is_ok()
-    );
+    assert!(serde_json::from_str::<TestCategoryResponse>(
+        common::get_body_as_string(resp).await.as_str()
+    )
+    .is_ok());
 }
 
 #[actix_rt::test]
@@ -161,7 +157,7 @@ async fn test_search_category_no_search_term() {
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     assert_eq!(
-        get_body_as_string(resp).await,
+        common::get_body_as_string(resp).await,
         "\"Search term must be provided.\""
     );
 }
@@ -184,7 +180,8 @@ async fn test_search_category_ok() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<Vec<TestCategory>>(get_body_as_string(resp).await.as_str()).is_ok()
-    );
+    assert!(serde_json::from_str::<Vec<TestCategory>>(
+        common::get_body_as_string(resp).await.as_str()
+    )
+    .is_ok());
 }
