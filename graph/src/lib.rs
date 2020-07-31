@@ -12,6 +12,7 @@ use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::process::Command;
+use std::time::Instant;
 pub use traits::{Random, Search};
 
 #[derive(Serialize)]
@@ -186,6 +187,7 @@ pub struct Graph {
     categories: HashMap<String, Category>,
     crates: HashMap<String, Crate>,
     keywords: HashMap<String, Keyword>,
+    last_updated: Instant,
 }
 
 impl Graph {
@@ -201,6 +203,7 @@ impl Graph {
             categories,
             crates,
             keywords,
+            last_updated: Instant::now(),
         }
     }
 
@@ -223,6 +226,7 @@ impl Graph {
             categories,
             crates,
             keywords,
+            last_updated: Instant::now(),
         }
     }
 
@@ -230,6 +234,7 @@ impl Graph {
         self.categories = other.categories;
         self.crates = other.crates;
         self.keywords = other.keywords;
+        self.last_updated = Instant::now();
     }
 
     #[must_use]
@@ -257,6 +262,10 @@ impl Graph {
 
     pub fn set_keywords(&mut self, keywords: HashMap<String, Keyword>) {
         self.keywords = keywords;
+    }
+
+    pub fn time_since_last_update(&self) -> u64 {
+        self.last_updated.elapsed().as_secs()
     }
 
     #[must_use]

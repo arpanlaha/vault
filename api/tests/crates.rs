@@ -6,16 +6,15 @@ mod common;
 use actix_web::{
     http::StatusCode,
     test::{self, TestRequest},
-    web::{self, Data},
-    App,
+    web, App,
 };
 use chrono::NaiveDateTime;
 use serde::Deserialize;
 use std::str;
-use vault_api::{routes::crates, utils::state::AppState};
+use vault_api::{routes::crates, utils::State};
 
 lazy_static! {
-    static ref DATA: Data<AppState> = common::get_data();
+    static ref DATA: State = common::get_data();
 }
 
 #[derive(Deserialize)]
@@ -77,7 +76,7 @@ async fn test_get_crate_ok() {
     let req = TestRequest::get().uri("/crates/actix-web").to_request();
     let resp = test::call_service(&mut app, req).await;
 
-    let graph = DATA.graph.read().await;
+    let graph = DATA.read().await;
 
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
@@ -208,7 +207,6 @@ async fn test_graph_ok() {
         common::get_body_as_string(resp).await,
         serde_json::to_string(
             &DATA
-                .graph
                 .read()
                 .await
                 .get_dependency_graph("actix-web", vec![])
@@ -240,7 +238,6 @@ async fn test_graph_ok_features() {
         common::get_body_as_string(resp).await,
         serde_json::to_string(
             &DATA
-                .graph
                 .read()
                 .await
                 .get_dependency_graph("actix-web", vec![String::from("tls")])

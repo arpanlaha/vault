@@ -6,18 +6,17 @@ mod common;
 use actix_web::{
     http::StatusCode,
     test::{self, TestRequest},
-    web::{self, Data},
-    App,
+    web, App,
 };
 use serde::Deserialize;
 use std::str;
 use vault_api::{
     routes::categories::{self, CategoryResponse},
-    utils::state::AppState,
+    utils::State,
 };
 
 lazy_static! {
-    static ref DATA: Data<AppState> = common::get_data();
+    static ref DATA: State = common::get_data();
 }
 
 #[derive(Deserialize)]
@@ -111,7 +110,7 @@ async fn test_get_category_ok() {
         .to_request();
     let resp = test::call_service(&mut app, req).await;
 
-    let graph = DATA.graph.read().await;
+    let graph = DATA.read().await;
 
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(

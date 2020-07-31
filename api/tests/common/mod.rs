@@ -1,9 +1,11 @@
 use actix_web::{dev::ServiceResponse, test, web::Data};
 use futures::executor;
-use vault_api::utils::state::AppState;
+use tokio::sync::RwLock;
+use vault_api::utils::State;
+use vault_graph::Graph;
 
-pub fn get_data() -> Data<AppState> {
-    Data::new(executor::block_on(AppState::test()))
+pub fn get_data() -> State {
+    Data::new(RwLock::new(executor::block_on(Graph::test())))
 }
 
 pub async fn get_body_as_string(resp: ServiceResponse) -> String {

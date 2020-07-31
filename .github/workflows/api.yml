@@ -82,4 +82,4 @@ jobs:
           toolchain: stable
 
       - name: Run tests
-        run: cargo +stable test --no-fail-fast --test categories --test crates
+        run: cargo +stable test --no-fail-fast --test categories --test crates -- test keywords

@@ -9,10 +9,9 @@ use actix_web::{
 use env_logger::Env;
 use std::env;
 use std::io::Result as IoResult;
-use vault_api::{
-    routes::{categories, crates, keywords, reset},
-    utils::state::AppState,
-};
+use tokio::sync::RwLock;
+use vault_api::routes::{categories, crates, keywords, reset};
+use vault_graph::Graph;
 
 #[actix_rt::main]
 async fn main() -> IoResult<()> {
@@ -30,7 +29,7 @@ async fn main() -> IoResult<()> {
         }
     });
 
-    let app_state = Data::new(AppState::new().await);
+    let app_state = Data::new(RwLock::new(Graph::new().await));
 
     env_logger::from_env(Env::default().default_filter_or("info")).init();
 

@@ -1,16 +1,14 @@
-use super::super::utils::state::AppState;
-use actix_web::{web::Data, HttpResponse};
+use super::super::utils::State;
+use actix_web::HttpResponse;
 use vault_graph::Graph;
 
 const INTERVAL: u64 = 60 * (60 * 23 + 55);
 
-pub async fn reset_state(data: Data<AppState>) -> HttpResponse {
-    let mut last_updated = data.last_updated.lock().await;
-    if last_updated.elapsed().as_secs() >= INTERVAL {
-        let graph = Graph::new().await;
-        data.graph.write().await.replace(graph);
-        let to_add = last_updated.elapsed();
-        *last_updated += to_add;
+pub async fn reset_state(data: State) -> HttpResponse {
+    let graph = data.read().await;
+    if graph.time_since_last_update() >= INTERVAL {
+        let new_graph = Graph::new().await;
+        data.write().await.replace(new_graph);
 
         HttpResponse::Ok().json("Successfully updated application state.")
     } else {

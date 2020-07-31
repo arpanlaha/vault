@@ -1,4 +1,9 @@
+use actix_web::web::Data;
 use std::collections::HashMap;
+use tokio::sync::RwLock;
+use vault_graph::Graph;
+
+pub type State = Data<RwLock<Graph>>;
 
 pub enum QueryParamError {
     InvalidQueryString,
