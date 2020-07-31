@@ -12,8 +12,10 @@ use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::process::Command;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 pub use traits::{Random, Search};
+
+const DAY_SECONDS: u64 = 60 * 60 * 24;
 
 #[derive(Serialize)]
 pub struct CrateDistance<'a> {
@@ -227,6 +229,29 @@ impl Graph {
             crates,
             keywords,
             last_updated: Instant::now(),
+        }
+    }
+
+    pub async fn yesterday() -> Self {
+        let data_path = "./tests/data";
+
+        if File::open(data_path).is_err() {
+            Command::new("tar")
+                .arg("-xzf")
+                .arg("./tests/data.tar.gz")
+                .arg("-C")
+                .arg("tests")
+                .output()
+                .unwrap();
+        }
+
+        let (categories, crates, keywords) = load::get_data(data_path).await;
+
+        Self {
+            categories,
+            crates,
+            keywords,
+            last_updated: Instant::now() - Duration::from_secs(DAY_SECONDS),
         }
     }
 

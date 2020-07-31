@@ -10,7 +10,7 @@ use env_logger::Env;
 use std::env;
 use std::io::Result as IoResult;
 use tokio::sync::RwLock;
-use vault_api::routes::{categories, crates, keywords, reset};
+use vault_api::routes::{categories, crates, keywords, state};
 use vault_graph::Graph;
 
 #[actix_rt::main]
@@ -68,7 +68,11 @@ async fn main() -> IoResult<()> {
                     )
                     .route("keywords/{search_term}", web::get().to(keywords::search)),
             )
-            .route("reset", web::put().to(reset::reset_state))
+            .service(
+                web::scope("state")
+                    .route("last-updated", web::get().to(state::time_since_last_update))
+                    .route("reset", web::put().to(state::reset)),
+            )
             .default_service(web::route().to(|| HttpResponse::NotFound().json("Route not found.")))
     })
     .bind(format!("{}:{}", address, port))?
