@@ -289,6 +289,7 @@ impl Graph {
         self.keywords = keywords;
     }
 
+    #[must_use]
     pub fn time_since_last_update(&self) -> u64 {
         self.last_updated.elapsed().as_secs()
     }
