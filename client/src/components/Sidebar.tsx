@@ -138,8 +138,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       collapsedWidth={0}
     >
       <div className="column sider">
-        <h1>Vault</h1>
-        <h2>Current crate: {currentCrate?.crate.name}</h2>
+        <h1>Current crate: {currentCrate?.crate.name}</h1>
         <div className="row crate-picker">
           <AutoComplete
             options={

@@ -15,19 +15,12 @@ body {
   margin: 0;
   padding: 0;
   font-family: "Nunito Sans", sans-serif !important;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 h1 {
-  font-size: 8vmin;
+  font-size: 4vmin;
   text-align: center;
-  margin: 0;
-}
-
-::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
+  margin: 2vmin 0;
 }
 
 h2 {
@@ -43,7 +36,6 @@ canvas {
 }
 
 aside {
-  overflow: scroll;
   height: 100vh;
 }
 
