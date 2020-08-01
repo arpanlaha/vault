@@ -102,7 +102,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
   const handleSearch = async (searchInput: string): Promise<void> => {
     setSearchTerm(searchInput);
     if (searchInput.length > 0) {
-      const searchCrateRes = await searchCrate(searchInput);
+      const searchCrateRes = await searchCrate(searchInput.toLowerCase());
       if (searchCrateRes.success) {
         setSearchCrates(searchCrateRes.result);
       } else {
