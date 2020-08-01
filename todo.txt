@@ -7,3 +7,4 @@ Look into custom graph viz
 Exhaustive documentation
 Cron jobs to update server
 Transitive deps on node click
+Fix sidebar width jumping

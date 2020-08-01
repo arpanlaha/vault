@@ -255,6 +255,10 @@ impl Graph {
         }
     }
 
+    pub fn update_time(&mut self) {
+        self.last_updated = Instant::now();
+    }
+
     pub fn replace(&mut self, other: Self) {
         self.categories = other.categories;
         self.crates = other.crates;

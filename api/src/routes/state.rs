@@ -16,8 +16,18 @@ pub async fn time_since_last_update(data: State) -> HttpResponse {
     })
 }
 
+async fn can_update(data: &State) -> bool {
+    let mut graph = data.write().await;
+    if graph.time_since_last_update() >= INTERVAL {
+        graph.update_time();
+        true
+    } else {
+        false
+    }
+}
+
 pub async fn reset(data: State) -> HttpResponse {
-    if data.read().await.time_since_last_update() >= INTERVAL {
+    if can_update(&data).await {
         let new_graph = Graph::new().await;
         data.write().await.replace(new_graph);
 
