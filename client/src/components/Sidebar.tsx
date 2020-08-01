@@ -70,6 +70,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
   }, [featureNames, currentCrate]);
 
   const handleSearch = async (searchInput: string): Promise<void> => {
+    setSearchTerm(searchInput);
     if (searchInput.length > 0) {
       const searchCrateRes = await searchCrate(searchInput);
       if (searchCrateRes.success) {
@@ -80,7 +81,6 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     } else {
       setSearchCrates([]);
     }
-    setSearchTerm(searchInput);
   };
 
   const handleSearchSelect = (selectedCrateName: string): void => {
