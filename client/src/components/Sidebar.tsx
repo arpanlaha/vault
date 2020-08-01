@@ -87,16 +87,23 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     setSearchTerm(selectedCrateName);
     setUrlCrateName(selectedCrateName);
     setUrlFeatures(undefined);
-    setCurrentCrate(
-      selectedCrateName.length > 0
-        ? {
-            crate: searchCrates.find(
-              (searchCrate) => searchCrate.name === selectedCrateName
-            )!,
-            selectedFeatures: [],
-          }
-        : null
+    const selectedCrate = searchCrates.find(
+      (searchCrate) => searchCrate.name === selectedCrateName
     );
+    if (selectedCrate !== undefined) {
+      setCurrentCrate(
+        selectedCrateName.length > 0
+          ? {
+              crate: searchCrates.find(
+                (searchCrate) => searchCrate.name === selectedCrateName
+              )!,
+              selectedFeatures: [],
+            }
+          : null
+      );
+    } else {
+      setError(`Crate with id ${selectedCrateName} does not exist.`);
+    }
   };
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
@@ -149,6 +156,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
               onSearch={handleSearchSelect}
               disabled={searchTerm.length === 0}
               allowClear
+              enterButton
             />
           </AutoComplete>
           <Button onClick={setRandomCrate} icon={<RedoOutlined />}>

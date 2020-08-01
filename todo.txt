@@ -7,3 +7,5 @@ Look into custom graph viz
 Exhaustive documentation
 Cron jobs to update server
 Transitive deps on node click
+Add last updated to client
+Fix scrollbar visibility on firefox/edge
