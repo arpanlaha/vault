@@ -115,24 +115,27 @@ export default function Sidebar(props: SidebarProps): ReactElement {
 
   const handleSearchSelect = (selectedCrateName: string): void => {
     setSearchTerm(selectedCrateName);
-    setUrlCrateName(selectedCrateName);
-    setUrlFeatures(undefined);
-    const selectedCrate = searchCrates.find(
-      (searchCrate) => searchCrate.name === selectedCrateName
-    );
-    if (selectedCrate !== undefined) {
-      setCurrentCrate(
-        selectedCrateName.length > 0
-          ? {
-              crate: searchCrates.find(
-                (searchCrate) => searchCrate.name === selectedCrateName
-              )!,
-              selectedFeatures: [],
-            }
-          : null
+
+    if (selectedCrateName !== "") {
+      setUrlCrateName(selectedCrateName);
+      setUrlFeatures(undefined);
+      const selectedCrate = searchCrates.find(
+        (searchCrate) => searchCrate.name === selectedCrateName
       );
-    } else {
-      setError(`Crate with id ${selectedCrateName} does not exist.`);
+      if (selectedCrate !== undefined) {
+        setCurrentCrate(
+          selectedCrateName.length > 0
+            ? {
+                crate: searchCrates.find(
+                  (searchCrate) => searchCrate.name === selectedCrateName
+                )!,
+                selectedFeatures: [],
+              }
+            : null
+        );
+      } else {
+        setError(`Crate with id ${selectedCrateName} does not exist.`);
+      }
     }
   };
 
