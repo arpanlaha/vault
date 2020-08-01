@@ -7,6 +7,5 @@ Look into custom graph viz
 Exhaustive documentation
 Cron jobs to update server
 Client url query parameters
-Mobile-friendly client
 Transitive deps on node click
 CSS refactor

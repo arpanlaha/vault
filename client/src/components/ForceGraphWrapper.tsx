@@ -2,7 +2,6 @@ import React, {
   Dispatch,
   ReactElement,
   SetStateAction,
-  useCallback,
   useState,
   useEffect,
 } from "react";
@@ -39,23 +38,23 @@ export default function ForceGraphWrapper(
   const BLUE = "hsl(216, 100%, 50%)";
   const GRAY = "hsl(0, 0%, 50%)";
 
-  const resize = useCallback((): void => {
-    if (portrait) {
-      setHeight(window.innerHeight);
-      setWidth(window.innerWidth);
-    } else {
-      const containerHeight = window.innerHeight;
-      const containerWidth =
-        window.innerWidth - document.querySelector("aside")!.clientWidth;
-      setHeight(containerHeight * (1 - DIMENSION_FACTOR));
-      setWidth(containerWidth - containerHeight * DIMENSION_FACTOR);
-    }
-  }, [portrait]);
-
   useEffect(() => {
+    const resize = (): void => {
+      if (portrait) {
+        setHeight(window.innerHeight);
+        setWidth(window.innerWidth);
+      } else {
+        const containerHeight = window.innerHeight;
+        const containerWidth =
+          window.innerWidth - document.querySelector("aside")!.clientWidth;
+        setHeight(containerHeight * (1 - DIMENSION_FACTOR));
+        setWidth(containerWidth - containerHeight * DIMENSION_FACTOR);
+      }
+    };
+
     resize();
     window.addEventListener("resize", resize);
-  }, [resize]);
+  }, [portrait]);
 
   useEffect(() => setClickedCrateName(null), [
     crates,
