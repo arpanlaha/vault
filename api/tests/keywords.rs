@@ -11,6 +11,7 @@ use actix_web::{
 use serde::Deserialize;
 use std::str;
 use vault_api::{routes::keywords, utils::State};
+use vault_graph::Search;
 
 lazy_static! {
     static ref DATA: State = common::get_data();
@@ -143,8 +144,10 @@ async fn test_search_keywords_ok() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(serde_json::from_str::<Vec<TestKeyword>>(
-        common::get_body_as_string(resp).await.as_str()
+
+    let graph = DATA.read().await;
+    assert_eq!(
+        common::get_body_as_string(resp).await.as_str(),
+        serde_json::to_string(&graph.keyword_names().search("actix", graph.keywords())).unwrap()
     )
-    .is_ok());
 }

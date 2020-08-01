@@ -81,3 +81,5 @@ yarn-error.log
 .yarn-integrity
 
 *.pem
+
+results

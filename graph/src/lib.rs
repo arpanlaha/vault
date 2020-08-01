@@ -9,7 +9,7 @@ mod traits;
 use chrono::NaiveDateTime;
 pub use schema::{Category, Crate, Dependency, Keyword};
 use serde::Serialize;
-use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -187,8 +187,11 @@ fn dependency_graph_helper(
 
 pub struct Graph {
     categories: HashMap<String, Category>,
+    category_names: BTreeSet<String>,
     crates: HashMap<String, Crate>,
+    crate_names: BTreeSet<String>,
     keywords: HashMap<String, Keyword>,
+    keyword_names: BTreeSet<String>,
     last_updated: Instant,
 }
 
@@ -201,9 +204,18 @@ impl Graph {
         let (categories, crates, keywords) = load::get_data(data_path.as_str()).await;
         fs::clean_tempdir(temp_dir);
 
+        let mut crate_names: BTreeSet<String> = BTreeSet::new();
+
+        for crate_name in crates.keys() {
+            crate_names.insert(crate_name.to_owned());
+        }
+
         Self {
+            category_names: get_names(&categories),
             categories,
+            crate_names: get_names(&crates),
             crates,
+            keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
         }
@@ -224,9 +236,18 @@ impl Graph {
 
         let (categories, crates, keywords) = load::get_data(data_path).await;
 
+        let mut crate_names: BTreeSet<String> = BTreeSet::new();
+
+        for crate_name in crates.keys() {
+            crate_names.insert(crate_name.to_owned());
+        }
+
         Self {
+            category_names: get_names(&categories),
             categories,
+            crate_names: get_names(&crates),
             crates,
+            keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
         }
@@ -247,9 +268,18 @@ impl Graph {
 
         let (categories, crates, keywords) = load::get_data(data_path).await;
 
+        let mut crate_names: BTreeSet<String> = BTreeSet::new();
+
+        for crate_name in crates.keys() {
+            crate_names.insert(crate_name.to_owned());
+        }
+
         Self {
+            category_names: get_names(&categories),
             categories,
+            crate_names: get_names(&crates),
             crates,
+            keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now() - Duration::from_secs(DAY_SECONDS),
         }
@@ -281,17 +311,106 @@ impl Graph {
         &self.keywords
     }
 
-    pub fn set_categories(&mut self, categories: HashMap<String, Category>) {
-        self.categories = categories;
+    #[must_use]
+    pub const fn category_names(&self) -> &BTreeSet<String> {
+        &self.category_names
     }
 
-    pub fn set_crates(&mut self, crates: HashMap<String, Crate>) {
-        self.crates = crates;
+    #[must_use]
+    pub const fn crate_names(&self) -> &BTreeSet<String> {
+        &self.crate_names
     }
 
-    pub fn set_keywords(&mut self, keywords: HashMap<String, Keyword>) {
-        self.keywords = keywords;
+    #[must_use]
+    pub const fn keyword_names(&self) -> &BTreeSet<String> {
+        &self.keyword_names
     }
+
+    // #[must_use]
+    // pub fn search_crates(&self, search_term: &str) -> VecDeque<&Crate> {
+    //     if search_term.is_empty() {
+    //         VecDeque::new()
+    //     } else {
+    //         let mut range_end = String::from(search_term);
+    //         let to_push = (range_end.pop().unwrap() as u8 + 1) as char;
+    //         range_end.push(to_push);
+
+    //         let prefixed_crate_names = self
+    //             .crate_names
+    //             .range::<String, _>((Included(&String::from(search_term)), Excluded(&range_end)));
+
+    //         let mut search_results: VecDeque<&Crate> =
+    //             VecDeque::with_capacity(MAX_SEARCH_LENGTH + 1);
+
+    //         for prefixed_crate_name in prefixed_crate_names {
+    //             if prefixed_crate_name != search_term {
+    //                 let prefixed_crate = self.crates.get(prefixed_crate_name).unwrap();
+    //                 if search_results.is_empty() {
+    //                     search_results.push_back(prefixed_crate);
+    //                 } else {
+    //                     if should_replace(prefixed_crate, search_results.back().unwrap()) {
+    //                         if let Some((index, _)) =
+    //                             search_results
+    //                                 .iter()
+    //                                 .enumerate()
+    //                                 .find(|(_, results_crate)| {
+    //                                     should_replace(prefixed_crate, results_crate)
+    //                                 })
+    //                         {
+    //                             search_results.insert(index, prefixed_crate);
+
+    //                             if search_results.len() > MAX_SEARCH_LENGTH {
+    //                                 search_results.pop_back();
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+
+    //         if let Some(search_crate) = self.crates.get(search_term) {
+    //             search_results.push_front(search_crate);
+    //             if search_results.len() > MAX_SEARCH_LENGTH {
+    //                 search_results.pop_back();
+    //             }
+    //         }
+
+    //         search_results
+
+    //         // let in_range: Vec<&String> = self
+    //         //     .crate_names
+    //         //     .range::<String, _>((Included(&search_term), Excluded(&range_end)))
+    //         //     .collect();
+
+    //         // if in_range.is_empty() {
+    //         //     return vec![];
+    //         // }
+
+    //         // in_range
+    //         //     .iter()
+    //         //     .filter(|crate_name| {
+    //         //         crate_name.len()
+    //         //             <= in_range
+    //         //                 .get(10)
+    //         //                 .unwrap_or_else(|| in_range.last().unwrap())
+    //         //                 .len()
+    //         //     })
+    //         //     .map(|&crate_name| crate_name)
+    //         //     .collect()
+    //     }
+    // }
+
+    // pub fn set_categories(&mut self, categories: HashMap<String, Category>) {
+    //     self.categories = categories;
+    // }
+
+    // pub fn set_crates(&mut self, crates: HashMap<String, Crate>) {
+    //     self.crates = crates;
+    // }
+
+    // pub fn set_keywords(&mut self, keywords: HashMap<String, Keyword>) {
+    //     self.keywords = keywords;
+    // }
 
     #[must_use]
     pub fn time_since_last_update(&self) -> u64 {
@@ -381,3 +500,17 @@ impl Graph {
         }
     }
 }
+
+fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
+    let mut names: BTreeSet<String> = BTreeSet::new();
+
+    for name in collection.keys() {
+        names.insert(name.to_owned());
+    }
+
+    names
+}
+
+// fn should_replace(a: &Crate, b: &Crate) -> bool {
+//     a.downloads > b.downloads || (a.downloads == b.downloads && a.name.len() < b.name.len())
+// }

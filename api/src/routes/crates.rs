@@ -25,7 +25,8 @@ pub async fn search(req: HttpRequest, data: State) -> HttpResponse {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
 
         Some(search_term) => {
-            HttpResponse::Ok().json(data.read().await.crates().search(search_term))
+            let graph = data.read().await;
+            HttpResponse::Ok().json(graph.crate_names().search(search_term, graph.crates()))
         }
     }
 }

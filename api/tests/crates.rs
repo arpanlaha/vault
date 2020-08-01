@@ -12,6 +12,7 @@ use chrono::NaiveDateTime;
 use serde::Deserialize;
 use std::str;
 use vault_api::{routes::crates, utils::State};
+use vault_graph::Search;
 
 lazy_static! {
     static ref DATA: State = common::get_data();
@@ -138,10 +139,12 @@ async fn test_search_crates_ok() {
     let resp = test::call_service(&mut app, req).await;
 
     assert_eq!(resp.status(), StatusCode::OK);
-    assert!(serde_json::from_str::<Vec<TestCrate>>(
-        common::get_body_as_string(resp).await.as_str()
+
+    let graph = DATA.read().await;
+    assert_eq!(
+        common::get_body_as_string(resp).await.as_str(),
+        serde_json::to_string(&graph.crate_names().search("actix", graph.crates())).unwrap()
     )
-    .is_ok());
 }
 
 #[actix_rt::test]

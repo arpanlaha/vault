@@ -1,5 +1,3 @@
-Profile search performance
-Tries for search
 Profile graph performance
 Multiple selected crates
 Upload Cargo.toml
