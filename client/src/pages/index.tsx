@@ -95,6 +95,9 @@ export default function Home(): ReactElement {
       };
 
       loadCrateDependencies();
+    } else {
+      setGraphNodes([]);
+      setGraphLinks([]);
     }
   }, [currentCrate]);
 
@@ -136,12 +139,16 @@ export default function Home(): ReactElement {
 
   const handleSearchSelect = (selectedCrateName: string): void => {
     setSearchTerm(selectedCrateName);
-    setCurrentCrate({
-      crate: searchCrates.find(
-        (searchCrate) => searchCrate.name === selectedCrateName
-      )!,
-      selectedFeatures: [],
-    });
+    setCurrentCrate(
+      selectedCrateName.length > 0
+        ? {
+            crate: searchCrates.find(
+              (searchCrate) => searchCrate.name === selectedCrateName
+            )!,
+            selectedFeatures: [],
+          }
+        : null
+    );
   };
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
