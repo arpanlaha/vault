@@ -1,5 +1,10 @@
 import React, { ReactElement, useEffect, useState } from "react";
-import { useQueryParam, StringParam } from "use-query-params";
+import {
+  decodeDelimitedArray,
+  encodeDelimitedArray,
+  StringParam,
+  useQueryParam,
+} from "use-query-params";
 import { CratePanelBody, ForceGraphWrapper, Head } from "../components";
 import {
   AutoComplete,
@@ -37,6 +42,14 @@ interface CrateInfo {
   selectedFeatures: string[];
 }
 
+const CommaArrayParam = {
+  encode: (array: string[] | null | undefined) =>
+    encodeDelimitedArray(array, ","),
+
+  decode: (arrayStr: string | (string | null)[] | null | undefined) =>
+    decodeDelimitedArray(arrayStr, ","),
+};
+
 export default function Home(): ReactElement {
   const [portrait, setPortrait] = useState(false);
   const [currentCrate, setCurrentCrate] = useState<CrateInfo | null>(null);
@@ -50,6 +63,10 @@ export default function Home(): ReactElement {
   const [error, setError] = useState("");
 
   const [urlCrateName, setUrlCrateName] = useQueryParam("crate", StringParam);
+  const [urlFeatures, setUrlFeatures] = useQueryParam(
+    "features",
+    CommaArrayParam
+  );
 
   const setRandomCrate = (): void => {
     const loadRandomCrate = async (): Promise<void> => {
@@ -82,15 +99,22 @@ export default function Home(): ReactElement {
       setRandomCrate();
     } else {
       const loadUrlCrate = async (): Promise<void> => {
+        const features = (urlFeatures !== null &&
+        urlFeatures !== undefined &&
+        urlFeatures.length > 0 &&
+        urlFeatures.every((urlFeature) => urlFeature !== null)
+          ? urlFeatures
+          : []) as string[];
+
         const [crateRes, dependencyGraphRes] = await Promise.all([
           getCrate(urlCrateName),
-          getDependencyGraph(urlCrateName, []),
+          getDependencyGraph(urlCrateName, features),
         ]);
 
         if (crateRes.success) {
           setCurrentCrate({
             crate: crateRes.result,
-            selectedFeatures: [],
+            selectedFeatures: features,
           });
           if (dependencyGraphRes.success) {
             setGraphNodes(dependencyGraphRes.result.crates);
@@ -178,6 +202,7 @@ export default function Home(): ReactElement {
   const handleSearchSelect = (selectedCrateName: string): void => {
     setSearchTerm(selectedCrateName);
     setUrlCrateName(selectedCrateName);
+    setUrlFeatures(undefined);
     setCurrentCrate(
       selectedCrateName.length > 0
         ? {
@@ -196,6 +221,7 @@ export default function Home(): ReactElement {
         ...currentCrate,
         selectedFeatures: e.target.checked ? featureNames : [],
       });
+      setUrlFeatures(e.target.checked ? featureNames : undefined);
       setIndeterminate(false);
     }
   };
@@ -206,6 +232,7 @@ export default function Home(): ReactElement {
         ...currentCrate,
         selectedFeatures: checked,
       });
+      setUrlFeatures(checked);
     }
   };
 
