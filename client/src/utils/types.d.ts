@@ -22,3 +22,8 @@ export interface DependencyGraph {
   crates: CrateDistance[];
   dependencies: Dependency[];
 }
+
+export interface CrateInfo {
+  crate: Crate;
+  selectedFeatures: string[];
+}

@@ -5,42 +5,15 @@ import {
   StringParam,
   useQueryParam,
 } from "use-query-params";
-import { CratePanelBody, ForceGraphWrapper, Head } from "../components";
-import {
-  AutoComplete,
-  Button,
-  Checkbox,
-  Collapse,
-  Input,
-  notification,
-  Layout,
-  List,
-} from "antd";
-import {
-  getCrate,
-  getDependencyGraph,
-  getRandomCrate,
-  searchCrate,
-} from "../utils/api";
-import { Crate, CrateDistance, Dependency } from "../utils/types";
-import { CheckboxChangeEvent } from "antd/lib/checkbox";
-
-import { RedoOutlined } from "@ant-design/icons";
+import { ForceGraphWrapper, Head, Sidebar } from "../components";
+import { notification, Layout } from "antd";
+import { getCrate, getDependencyGraph, getRandomCrate } from "../utils/api";
+import { CrateDistance, CrateInfo, Dependency } from "../utils/types";
 
 import "../styles/antd.scss";
 import "../styles/vault.scss";
 
-const { Panel } = Collapse;
-const { Search } = Input;
-const { Content, Sider } = Layout;
-const CheckboxGroup = Checkbox.Group;
-const ListItem = List.Item;
-const ListItemMeta = List.Item.Meta;
-
-interface CrateInfo {
-  crate: Crate;
-  selectedFeatures: string[];
-}
+const { Content } = Layout;
 
 const CommaArrayParam = {
   encode: (array: string[] | null | undefined) =>
@@ -52,13 +25,11 @@ const CommaArrayParam = {
 
 export default function Home(): ReactElement {
   const [portrait, setPortrait] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentCrate, setCurrentCrate] = useState<CrateInfo | null>(null);
   const [featureNames, setFeatureNames] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [graphNodes, setGraphNodes] = useState<CrateDistance[]>([]);
   const [graphLinks, setGraphLinks] = useState<Dependency[]>([]);
-  const [indeterminate, setIndeterminate] = useState(true);
   const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -86,9 +57,6 @@ export default function Home(): ReactElement {
 
     loadRandomCrate();
   };
-
-  const checkLayout = (): void =>
-    setPortrait(window.innerHeight > window.innerWidth);
 
   useEffect(() => {
     if (
@@ -130,6 +98,10 @@ export default function Home(): ReactElement {
 
       loadUrlCrate();
     }
+
+    const checkLayout = (): void =>
+      setPortrait(window.innerHeight > window.innerWidth);
+
     checkLayout();
 
     window.addEventListener("resize", checkLayout);
@@ -176,208 +148,26 @@ export default function Home(): ReactElement {
     [error]
   );
 
-  useEffect(() => {
-    if (currentCrate !== null) {
-      setIndeterminate(
-        currentCrate.selectedFeatures.length > 0 &&
-          currentCrate.selectedFeatures.length < featureNames.length
-      );
-    }
-  }, [featureNames, currentCrate]);
-
-  const handleSearch = async (searchInput: string): Promise<void> => {
-    if (searchInput.length > 0) {
-      const searchCrateRes = await searchCrate(searchInput);
-      if (searchCrateRes.success) {
-        setSearchCrates(searchCrateRes.result);
-      } else {
-        setError(searchCrateRes.error);
-      }
-    } else {
-      setSearchCrates([]);
-    }
-    setSearchTerm(searchInput);
-  };
-
-  const handleSearchSelect = (selectedCrateName: string): void => {
-    setSearchTerm(selectedCrateName);
-    setUrlCrateName(selectedCrateName);
-    setUrlFeatures(undefined);
-    setCurrentCrate(
-      selectedCrateName.length > 0
-        ? {
-            crate: searchCrates.find(
-              (searchCrate) => searchCrate.name === selectedCrateName
-            )!,
-            selectedFeatures: [],
-          }
-        : null
-    );
-  };
-
-  const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
-    if (currentCrate !== null) {
-      setCurrentCrate({
-        ...currentCrate,
-        selectedFeatures: e.target.checked ? featureNames : [],
-      });
-      setUrlFeatures(e.target.checked ? featureNames : undefined);
-      setIndeterminate(false);
-    }
-  };
-
-  const handleCheckboxGroup = (checked: string[]): void => {
-    if (currentCrate !== null) {
-      setCurrentCrate({
-        ...currentCrate,
-        selectedFeatures: checked,
-      });
-      setUrlFeatures(checked);
-    }
-  };
-
-  const handleListClick = (crate: CrateDistance): void =>
-    setClickedCrateName(crate.name !== clickedCrateName ? crate.name : null);
-
   return (
     <>
       <Head />
       <Layout>
-        <Sider
-          width={portrait ? "80%" : "30%"}
-          theme="light"
-          collapsible={portrait}
-          collapsedWidth={0}
-        >
-          <div className="sider">
-            <h1>Vault</h1>
-            <h2>Current crate: {currentCrate?.crate.name}</h2>
-            <div className="crate-picker">
-              <AutoComplete
-                options={
-                  searchCrates.map((searchCrate) => ({
-                    value: searchCrate.name,
-                  })) as any
-                }
-                onSelect={handleSearchSelect}
-                onSearch={handleSearch}
-                value={searchTerm}
-              >
-                <Search
-                  placeholder="Search for a crate..."
-                  onSearch={handleSearchSelect}
-                  disabled={searchTerm.length === 0}
-                  allowClear
-                />
-              </AutoComplete>
-              <Button onClick={setRandomCrate} icon={<RedoOutlined />}>
-                Random
-              </Button>
-            </div>
-            {currentCrate !== null && (
-              <Collapse accordion>
-                <Panel
-                  header={clickedCrateName ?? currentCrate.crate.name}
-                  key="crate"
-                >
-                  {" "}
-                  <CratePanelBody
-                    crate={
-                      clickedCrateName !== null
-                        ? graphNodes.find(
-                            (crate) => crate.name === clickedCrateName
-                          )!
-                        : currentCrate.crate
-                    }
-                    dependencies={graphLinks
-                      .filter(
-                        (dependency) =>
-                          dependency.from === clickedCrateName ??
-                          currentCrate.crate.name
-                      )
-                      .map((dependency) => dependency.to)}
-                  />
-                </Panel>
-
-                {featureNames.length > 0 && (
-                  <Panel
-                    header="Features"
-                    key="features"
-                    extra={`${currentCrate.selectedFeatures.length}/${featureNames.length}`}
-                  >
-                    <Checkbox
-                      indeterminate={indeterminate}
-                      onChange={handleAllFeatureToggle}
-                      checked={
-                        currentCrate.selectedFeatures.length ===
-                        featureNames.length
-                      }
-                    >
-                      Toggle all features
-                    </Checkbox>
-                    <CheckboxGroup
-                      options={featureNames}
-                      value={currentCrate.selectedFeatures}
-                      onChange={handleCheckboxGroup as any}
-                    />
-                  </Panel>
-                )}
-                <Panel
-                  header="Included crates"
-                  key="crates"
-                  extra={graphNodes.length}
-                >
-                  <List
-                    dataSource={graphNodes}
-                    renderItem={(crate: CrateDistance) => (
-                      <Button
-                        className="crate-list-button"
-                        onClick={() => handleListClick(crate)}
-                        block
-                      >
-                        <ListItem>
-                          <ListItemMeta
-                            title={
-                              <div className="row">
-                                <a
-                                  href={`https://crates.io/crates/${crate.name}`}
-                                  key="crates.io-link"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  {crate.name}
-                                </a>
-                                <div>Depth: {crate.distance}</div>
-                              </div>
-                            }
-                            description={crate.description}
-                          />
-                        </ListItem>
-                      </Button>
-                    )}
-                  />
-                </Panel>
-                {graphLinks.length > 0 && (
-                  <Panel
-                    header="Dependencies"
-                    key="dependencies"
-                    extra={graphLinks.length}
-                  >
-                    <List
-                      bordered
-                      dataSource={graphLinks}
-                      renderItem={(dependency: Dependency) => (
-                        <ListItem>
-                          {dependency.from} depends on {dependency.to}
-                        </ListItem>
-                      )}
-                    />
-                  </Panel>
-                )}
-              </Collapse>
-            )}
-          </div>
-        </Sider>
+        <Sidebar
+          clickedCrateName={clickedCrateName}
+          currentCrate={currentCrate}
+          featureNames={featureNames}
+          graphLinks={graphLinks}
+          graphNodes={graphNodes}
+          portrait={portrait}
+          searchTerm={searchTerm}
+          setClickedCrateName={setClickedCrateName}
+          setCurrentCrate={setCurrentCrate}
+          setError={setError}
+          setRandomCrate={setRandomCrate}
+          setSearchTerm={setSearchTerm}
+          setUrlCrateName={setUrlCrateName}
+          setUrlFeatures={setUrlFeatures}
+        />
         <Content className="content">
           <div className="dependency-graph">
             <ForceGraphWrapper
