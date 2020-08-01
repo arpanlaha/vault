@@ -2,6 +2,7 @@ import React, {
   Dispatch,
   ReactElement,
   SetStateAction,
+  useCallback,
   useState,
   useEffect,
 } from "react";
@@ -15,13 +16,20 @@ interface ForceGraphWrapperProps {
   clickedCrateName: string | null;
   crates: CrateDistance[];
   dependencies: Dependency[];
+  portrait: boolean;
   setClickedCrateName: Dispatch<SetStateAction<string | null>>;
 }
 
 export default function ForceGraphWrapper(
   props: ForceGraphWrapperProps
 ): ReactElement {
-  const { clickedCrateName, crates, dependencies, setClickedCrateName } = props;
+  const {
+    clickedCrateName,
+    crates,
+    dependencies,
+    portrait,
+    setClickedCrateName,
+  } = props;
 
   const [height, setHeight] = useState(0);
   const [width, setWidth] = useState(0);
@@ -31,18 +39,23 @@ export default function ForceGraphWrapper(
   const BLUE = "hsl(216, 100%, 50%)";
   const GRAY = "hsl(0, 0%, 50%)";
 
-  const resize = (): void => {
-    const containerHeight = window.innerHeight;
-    const containerWidth =
-      window.innerWidth - document.querySelector("aside")!.clientWidth;
-    setHeight(containerHeight * (1 - DIMENSION_FACTOR));
-    setWidth(containerWidth - containerHeight * DIMENSION_FACTOR);
-  };
+  const resize = useCallback((): void => {
+    if (portrait) {
+      setHeight(window.innerHeight);
+      setWidth(window.innerWidth);
+    } else {
+      const containerHeight = window.innerHeight;
+      const containerWidth =
+        window.innerWidth - document.querySelector("aside")!.clientWidth;
+      setHeight(containerHeight * (1 - DIMENSION_FACTOR));
+      setWidth(containerWidth - containerHeight * DIMENSION_FACTOR);
+    }
+  }, [portrait]);
 
   useEffect(() => {
     resize();
     window.addEventListener("resize", resize);
-  }, []);
+  }, [resize]);
 
   useEffect(() => setClickedCrateName(null), [
     crates,

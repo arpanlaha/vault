@@ -32,6 +32,7 @@ interface CrateInfo {
 }
 
 export default function Home(): ReactElement {
+  const [portrait, setPortrait] = useState(false);
   const [currentCrate, setCurrentCrate] = useState<CrateInfo | null>(null);
   const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,7 +58,15 @@ export default function Home(): ReactElement {
     loadRandomCrate();
   };
 
-  useEffect(setRandomCrate, []);
+  const checkLayout = (): void =>
+    setPortrait(window.innerHeight > window.innerWidth);
+
+  useEffect(() => {
+    setRandomCrate();
+    checkLayout();
+
+    window.addEventListener("resize", checkLayout);
+  }, []);
 
   useEffect(() => {
     if (currentCrate !== null) {
@@ -158,7 +167,12 @@ export default function Home(): ReactElement {
     <>
       <Head />
       <Layout>
-        <Sider width="30%" theme="light">
+        <Sider
+          width={portrait ? "80%" : "30%"}
+          theme="light"
+          collapsible={portrait}
+          collapsedWidth={0}
+        >
           <div className="sider">
             <h1>Vault</h1>
             <h2>Current crate: {currentCrate?.crate.name}</h2>
@@ -295,6 +309,7 @@ export default function Home(): ReactElement {
               dependencies={graphLinks}
               clickedCrateName={clickedCrateName}
               setClickedCrateName={setClickedCrateName}
+              portrait={portrait}
             />
           </div>
         </Content>
