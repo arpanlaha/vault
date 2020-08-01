@@ -215,8 +215,8 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                     dependencies={graphLinks
                       .filter(
                         (dependency) =>
-                          dependency.from === clickedCrateName ??
-                          currentCrate.crate.name
+                          dependency.from ===
+                          (clickedCrateName ?? currentCrate.crate.name)
                       )
                       .map((dependency) => dependency.to)}
                   />
