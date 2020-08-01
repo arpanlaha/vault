@@ -9,7 +9,7 @@ import {
   Layout,
   List,
 } from "antd";
-import { searchCrate } from "../utils/api";
+import { getLastUpdated, searchCrate } from "../utils/api";
 import { Crate, CrateDistance, CrateInfo, Dependency } from "../utils/types";
 import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
@@ -17,10 +17,14 @@ import { RedoOutlined } from "@ant-design/icons";
 
 const { Panel } = Collapse;
 const { Search } = Input;
-const { Sider } = Layout;
+const { Content, Footer, Sider } = Layout;
 const CheckboxGroup = Checkbox.Group;
 const ListItem = List.Item;
 const ListItemMeta = List.Item.Meta;
+
+const MINUTE = 60;
+const HOUR = MINUTE * 60;
+const DAY = HOUR * 24; // eslint-disable-line @typescript-eslint/no-magic-numbers
 
 interface SidebarProps {
   clickedCrateName: string | null;
@@ -42,6 +46,7 @@ interface SidebarProps {
 export default function Sidebar(props: SidebarProps): ReactElement {
   const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const {
     clickedCrateName,
@@ -59,6 +64,31 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     setUrlCrateName,
     setUrlFeatures,
   } = props;
+
+  useEffect(() => {
+    const loadLastUpdated = async (): Promise<void> => {
+      const lastUpdatedRes = await getLastUpdated();
+      if (lastUpdatedRes.success) {
+        const { seconds } = lastUpdatedRes.result;
+        if (seconds > DAY) {
+          const days = Math.floor(seconds / DAY);
+          setLastUpdated(`${days} day${days > 1 ? "s" : ""}`);
+        } else if (seconds > HOUR) {
+          const hours = Math.floor(seconds / HOUR);
+          setLastUpdated(`${hours} hour${hours > 1 ? "s" : ""}`);
+        } else if (seconds > MINUTE) {
+          const minutes = Math.floor(seconds / MINUTE);
+          setLastUpdated(`${minutes} minute${minutes > 1 ? "s" : ""}`);
+        } else {
+          setLastUpdated(`${seconds} second${seconds > 1 ? "s" : ""}`);
+        }
+      } else {
+        setError(lastUpdatedRes.error);
+      }
+    };
+
+    loadLastUpdated();
+  }, [setError]);
 
   useEffect(() => {
     if (currentCrate !== null) {
@@ -137,133 +167,141 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       collapsible={portrait}
       collapsedWidth={0}
     >
-      <div className="column sider">
-        <h1>Current crate: {currentCrate?.crate.name}</h1>
-        <div className="row crate-picker">
-          <AutoComplete
-            options={
-              searchCrates.map((searchCrate) => ({
-                value: searchCrate.name,
-              })) as any
-            }
-            onSelect={handleSearchSelect}
-            onSearch={handleSearch}
-            value={searchTerm}
-          >
-            <Search
-              placeholder="Search for a crate..."
-              onSearch={handleSearchSelect}
-              disabled={searchTerm.length === 0}
-              allowClear
-              enterButton
-            />
-          </AutoComplete>
-          <Button onClick={setRandomCrate} icon={<RedoOutlined />}>
-            Random
-          </Button>
-        </div>
-        {currentCrate !== null && (
-          <Collapse accordion>
-            <Panel
-              header={clickedCrateName ?? currentCrate.crate.name}
-              key="crate"
-            >
-              {" "}
-              <CratePanelBody
-                crate={
-                  clickedCrateName !== null
-                    ? graphNodes.find(
-                        (crate) => crate.name === clickedCrateName
-                      )!
-                    : currentCrate.crate
+      <Layout>
+        <Content>
+          <div className="column sider">
+            <h1>Current crate: {currentCrate?.crate.name}</h1>
+            <div className="row crate-picker">
+              <AutoComplete
+                options={
+                  searchCrates.map((searchCrate) => ({
+                    value: searchCrate.name,
+                  })) as any
                 }
-                dependencies={graphLinks
-                  .filter(
-                    (dependency) =>
-                      dependency.from === clickedCrateName ??
-                      currentCrate.crate.name
-                  )
-                  .map((dependency) => dependency.to)}
-              />
-            </Panel>
-
-            {featureNames.length > 0 && (
-              <Panel
-                header="Features"
-                key="features"
-                extra={`${currentCrate.selectedFeatures.length}/${featureNames.length}`}
+                onSelect={handleSearchSelect}
+                onSearch={handleSearch}
+                value={searchTerm}
               >
-                <Checkbox
-                  indeterminate={indeterminate}
-                  onChange={handleAllFeatureToggle}
-                  checked={
-                    currentCrate.selectedFeatures.length === featureNames.length
-                  }
+                <Search
+                  placeholder="Search for a crate..."
+                  onSearch={handleSearchSelect}
+                  disabled={searchTerm.length === 0}
+                  allowClear
+                  enterButton
+                />
+              </AutoComplete>
+              <Button onClick={setRandomCrate} icon={<RedoOutlined />}>
+                Random
+              </Button>
+            </div>
+            {currentCrate !== null && (
+              <Collapse accordion>
+                <Panel
+                  header={clickedCrateName ?? currentCrate.crate.name}
+                  key="crate"
                 >
-                  Toggle all features
-                </Checkbox>
-                <CheckboxGroup
-                  options={featureNames}
-                  value={currentCrate.selectedFeatures}
-                  onChange={handleCheckboxGroup as any}
-                />
-              </Panel>
-            )}
-            <Panel
-              header="Included crates"
-              key="crates"
-              extra={graphNodes.length}
-            >
-              <List
-                dataSource={graphNodes}
-                renderItem={(crate: CrateDistance) => (
-                  <Button
-                    className="crate-list-button"
-                    onClick={() => handleListClick(crate)}
-                    block
+                  {" "}
+                  <CratePanelBody
+                    crate={
+                      clickedCrateName !== null
+                        ? graphNodes.find(
+                            (crate) => crate.name === clickedCrateName
+                          )!
+                        : currentCrate.crate
+                    }
+                    dependencies={graphLinks
+                      .filter(
+                        (dependency) =>
+                          dependency.from === clickedCrateName ??
+                          currentCrate.crate.name
+                      )
+                      .map((dependency) => dependency.to)}
+                  />
+                </Panel>
+
+                {featureNames.length > 0 && (
+                  <Panel
+                    header="Features"
+                    key="features"
+                    extra={`${currentCrate.selectedFeatures.length}/${featureNames.length}`}
                   >
-                    <ListItem>
-                      <ListItemMeta
-                        title={
-                          <div className="row crate-row">
-                            <a
-                              href={`https://crates.io/crates/${crate.name}`}
-                              key="crates.io-link"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {crate.name}
-                            </a>
-                            <div>Depth: {crate.distance}</div>
-                          </div>
-                        }
-                        description={crate.description}
-                      />
-                    </ListItem>
-                  </Button>
+                    <Checkbox
+                      indeterminate={indeterminate}
+                      onChange={handleAllFeatureToggle}
+                      checked={
+                        currentCrate.selectedFeatures.length ===
+                        featureNames.length
+                      }
+                    >
+                      Toggle all features
+                    </Checkbox>
+                    <CheckboxGroup
+                      options={featureNames}
+                      value={currentCrate.selectedFeatures}
+                      onChange={handleCheckboxGroup as any}
+                    />
+                  </Panel>
                 )}
-              />
-            </Panel>
-            {graphLinks.length > 0 && (
-              <Panel
-                header="Dependencies"
-                key="dependencies"
-                extra={graphLinks.length}
-              >
-                <List
-                  bordered
-                  dataSource={graphLinks}
-                  renderItem={(dependency: Dependency) => (
-                    <ListItem>
-                      {dependency.from} depends on {dependency.to}
-                    </ListItem>
-                  )}
-                />
-              </Panel>
+                <Panel
+                  header="Included crates"
+                  key="crates"
+                  extra={graphNodes.length}
+                >
+                  <List
+                    dataSource={graphNodes}
+                    renderItem={(crate: CrateDistance) => (
+                      <Button
+                        className="crate-list-button"
+                        onClick={() => handleListClick(crate)}
+                        block
+                      >
+                        <ListItem>
+                          <ListItemMeta
+                            title={
+                              <div className="row crate-row">
+                                <a
+                                  href={`https://crates.io/crates/${crate.name}`}
+                                  key="crates.io-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {crate.name}
+                                </a>
+                                <div>Depth: {crate.distance}</div>
+                              </div>
+                            }
+                            description={crate.description}
+                          />
+                        </ListItem>
+                      </Button>
+                    )}
+                  />
+                </Panel>
+                {graphLinks.length > 0 && (
+                  <Panel
+                    header="Dependencies"
+                    key="dependencies"
+                    extra={graphLinks.length}
+                  >
+                    <List
+                      bordered
+                      dataSource={graphLinks}
+                      renderItem={(dependency: Dependency) => (
+                        <ListItem>
+                          {dependency.from} depends on {dependency.to}
+                        </ListItem>
+                      )}
+                    />
+                  </Panel>
+                )}
+              </Collapse>
             )}
-          </Collapse>
-        )}
-      </div>
+          </div>
+        </Content>
+        <Footer>
+          {lastUpdated !== null && <span>Last updated {lastUpdated} ago.</span>}
+        </Footer>
+      </Layout>
     </Sider>
   );
 }

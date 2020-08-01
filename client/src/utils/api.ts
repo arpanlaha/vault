@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from "axios";
-import { Crate, DependencyGraph } from "./types";
+import { Crate, DependencyGraph, LastUpdated } from "./types";
 
 const API_URL = process.env.GATSBY_VAULT_API_URL;
 
@@ -52,3 +52,6 @@ export const searchCrate = (searchTerm: string): Promise<Response<Crate[]>> =>
 
 export const getRandomCrate = (): Promise<Response<Crate>> =>
   wrapResponse(axios.get(`${API_URL}/random/crates`));
+
+export const getLastUpdated = (): Promise<Response<LastUpdated>> =>
+  wrapResponse(axios.get(`${API_URL}/state/last-updated`));

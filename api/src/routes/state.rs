@@ -7,12 +7,12 @@ const INTERVAL: u64 = 60 * (60 * 23 + 55);
 
 #[derive(Deserialize, Serialize)]
 pub struct LastUpdated {
-    time_since_last_updated: u64,
+    seconds: u64,
 }
 
 pub async fn time_since_last_update(data: State) -> HttpResponse {
     HttpResponse::Ok().json(LastUpdated {
-        time_since_last_updated: data.read().await.time_since_last_update(),
+        seconds: data.read().await.time_since_last_update(),
     })
 }
 

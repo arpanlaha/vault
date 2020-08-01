@@ -27,3 +27,7 @@ export interface CrateInfo {
   crate: Crate;
   selectedFeatures: string[];
 }
+
+export interface LastUpdated {
+  seconds: number;
+}
