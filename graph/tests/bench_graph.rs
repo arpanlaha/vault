@@ -49,7 +49,7 @@ fn bench_graph_futures(b: &mut Bencher) {
 
 #[bench]
 fn bench_graph_wasm_bindgen(b: &mut Bencher) {
-    b.iter(|| GRAPH.get_dependency_graph("wasm_bindgen", vec![]));
+    b.iter(|| GRAPH.get_dependency_graph("wasm-bindgen", vec![]));
 }
 
 #[bench]
