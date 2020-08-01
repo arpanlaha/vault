@@ -130,10 +130,10 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       collapsible={portrait}
       collapsedWidth={0}
     >
-      <div className="sider">
+      <div className="column sider">
         <h1>Vault</h1>
         <h2>Current crate: {currentCrate?.crate.name}</h2>
-        <div className="crate-picker">
+        <div className="row crate-picker">
           <AutoComplete
             options={
               searchCrates.map((searchCrate) => ({
@@ -218,7 +218,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                     <ListItem>
                       <ListItemMeta
                         title={
-                          <div className="row">
+                          <div className="row crate-row">
                             <a
                               href={`https://crates.io/crates/${crate.name}`}
                               key="crates.io-link"

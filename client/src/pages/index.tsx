@@ -169,7 +169,7 @@ export default function Home(): ReactElement {
           setUrlFeatures={setUrlFeatures}
         />
         <Content className="content">
-          <div className="dependency-graph">
+          <div className="column dependency-graph-container">
             <ForceGraphWrapper
               crates={graphNodes}
               dependencies={graphLinks}
