@@ -26,5 +26,6 @@ module.exports = {
         isTSX: true,
       },
     },
+    "gatsby-plugin-use-query-params",
   ],
 };

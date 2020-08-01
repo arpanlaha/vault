@@ -26,12 +26,14 @@
     "gatsby-plugin-react-helmet": "^3.3.10",
     "gatsby-plugin-sass": "^2.3.12",
     "gatsby-plugin-typescript": "^2.4.16",
+    "gatsby-plugin-use-query-params": "^1.0.1",
     "node-sass": "^4.14.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-force-graph": "^1.36.7",
     "react-helmet": "^6.1.0",
-    "typescript": "^3.9.7"
+    "typescript": "^3.9.7",
+    "use-query-params": "^1.1.6"
   },
   "devDependencies": {
     "@hack4impact-uiuc/eslint-plugin": "^2.0.1",

@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react";
+import { useQueryParam, StringParam } from "use-query-params";
 import { CratePanelBody, ForceGraphWrapper, Head } from "../components";
 import {
   AutoComplete,
@@ -10,7 +11,12 @@ import {
   Layout,
   List,
 } from "antd";
-import { getDependencyGraph, getRandomCrate, searchCrate } from "../utils/api";
+import {
+  getCrate,
+  getDependencyGraph,
+  getRandomCrate,
+  searchCrate,
+} from "../utils/api";
 import { Crate, CrateDistance, Dependency } from "../utils/types";
 import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
@@ -43,12 +49,18 @@ export default function Home(): ReactElement {
   const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  const [urlCrateName, setUrlCrateName] = useQueryParam("crate", StringParam);
+
   const setRandomCrate = (): void => {
     const loadRandomCrate = async (): Promise<void> => {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
-        setCurrentCrate({ crate: randomCrateRes.result, selectedFeatures: [] });
+        setCurrentCrate({
+          crate: randomCrateRes.result,
+          selectedFeatures: [],
+        });
         setSearchTerm(randomCrateRes.result.name);
+        setUrlCrateName(randomCrateRes.result.name);
         setError("");
       } else {
         setError(randomCrateRes.error);
@@ -62,11 +74,42 @@ export default function Home(): ReactElement {
     setPortrait(window.innerHeight > window.innerWidth);
 
   useEffect(() => {
-    setRandomCrate();
+    if (
+      urlCrateName === null ||
+      urlCrateName === undefined ||
+      urlCrateName.length === 0
+    ) {
+      setRandomCrate();
+    } else {
+      const loadUrlCrate = async (): Promise<void> => {
+        const [crateRes, dependencyGraphRes] = await Promise.all([
+          getCrate(urlCrateName),
+          getDependencyGraph(urlCrateName, []),
+        ]);
+
+        if (crateRes.success) {
+          setCurrentCrate({
+            crate: crateRes.result,
+            selectedFeatures: [],
+          });
+          if (dependencyGraphRes.success) {
+            setGraphNodes(dependencyGraphRes.result.crates);
+            setGraphLinks(dependencyGraphRes.result.dependencies);
+            setError("");
+          } else {
+            setError(dependencyGraphRes.error);
+          }
+        } else {
+          setError(crateRes.error);
+        }
+      };
+
+      loadUrlCrate();
+    }
     checkLayout();
 
     window.addEventListener("resize", checkLayout);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (currentCrate !== null) {
@@ -75,11 +118,6 @@ export default function Home(): ReactElement {
           (featureName) => featureName !== "default"
         )
       );
-    }
-  }, [currentCrate]);
-
-  useEffect(() => {
-    if (currentCrate !== null) {
       const loadCrateDependencies = async (): Promise<void> => {
         const dependencyGraphRes = await getDependencyGraph(
           currentCrate.crate.name,
@@ -139,6 +177,7 @@ export default function Home(): ReactElement {
 
   const handleSearchSelect = (selectedCrateName: string): void => {
     setSearchTerm(selectedCrateName);
+    setUrlCrateName(selectedCrateName);
     setCurrentCrate(
       selectedCrateName.length > 0
         ? {
@@ -163,7 +202,10 @@ export default function Home(): ReactElement {
 
   const handleCheckboxGroup = (checked: string[]): void => {
     if (currentCrate !== null) {
-      setCurrentCrate({ ...currentCrate, selectedFeatures: checked });
+      setCurrentCrate({
+        ...currentCrate,
+        selectedFeatures: checked,
+      });
     }
   };
 
