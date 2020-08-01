@@ -14,6 +14,8 @@ export default function Head(): ReactElement {
         content="Rust, crates, crates.io, package, dependency, registry, graph, visualization."
       />
       <meta name="author" content="ARpan Laha" />
+      <meta name="theme-color" content="#0d0f12" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black" />
       <title>Vault</title>
     </Helmet>
   );
