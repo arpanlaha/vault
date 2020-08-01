@@ -1,4 +1,5 @@
+import CratePanelBody from "./CratePanelBody";
 import ForceGraphWrapper from "./ForceGraphWrapper";
 import Head from "./Head";
 
-export { ForceGraphWrapper, Head };
+export { CratePanelBody, ForceGraphWrapper, Head };

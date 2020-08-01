@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react";
-import { Head, ForceGraphWrapper } from "../components";
+import { CratePanelBody, ForceGraphWrapper, Head } from "../components";
 import {
   AutoComplete,
   Button,
@@ -186,6 +186,29 @@ export default function Home(): ReactElement {
             </div>
             {currentCrate !== null && (
               <Collapse accordion>
+                <Panel
+                  header={clickedCrateName ?? currentCrate.crate.name}
+                  key="crate"
+                >
+                  {" "}
+                  <CratePanelBody
+                    crate={
+                      clickedCrateName !== null
+                        ? graphNodes.find(
+                            (crate) => crate.name === clickedCrateName
+                          )!
+                        : currentCrate.crate
+                    }
+                    dependencies={graphLinks
+                      .filter(
+                        (dependency) =>
+                          dependency.from === clickedCrateName ??
+                          currentCrate.crate.name
+                      )
+                      .map((dependency) => dependency.to)}
+                  />
+                </Panel>
+
                 {featureNames.length > 0 && (
                   <Panel
                     header="Features"
