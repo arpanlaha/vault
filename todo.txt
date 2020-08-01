@@ -6,3 +6,4 @@ Exhaustive documentation
 Cron jobs to update server
 Transitive deps on node click
 Fix sidebar width jumping
+Clicked crate navigation from crate panel
