@@ -74,23 +74,13 @@ export default function Home(): ReactElement {
           ? urlFeatures
           : []) as string[];
 
-        const [crateRes, dependencyGraphRes] = await Promise.all([
-          getCrate(urlCrateName),
-          getDependencyGraph(urlCrateName, features),
-        ]);
+        const crateRes = await getCrate(urlCrateName);
 
         if (crateRes.success) {
           setCurrentCrate({
             crate: crateRes.result,
             selectedFeatures: features,
           });
-          if (dependencyGraphRes.success) {
-            setGraphNodes(dependencyGraphRes.result.crates);
-            setGraphLinks(dependencyGraphRes.result.dependencies);
-            setError("");
-          } else {
-            setError(dependencyGraphRes.error);
-          }
         } else {
           setError(crateRes.error);
         }
