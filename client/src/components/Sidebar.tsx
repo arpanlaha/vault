@@ -301,8 +301,19 @@ export default function Sidebar(props: SidebarProps): ReactElement {
             )}
           </div>
         </Content>
-        <Footer>
-          {lastUpdated !== null && <span>Last updated {lastUpdated} ago.</span>}
+        <Footer className="row footer">
+          {lastUpdated !== null && (
+            <span>
+              Last updated {lastUpdated} ago.{" "}
+              <a
+                href="https://github.com/arpanlaha/vault"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on GitHub.
+              </a>
+            </span>
+          )}
         </Footer>
       </Layout>
     </Sider>

@@ -68,9 +68,9 @@ aside .ant-layout {
 }
 
 .ant-checkbox-group {
-  padding: 0 10%;
-
   @extend .column;
+
+  padding: 0 10%;
 }
 
 .ant-collapse-content {
@@ -78,8 +78,8 @@ aside .ant-layout {
   overflow: scroll;
 }
 
-.content {
-  overflow: hidden;
+.crate-panel-list {
+  line-height: 2;
 }
 
 .crate-list-button {
@@ -99,13 +99,19 @@ aside .ant-layout {
   justify-content: space-between;
 }
 
+.footer {
+  justify-content: center;
+  top: 0;
+  padding: 2vh 0;
+}
+
+.content {
+  overflow: hidden;
+}
+
 .dependency-graph-container {
   width: 100%;
   height: 100vh;
   justify-content: center;
   align-items: center;
-}
-
-.crate-panel-list {
-  line-height: 2;
 }
