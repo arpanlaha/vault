@@ -113,8 +113,6 @@ pub struct CrateKeyword {
 #[derive(Deserialize, Debug, Hash, Eq, PartialEq, Serialize)]
 pub struct Dependency {
     /// If the dependency relies on default features.
-    ///
-    /// TODO: confirm this is the case.
     #[serde(skip_serializing)]
     pub default_features: bool,
 
