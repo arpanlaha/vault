@@ -1,4 +1,4 @@
-#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(clippy::cast_precision_loss)]
 
 mod fs;
