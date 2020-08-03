@@ -113,21 +113,23 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     }
   };
 
-  const handleSearchSelect = (selectedCrateName: string): void => {
+  const handleCrateSelect = (
+    crates: Crate[]
+  ): ((selectedCrateName: string) => void) => (selectedCrateName: string) => {
     setSearchTerm(selectedCrateName);
 
     if (selectedCrateName !== "") {
       setUrlCrateName(selectedCrateName);
       setUrlFeatures(undefined);
-      const selectedCrate = searchCrates.find(
-        (searchCrate) => searchCrate.name === selectedCrateName
+      const selectedCrate = crates.find(
+        (crate) => crate.name === selectedCrateName
       );
       if (selectedCrate !== undefined) {
         setCurrentCrate(
           selectedCrateName.length > 0
             ? {
-                crate: searchCrates.find(
-                  (searchCrate) => searchCrate.name === selectedCrateName
+                crate: crates.find(
+                  (crate) => crate.name === selectedCrateName
                 )!,
                 selectedFeatures: [],
               }
@@ -138,6 +140,10 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       }
     }
   };
+
+  const handleSearchSelect = handleCrateSelect(searchCrates);
+
+  const handlePanelSelect = handleCrateSelect(graphNodes);
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
     if (currentCrate !== null) {
@@ -202,8 +208,18 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                 <Panel
                   header={clickedCrateName ?? currentCrate.crate.name}
                   key="crate"
+                  extra={
+                    clickedCrateName !== null &&
+                    clickedCrateName !== currentCrate.crate.name ? (
+                      <Button
+                        type="link"
+                        onClick={() => handlePanelSelect(clickedCrateName)}
+                      >
+                        View dependency graph
+                      </Button>
+                    ) : undefined
+                  }
                 >
-                  {" "}
                   <CratePanelBody
                     crate={
                       clickedCrateName !== null
@@ -219,6 +235,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                           (clickedCrateName ?? currentCrate.crate.name)
                       )
                       .map((dependency) => dependency.to)}
+                    setClickedCrateName={setClickedCrateName}
                   />
                 </Panel>
 

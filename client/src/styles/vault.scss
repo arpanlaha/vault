@@ -68,19 +68,28 @@ aside .ant-layout {
   margin: 2vh 0;
 }
 
-.ant-checkbox-group {
-  @extend .column;
-
-  padding: 0 10%;
-}
-
 .ant-collapse-content {
   max-height: 50vh;
   overflow: scroll;
 }
 
+.ant-btn-link {
+  padding: 0;
+  height: auto;
+}
+
+.dependency-tag {
+  cursor: pointer;
+}
+
 .crate-panel-list {
   line-height: 2;
+}
+
+.ant-checkbox-group {
+  @extend .column;
+
+  padding: 0 10%;
 }
 
 .crate-list-button {

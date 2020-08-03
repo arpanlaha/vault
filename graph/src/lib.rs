@@ -319,6 +319,9 @@ pub struct CrateDistance<'a> {
     /// The number of downloads of the crate.
     pub downloads: &'a usize,
 
+    /// The features exposed by the crate.
+    pub features: &'a HashMap<String, Vec<String>>,
+
     /// The keywords belonging to the crate.
     pub keywords: &'a Vec<String>,
 
@@ -346,6 +349,7 @@ impl<'a> CrateDistance<'a> {
             created_at,
             description,
             downloads,
+            features,
             keywords,
             name,
             version,
@@ -358,6 +362,7 @@ impl<'a> CrateDistance<'a> {
             description,
             distance,
             downloads,
+            features,
             keywords,
             name,
             version,
