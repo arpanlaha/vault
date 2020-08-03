@@ -2,6 +2,11 @@ use super::super::utils::{self, State};
 use actix_web::{HttpRequest, HttpResponse};
 use vault_graph::{Random, Search};
 
+/// Returns the `Crate` with the given id, if found.
+///
+/// # Errors
+/// * Returns a `400` error if `crate_id` is not present.
+/// * Returns a `404` error if no `Crate` with the given id is found.
 pub async fn get_crate(req: HttpRequest, data: State) -> HttpResponse {
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),
@@ -16,10 +21,15 @@ pub async fn get_crate(req: HttpRequest, data: State) -> HttpResponse {
     }
 }
 
+/// Returns a random `Crate`.
 pub async fn random(data: State) -> HttpResponse {
     HttpResponse::Ok().json(data.read().await.crates().random())
 }
 
+/// Searches for crates matching the given search term.
+///
+/// # Errors
+/// * Returns a `400` error if `search_term` is not present.
 pub async fn search(req: HttpRequest, data: State) -> HttpResponse {
     match req.match_info().get("search_term") {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
@@ -31,6 +41,11 @@ pub async fn search(req: HttpRequest, data: State) -> HttpResponse {
     }
 }
 
+/// Returns the `DependencyGraph` of the `Crate` ith the given id, if found.
+///
+/// # Errors
+/// * Returns a `400` error if `crate_id` is not present.
+/// * Returns a `404` error if no `Crate` with the given id is found.
 pub async fn get_dependency_graph(req: HttpRequest, data: State) -> HttpResponse {
     match req.match_info().get("crate_id") {
         None => HttpResponse::BadRequest().json("Crate id must be provided."),

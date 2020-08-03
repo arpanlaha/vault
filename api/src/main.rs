@@ -17,10 +17,12 @@ use vault_graph::Graph;
 async fn main() -> IoResult<()> {
     let mut args = env::args();
 
+    // port defaults to 8080 if not provided
     let port = args.nth(1).unwrap_or_else(|| String::from("8080"));
     port.parse::<u16>()
         .unwrap_or_else(|_| panic!("{} is not a valid port number", port));
 
+    // address defaults to `0.0.0.0`, unless the `-l` or `--local` argument is passed, in which case the address is `127.0.0.1`
     let address = args.next().map_or("0.0.0.0", |arg| {
         if arg == "--local" || arg == "-l" {
             "127.0.0.1"
@@ -31,6 +33,7 @@ async fn main() -> IoResult<()> {
 
     let app_state = Data::new(RwLock::new(Graph::new().await));
 
+    // initialize logger at `info` level
     env_logger::from_env(Env::default().default_filter_or("info")).init();
 
     HttpServer::new(move || {

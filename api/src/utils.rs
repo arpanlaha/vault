@@ -3,12 +3,16 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 use vault_graph::Graph;
 
+/// Shorthand for Data<RwLock<Graph>>.
 pub type State = Data<RwLock<Graph>>;
 
+/// An enum containing possible query param errors.
 pub enum QueryParamError {
+    /// If the query string (or any query parameter) does not contain the `=` character.
     InvalidQueryString,
 }
 
+/// Maps a query string into a `HashMap` of key-value pairs.
 pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, QueryParamError> {
     if query_str.is_empty() {
         return Ok(HashMap::new());
@@ -17,7 +21,7 @@ pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, Quer
     if query_str.contains('&') {
         let mut query_param_strs = query_str.split('&');
 
-        if query_param_strs.all(|query_param_str| !query_param_str.contains('=')) {
+        if query_param_strs.any(|query_param_str| !query_param_str.contains('=')) {
             return Err(QueryParamError::InvalidQueryString);
         }
 

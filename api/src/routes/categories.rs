@@ -4,12 +4,21 @@ use serde::Serialize;
 use vault_graph::{Category, Graph, Random, Search};
 
 #[derive(Serialize)]
+/// A struct containing a `Category` as well as any subcategories.
 pub struct CategoryResponse<'a> {
+    /// The `Category` in question.
     category: &'a Category,
+
+    /// A list of any subcategories of the given `Category`.
     children: Vec<&'a Category>,
 }
 
 impl<'a> CategoryResponse<'a> {
+    /// Creates a `CategoryResponse` from the given `Category.
+    ///
+    /// # Arguments
+    /// * `category` - the given `Category`.
+    /// * `graph` - the `Graph` containing the crates.io data.
     pub fn new(category: &'a Category, graph: &'a Graph) -> CategoryResponse<'a> {
         CategoryResponse {
             category,
@@ -27,6 +36,7 @@ impl<'a> CategoryResponse<'a> {
     }
 }
 
+/// Returns a list of all categories.
 pub async fn get_categories(data: State) -> HttpResponse {
     let graph = data.read().await;
     let mut categories = graph.categories().values().collect::<Vec<&Category>>();
@@ -35,6 +45,11 @@ pub async fn get_categories(data: State) -> HttpResponse {
     HttpResponse::Ok().json(categories)
 }
 
+/// Returns the `Category` with the given id, if found.
+///
+/// # Errors
+/// * Returns a `400` error if `category_id` is not present.
+/// * Returns a `404` error if no `Category` with the given id is found.
 pub async fn get_category(req: HttpRequest, data: State) -> HttpResponse {
     match req.match_info().get("category_id") {
         None => HttpResponse::BadRequest().json("Category id must be provided."),
@@ -51,6 +66,7 @@ pub async fn get_category(req: HttpRequest, data: State) -> HttpResponse {
     }
 }
 
+/// Returns a random `Category`.
 pub async fn random(data: State) -> HttpResponse {
     let graph = data.read().await;
     let category = graph.categories().random();
@@ -58,6 +74,10 @@ pub async fn random(data: State) -> HttpResponse {
     HttpResponse::Ok().json(CategoryResponse::new(category, &graph))
 }
 
+/// Searches for categories matching the given search term.
+///
+/// # Errors
+/// * Returns a `400` error if `search_term` is not present.
 pub async fn search(req: HttpRequest, data: State) -> HttpResponse {
     match req.match_info().get("search_term") {
         None => HttpResponse::BadRequest().json("Search term must be provided."),
