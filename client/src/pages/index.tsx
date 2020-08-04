@@ -140,7 +140,7 @@ export default function Home(): ReactElement {
 
   return (
     <>
-      <Head />
+      <Head currentCrateName={currentCrate?.crate.name} />
       <Layout>
         <Sidebar
           clickedCrateName={clickedCrateName}

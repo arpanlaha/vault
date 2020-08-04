@@ -1,7 +1,13 @@
 import React, { ReactElement } from "react";
 import { Helmet } from "react-helmet";
 
-export default function Head(): ReactElement {
+interface HeadProps {
+  currentCrateName?: string;
+}
+
+export default function Head(props: HeadProps): ReactElement {
+  const { currentCrateName } = props;
+
   return (
     <Helmet htmlAttributes={{ lang: "en" }} defer={false}>
       <meta charSet="UTF-8" />
@@ -16,7 +22,11 @@ export default function Head(): ReactElement {
       <meta name="author" content="ARpan Laha" />
       <meta name="theme-color" content="#0d0f12" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-      <title>Vault</title>
+      <title>
+        {currentCrateName !== undefined
+          ? `${currentCrateName} | Vault`
+          : "Vault"}
+      </title>
     </Helmet>
   );
 }
