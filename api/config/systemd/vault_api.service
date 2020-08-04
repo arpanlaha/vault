@@ -10,6 +10,8 @@ ExecStart=/usr/sbin/vault_api 8285 -l
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=vault_api
+CPUAccounting = yes
+MemoryAccounting = yes
 
 [Install]
 WantedBy=multi-user.target
