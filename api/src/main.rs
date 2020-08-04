@@ -13,7 +13,7 @@ use tokio::sync::RwLock;
 use vault_api::routes::{categories, crates, keywords, state};
 use vault_graph::Graph;
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> IoResult<()> {
     let mut args = env::args();
 
