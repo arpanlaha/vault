@@ -8,7 +8,7 @@ import {
 import { ForceGraphWrapper, Head, Sidebar } from "../components";
 import { notification, Layout } from "antd";
 import { getCrate, getDependencyGraph, getRandomCrate } from "../utils/api";
-import { CrateDistance, CrateInfo, Dependency } from "../utils/types";
+import { CrateInfo, DependencyGraph } from "../utils/types";
 
 import "../styles/antd.scss";
 import "../styles/vault.scss";
@@ -28,8 +28,10 @@ export default function Home(): ReactElement {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentCrate, setCurrentCrate] = useState<CrateInfo | null>(null);
   const [featureNames, setFeatureNames] = useState<string[]>([]);
-  const [graphNodes, setGraphNodes] = useState<CrateDistance[]>([]);
-  const [graphLinks, setGraphLinks] = useState<Dependency[]>([]);
+  const [
+    dependencyGraph,
+    setDependencyGraph,
+  ] = useState<DependencyGraph | null>(null);
   const [clickedCrateName, setClickedCrateName] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -110,8 +112,7 @@ export default function Home(): ReactElement {
           currentCrate.selectedFeatures
         );
         if (dependencyGraphRes.success) {
-          setGraphNodes(dependencyGraphRes.result.crates);
-          setGraphLinks(dependencyGraphRes.result.dependencies);
+          setDependencyGraph(dependencyGraphRes.result);
           setError("");
         } else {
           setError(dependencyGraphRes.error);
@@ -120,8 +121,7 @@ export default function Home(): ReactElement {
 
       loadCrateDependencies();
     } else {
-      setGraphNodes([]);
-      setGraphLinks([]);
+      setDependencyGraph(null);
     }
   }, [currentCrate]);
 
@@ -146,8 +146,8 @@ export default function Home(): ReactElement {
           clickedCrateName={clickedCrateName}
           currentCrate={currentCrate}
           featureNames={featureNames}
-          graphLinks={graphLinks}
-          graphNodes={graphNodes}
+          graphLinks={dependencyGraph?.dependencies ?? []}
+          graphNodes={dependencyGraph?.crates ?? []}
           portrait={portrait}
           searchTerm={searchTerm}
           setClickedCrateName={setClickedCrateName}
@@ -161,9 +161,8 @@ export default function Home(): ReactElement {
         <Content className="content">
           <div className="column dependency-graph-container">
             <ForceGraphWrapper
-              crates={graphNodes}
-              dependencies={graphLinks}
               clickedCrateName={clickedCrateName}
+              dependencyGraph={dependencyGraph}
               setClickedCrateName={setClickedCrateName}
               portrait={portrait}
             />
