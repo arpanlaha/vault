@@ -4,7 +4,7 @@ import CratePanelListItem from "./CratePanelListItem";
 import { CrateDistance } from "../utils/types";
 
 interface CratePanelBodyProps {
-  crate: CrateDistance;
+  crate: CrateDistance | undefined;
   dependencies: string[];
   setClickedCrateName: (clickedCrateName: string) => void;
 }
@@ -13,6 +13,11 @@ export default function CratePanelBody(
   props: CratePanelBodyProps
 ): ReactElement {
   const { crate, dependencies, setClickedCrateName } = props;
+
+  if (crate === undefined) {
+    return <></>;
+  }
+
   const {
     name,
     description,

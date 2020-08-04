@@ -118,7 +118,10 @@ export default function Sidebar(props: SidebarProps): ReactElement {
   ): ((selectedCrateName: string) => void) => (selectedCrateName: string) => {
     setSearchTerm(selectedCrateName);
 
-    if (selectedCrateName !== "") {
+    if (
+      selectedCrateName !== "" &&
+      selectedCrateName !== currentCrate?.crate.name
+    ) {
       setUrlCrateName(selectedCrateName);
       setUrlFeatures(undefined);
       const selectedCrate = crates.find(
@@ -221,13 +224,11 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                   }
                 >
                   <CratePanelBody
-                    crate={
-                      graphNodes.find(
-                        (crate) =>
-                          crate.name ===
-                          (clickedCrateName ?? currentCrate.crate.name)
-                      )!
-                    }
+                    crate={graphNodes.find(
+                      (crate) =>
+                        crate.name ===
+                        (clickedCrateName ?? currentCrate.crate.name)
+                    )}
                     dependencies={graphLinks
                       .filter(
                         (dependency) =>

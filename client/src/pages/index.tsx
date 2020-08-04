@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useState } from "react";
 import {
   decodeDelimitedArray,
   encodeDelimitedArray,
@@ -41,7 +41,7 @@ export default function Home(): ReactElement {
     CommaArrayParam
   );
 
-  const setRandomCrate = (): void => {
+  const setRandomCrate = useCallback((): void => {
     const loadRandomCrate = async (): Promise<void> => {
       const randomCrateRes = await getRandomCrate();
       if (randomCrateRes.success) {
@@ -58,7 +58,7 @@ export default function Home(): ReactElement {
     };
 
     loadRandomCrate();
-  };
+  }, [setUrlCrateName]);
 
   useEffect(() => {
     if (
