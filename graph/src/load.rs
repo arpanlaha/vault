@@ -415,7 +415,7 @@ fn load_crate_categories(
             .get_mut(category_id)
             .unwrap_or_else(|| panic!("Category with id {} not found", category_id))
             .crates
-            .insert(crate_id.to_owned());
+            .push(crate_id.to_owned());
     }
 
     println!(

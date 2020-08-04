@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use semver_parser::version as semver_version;
 use serde::{Deserialize, Serialize};
 use std::cmp::PartialEq;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// A category in the crates.io registry.
 #[derive(Deserialize, Debug, Serialize)]
@@ -16,7 +16,7 @@ pub struct Category {
     ///
     /// This is not set on deserialization and instead must be populated later when processing crate-category relationships.
     #[serde(skip_deserializing, default, skip_serializing)]
-    pub crates: HashSet<String>,
+    pub crates: Vec<String>,
 
     // /The description of the category.
     pub description: String,
