@@ -222,11 +222,11 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                 >
                   <CratePanelBody
                     crate={
-                      clickedCrateName !== null
-                        ? graphNodes.find(
-                            (crate) => crate.name === clickedCrateName
-                          )!
-                        : currentCrate.crate
+                      graphNodes.find(
+                        (crate) =>
+                          crate.name ===
+                          (clickedCrateName ?? currentCrate.crate.name)
+                      )!
                     }
                     dependencies={graphLinks
                       .filter(

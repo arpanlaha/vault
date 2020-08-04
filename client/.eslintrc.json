@@ -6,6 +6,7 @@
     "plugin:@hack4impact-uiuc/typescript"
   ],
   "rules": {
+    "@typescript-eslint/camelcase": "off",
     "no-console": "error"
   }
 }

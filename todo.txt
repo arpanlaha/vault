@@ -7,4 +7,3 @@ Transitive deps on node click
 Fix sidebar width jumping
 Add random graph route
 Redo client logic to allow random graphs
-Add enabled features to dependency graph response

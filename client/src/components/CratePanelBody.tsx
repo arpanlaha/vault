@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react";
 import CratePanelItem from "./CratePanelItem";
 import CratePanelListItem from "./CratePanelListItem";
-import { Crate } from "../utils/types";
+import { CrateDistance } from "../utils/types";
 
 interface CratePanelBodyProps {
-  crate: Crate;
+  crate: CrateDistance;
   dependencies: string[];
   setClickedCrateName: (clickedCrateName: string) => void;
 }
@@ -13,7 +13,15 @@ export default function CratePanelBody(
   props: CratePanelBodyProps
 ): ReactElement {
   const { crate, dependencies, setClickedCrateName } = props;
-  const { name, description, version, downloads, categories, keywords } = crate;
+  const {
+    name,
+    description,
+    version,
+    downloads,
+    categories,
+    keywords,
+    enabled_features,
+  } = crate;
 
   return (
     <>
@@ -22,6 +30,7 @@ export default function CratePanelBody(
       <CratePanelItem label="Downloads" value={downloads} />
       <CratePanelListItem label="Categories" values={categories} />
       <CratePanelListItem label="Keywords" values={keywords} />
+      <CratePanelListItem label="Enabled features" values={enabled_features} />
       <CratePanelListItem
         dependencies
         label="Dependencies"

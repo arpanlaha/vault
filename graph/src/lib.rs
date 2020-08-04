@@ -219,7 +219,7 @@ impl Graph {
                 while let Some(QueueDependency {
                     from,
                     to,
-                    to_feature_names,
+                    mut to_feature_names,
                     to_distance,
                 }) = dependency_queue.pop_front()
                 {
@@ -244,20 +244,23 @@ impl Graph {
                     if let Some(crate_feature_names) = crates_seen.get_mut(&to_crate_val.name) {
                         // if crate has been seen
 
-                        let is_feature_unseen = |dependency_feature_name| {
+                        // remove already seen features
+                        to_feature_names.retain(|dependency_feature_name| {
                             !crate_feature_names.contains(dependency_feature_name)
-                        };
+                        });
 
-                        if to_feature_names.iter().any(is_feature_unseen) {
+                        if !to_feature_names.is_empty() {
                             // but has features that haven't been enabled yet
                             // add dependencies to queue
                             dependency_graph_helper(
                                 to_crate_val,
-                                to_feature_names,
+                                to_feature_names.clone(),
                                 &mut dependency_queue,
                                 to_distance,
                             );
                         }
+
+                        crate_feature_names.append(&mut to_feature_names);
                     } else {
                         // add crate to list and map
                         crate_distance_vec.push((&to_crate_val.name, to_distance));
@@ -276,8 +279,19 @@ impl Graph {
                 Some(DependencyGraph {
                     crates: crate_distance_vec
                         .iter()
-                        .map(|(crate_name, crate_distance)| {
-                            CrateDistance::new((*crate_name, *crate_distance), &self.crates)
+                        .map(|&(crate_id, distance)| {
+                            let mut enabled_features =
+                                crates_seen.get(crate_id).unwrap().to_owned();
+                            enabled_features.retain(|feature_name| feature_name != "default");
+
+                            CrateDistance::new(
+                                CrateDistanceInfo {
+                                    crate_id,
+                                    distance,
+                                    enabled_features,
+                                },
+                                &self.crates,
+                            )
                         })
                         .collect(),
                     dependencies,
@@ -302,7 +316,7 @@ fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
 }
 
 #[derive(Serialize)]
-/// A Crate intended for serialization, including the distance from the root crate.
+/// A Crate intended for serialization, including the distance from the root crate and enabled features.
 pub struct CrateDistance<'a> {
     /// A list of categories the crate belongs to.
     pub categories: &'a Vec<String>,
@@ -319,6 +333,9 @@ pub struct CrateDistance<'a> {
     /// The number of downloads of the crate.
     pub downloads: &'a usize,
 
+    /// The features enabled for this crate in this `DependencyGraph`.
+    pub enabled_features: Vec<String>,
+
     /// The features exposed by the crate.
     pub features: &'a HashMap<String, Vec<String>>,
 
@@ -332,18 +349,29 @@ pub struct CrateDistance<'a> {
     pub version: &'a String,
 }
 
+pub struct CrateDistanceInfo<'a> {
+    pub crate_id: &'a String,
+    pub distance: usize,
+    pub enabled_features: Vec<String>,
+}
+
 impl<'a> CrateDistance<'a> {
     #[must_use]
     /// Creates a new `CrateDistance`.
     ///
     /// # Arguments
-    /// * `crate_distance_tuple` - a tuple containing the crate name and distance.
+    /// * `crate_distance_info` - a the `CrateDistanceInfo` containing the relevant information.
     /// * `crates` - the `HashMap` containing the crate values.
     pub fn new(
-        crate_distance_tuple: (&String, usize),
+        crate_distance_info: CrateDistanceInfo<'a>,
         crates: &'a HashMap<String, Crate>,
     ) -> CrateDistance<'a> {
-        let (crate_id, distance) = crate_distance_tuple;
+        let CrateDistanceInfo {
+            crate_id,
+            distance,
+            enabled_features,
+        } = crate_distance_info;
+
         let Crate {
             categories,
             created_at,
@@ -362,6 +390,7 @@ impl<'a> CrateDistance<'a> {
             description,
             distance,
             downloads,
+            enabled_features,
             features,
             keywords,
             name,

@@ -11,6 +11,7 @@ export interface Crate {
 
 export interface CrateDistance extends Crate {
   distance: number;
+  enabled_features: string[];
 }
 
 export interface Dependency {
