@@ -8,19 +8,24 @@
 
 use wasm_bindgen::prelude::*;
 
+const ALPHA_DECAY: f64 = 0.98;
+const VELOCITY_DECAY: f64 = 0.6;
+
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-struct Node {
+struct Vertex {
     id: u32,
-    coords: [u32; 3],
+    position: [f64; 3],
+    velocity: [f64; 3],
 }
 
-impl Node {
+impl Vertex {
     pub const fn new(id: u32) -> Self {
         Self {
             id,
-            coords: [0, 0, 0],
+            position: [0_f64, 0_f64, 0_f64],
+            velocity: [0_f64, 0_f64, 0_f64],
         }
     }
 }
@@ -38,8 +43,9 @@ impl Edge {
 
 #[wasm_bindgen]
 pub struct ForceGraph {
-    vertices: Vec<Node>,
+    vertices: Vec<Vertex>,
     edges: Vec<Edge>,
+    alpha: f64,
 }
 
 #[wasm_bindgen]
@@ -63,13 +69,35 @@ impl ForceGraph {
         Self {
             vertices: vertex_ids
                 .iter()
-                .map(|&vertex_id| Node::new(vertex_id))
+                .map(|&vertex_id| Vertex::new(vertex_id))
                 .collect(),
             edges,
+            alpha: 1_f64,
         }
     }
 
     pub fn tick(&mut self, iterations: u32) {
-        for _ in 0..iterations {}
+        for _ in 0..iterations {
+            self.tick_single();
+        }
+    }
+}
+
+impl ForceGraph {
+    fn tick_single(&mut self) {
+        self.alpha *= ALPHA_DECAY;
+
+        // apply forces
+
+        for vertex in &mut self.vertices {
+            let Vertex {
+                position, velocity, ..
+            } = vertex;
+
+            for dimension in 0..3 {
+                velocity[dimension] *= VELOCITY_DECAY;
+                position[dimension] += velocity[dimension];
+            }
+        }
     }
 }
