@@ -6,18 +6,23 @@
     clippy::module_name_repetitions
 )]
 
+mod octree;
+
+use octree::Octree;
+
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 
 const ALPHA_DECAY: f64 = 0.977_237_220_955_810_7;
 const ALPHA_MIN: f64 = 0.001;
+const MANY_BODY_STRENGTH: f64 = -30.0;
 const OPTIMAL_LENGTH: f64 = 30.0;
 const VELOCITY_DECAY: f64 = 0.6;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-struct Vertex {
+pub struct Vertex {
     index: usize,
     position: [f64; 3],
     velocity: [f64; 3],
@@ -78,6 +83,7 @@ pub struct ForceLayout {
     vertices: RefCell<Vec<Vertex>>,
     edges: Vec<Edge>,
     alpha: f64,
+    octree: Octree,
 }
 
 #[wasm_bindgen]
@@ -109,6 +115,8 @@ impl ForceLayout {
             ));
         }
 
+        // TODO: many-body
+
         Self {
             num_vertices,
             vertices: RefCell::new(
@@ -123,7 +131,7 @@ impl ForceLayout {
 
     pub fn tick(&mut self, iterations: u32) -> bool {
         for _ in 0..iterations {
-            self.tick_single();
+            self.tick_once();
         }
 
         self.alpha <= ALPHA_MIN
@@ -131,7 +139,7 @@ impl ForceLayout {
 }
 
 impl ForceLayout {
-    fn tick_single(&mut self) {
+    fn tick_once(&mut self) {
         self.alpha *= ALPHA_DECAY;
 
         for edge in &self.edges {
