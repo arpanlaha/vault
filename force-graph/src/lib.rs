@@ -74,6 +74,7 @@ impl Edge {
 
 #[wasm_bindgen]
 pub struct ForceLayout {
+    num_vertices: usize,
     vertices: RefCell<Vec<Vertex>>,
     edges: Vec<Edge>,
     alpha: f64,
@@ -109,6 +110,7 @@ impl ForceLayout {
         }
 
         Self {
+            num_vertices,
             vertices: RefCell::new(
                 (0..num_vertices)
                     .map(|index| Vertex::new(index, edge_counts[index]))
@@ -137,14 +139,26 @@ impl ForceLayout {
             // let length = get_length(&source.position, &dest.position);
         }
 
-        for vertex in self.vertices.borrow_mut().iter_mut() {
-            let Vertex {
-                position, velocity, ..
-            } = vertex;
+        let mut position_sums = vec![0_f64; 3];
 
+        for Vertex { position, .. } in self.vertices.borrow().iter() {
+            for dimension in 0..3 {
+                position_sums[dimension] += position[dimension];
+            }
+        }
+
+        let position_means: Vec<f64> = position_sums
+            .iter()
+            .map(|position_sum| position_sum / self.num_vertices as f64)
+            .collect();
+
+        for Vertex {
+            position, velocity, ..
+        } in self.vertices.borrow_mut().iter_mut()
+        {
             for dimension in 0..3 {
                 velocity[dimension] *= VELOCITY_DECAY;
-                position[dimension] += velocity[dimension];
+                position[dimension] += velocity[dimension] - position_means[dimension];
             }
         }
     }
