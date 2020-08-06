@@ -136,21 +136,9 @@ impl ForceLayout {
 
         for edge in &self.edges {
             self.apply_edge_force(edge);
-            // let length = get_length(&source.position, &dest.position);
         }
 
-        let mut position_sums = vec![0_f64; 3];
-
-        for Vertex { position, .. } in self.vertices.borrow().iter() {
-            for dimension in 0..3 {
-                position_sums[dimension] += position[dimension];
-            }
-        }
-
-        let position_means: Vec<f64> = position_sums
-            .iter()
-            .map(|position_sum| position_sum / self.num_vertices as f64)
-            .collect();
+        let mean_position = self.get_mean_position();
 
         for Vertex {
             position, velocity, ..
@@ -158,7 +146,7 @@ impl ForceLayout {
         {
             for dimension in 0..3 {
                 velocity[dimension] *= VELOCITY_DECAY;
-                position[dimension] += velocity[dimension] - position_means[dimension];
+                position[dimension] += velocity[dimension] - mean_position[dimension];
             }
         }
     }
@@ -205,8 +193,19 @@ impl ForceLayout {
         source.velocity[1] += y_factor * source_bias;
         source.velocity[2] += z_factor * source_bias;
     }
-}
 
-fn get_length(a: &[f64; 3], b: &[f64; 3]) -> f64 {
-    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
+    fn get_mean_position(&self) -> Vec<f64> {
+        let mut position_sums = vec![0_f64; 3];
+
+        for Vertex { position, .. } in self.vertices.borrow().iter() {
+            for dimension in 0..3 {
+                position_sums[dimension] += position[dimension];
+            }
+        }
+
+        position_sums
+            .iter()
+            .map(|position_sum| position_sum / self.num_vertices as f64)
+            .collect()
+    }
 }
