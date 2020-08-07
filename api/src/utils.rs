@@ -28,7 +28,7 @@ pub enum QueryParamError {
 }
 
 /// Maps a query string into a `HashMap` of key-value pairs.
-pub fn get_query_params(query_str: &str) -> Result<HashMap<String, String>, QueryParamError> {
+pub fn get_query_params(query_str: String) -> Result<HashMap<String, String>, QueryParamError> {
     if query_str.is_empty() {
         return Ok(HashMap::new());
     }

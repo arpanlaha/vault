@@ -1,15 +1,8 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-// use actix_cors::Cors;
-// use actix_web::{
-//     middleware::{Compress, Logger},
-//     web::{self, Data},
-//     App, HttpResponse, HttpServer,
-// };
 // use env_logger::Env;
 use parking_lot::RwLock;
 use std::env;
-// use std::io::Result as IoResult;
 use std::sync::Arc;
 use vault_api::routes;
 use vault_graph::Graph;
@@ -18,10 +11,13 @@ use vault_graph::Graph;
 async fn main() {
     let mut args = env::args();
 
-    let port = args.nth(1).unwrap_or_else(|| String::from("8080"));
-    let port = port
-        .parse::<u16>()
-        .unwrap_or_else(|_| panic!("{} is not a valid port number", port));
+    let port = {
+        let port_string = args.nth(1).unwrap_or_else(|| String::from("8080"));
+
+        port_string
+            .parse::<u16>()
+            .unwrap_or_else(|_| panic!("{} is not a valid port number", port_string))
+    };
 
     // address defaults to `0.0.0.0`, unless the `-l` or `--local` argument is passed, in which case the address is `127.0.0.1`
     let address = args.next().map_or([0; 4], |arg| {
