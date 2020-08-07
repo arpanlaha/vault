@@ -55,10 +55,7 @@ mod handlers {
     /// * Returns a `404` error if no `Crate` with the given id is found.
     pub async fn get_crate(crate_id: String, state: State) -> Result<impl Reply, Rejection> {
         match state.read().crates().get(&crate_id) {
-            None => Err(reject::custom(VaultError::IdNotFound(
-                String::from("Crate"),
-                crate_id,
-            ))),
+            None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 
             Some(crate_val) => Ok(reply::json(crate_val)),
         }
@@ -104,40 +101,9 @@ mod handlers {
                 None => vec![],
             },
         ) {
-            None => Err(reject::custom(VaultError::IdNotFound(
-                String::from("Crate"),
-                crate_id,
-            ))),
+            None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 
             Some(dependency_graph) => Ok(reply::json(dependency_graph)),
         }
-
-        // match features {
-        //     Err(_) => Err(reject::custom(VaultError::QueryParamError)),
-
-        //     Ok(query_params) => match &state.read().get_dependency_graph(
-        //         &crate_id,
-        //         match query_params.get("features") {
-        //             Some(features) => {
-        //                 if features.contains(',') {
-        //                     features
-        //                         .split(',')
-        //                         .map(String::from)
-        //                         .collect::<Vec<String>>()
-        //                 } else {
-        //                     vec![features.to_owned()]
-        //                 }
-        //             }
-        //             None => vec![],
-        //         },
-        //     ) {
-        //         None => Err(reject::custom(VaultError::IdNotFound(
-        //             String::from("Crate"),
-        //             crate_id,
-        //         ))),
-
-        //         Some(dependency_graph) => Ok(reply::json(dependency_graph)),
-        //     },
-        // }
     }
 }

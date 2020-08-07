@@ -8,8 +8,10 @@ pub type State = Arc<RwLock<Graph>>;
 
 #[derive(Debug)]
 pub enum VaultError {
+    CategoryNotFound(String),
+    CrateNotFound(String),
+    KeywordNotFound(String),
     UpdateForbidden,
-    IdNotFound(String, String),
 }
 
 impl Reject for VaultError {}

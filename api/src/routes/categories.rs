@@ -53,10 +53,7 @@ mod handlers {
     /// * Returns a `404` error if no `Category` with the given id is found.
     pub async fn get_category(category_id: String, state: State) -> Result<impl Reply, Rejection> {
         match state.read().categories().get(&category_id) {
-            None => Err(reject::custom(VaultError::IdNotFound(
-                String::from("Category"),
-                category_id,
-            ))),
+            None => Err(reject::custom(VaultError::CategoryNotFound(category_id))),
 
             Some(category) => {
                 let graph = state.read();
