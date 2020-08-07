@@ -1,7 +1,7 @@
 use super::super::utils::{State, VaultError};
 use warp::{Filter, Rejection, Reply};
 
-pub fn get_routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_keyword(state.clone())
         .or(random(state.clone()))
         .or(search(state.clone()))
@@ -35,13 +35,13 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Keyword` with the given id is found.
     pub async fn get_keyword(keyword_id: String, state: State) -> Result<impl Reply, Rejection> {
-        if let Some(keyword) = state.read().keywords().get(&keyword_id) {
-            Ok(reply::json(keyword))
-        } else {
-            Err(reject::custom(VaultError::IdNotFound(
+        match state.read().keywords().get(&keyword_id) {
+            None => Err(reject::custom(VaultError::IdNotFound(
                 String::from("Keyword"),
                 keyword_id,
-            )))
+            ))),
+
+            Some(keyword) => Ok(reply::json(keyword)),
         }
     }
 

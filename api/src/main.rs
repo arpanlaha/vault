@@ -11,7 +11,7 @@ use parking_lot::RwLock;
 use std::env;
 // use std::io::Result as IoResult;
 use std::sync::Arc;
-use vault_api::routes::keywords;
+use vault_api::routes;
 use vault_graph::Graph;
 
 #[tokio::main]
@@ -38,13 +38,9 @@ async fn main() {
     //     .with(warp::cors().allow_any_origin())
     //     .with(warp::body::json());
 
-    // let random = warp::path("random");
-    // let search = warp::path("search");
-    // let state = warp::path("state");
-
-    let routes = keywords::get_routes(app_state.clone());
-
-    warp::serve(routes).run((address, port)).await;
+    warp::serve(routes::get(app_state.clone()))
+        .run((address, port))
+        .await;
 }
 
 // #[actix_web::main]
