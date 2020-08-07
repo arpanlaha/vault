@@ -1,11 +1,26 @@
-use actix_web::web::Data;
+use parking_lot::RwLock;
 use std::collections::HashMap;
-use tokio::sync::RwLock;
+use std::sync::Arc;
 use vault_graph::Graph;
+use warp::{reject::Reject, Filter};
 
-/// Shorthand for Data<RwLock<Graph>>.
-pub type State = Data<RwLock<Graph>>;
+/// Shorthand for Arc<RwLock<Graph>>.
+pub type State = Arc<RwLock<Graph>>;
 
+pub fn with_state(
+    state: State,
+) -> impl Filter<Extract = (State,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || state.clone())
+}
+
+#[derive(Debug)]
+pub enum VaultError {
+    QueryParamError,
+    UpdateForbidden,
+    IdNotFound(String, String),
+}
+
+impl Reject for VaultError {}
 /// An enum containing possible query param errors.
 pub enum QueryParamError {
     /// If the query string (or any query parameter) does not contain the `=` character.
