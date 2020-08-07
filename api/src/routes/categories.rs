@@ -10,6 +10,7 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
 
 fn get_categories(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("categories")
+        .and(warp::path::end())
         .and(warp::get())
         .and_then(move || handlers::get_categories(state.clone()))
 }
