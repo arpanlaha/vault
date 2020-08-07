@@ -1,6 +1,8 @@
 use super::utils::{State, VaultError};
 use warp::{Filter, Rejection, Reply};
 
+pub use handlers::CategoryResponse;
+
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_categories(state.clone())
         .or(get_category(state.clone()))
@@ -67,7 +69,11 @@ mod handlers {
     /// Returns a random `Category`.
     pub async fn random(state: State) -> Result<impl Reply, Rejection> {
         let graph = state.read();
-        Ok(reply::json(graph.categories().random()))
+
+        Ok(reply::json(&CategoryResponse::new(
+            graph.categories().random(),
+            &graph,
+        )))
     }
 
     /// Searches for categorys matching the given search term.
