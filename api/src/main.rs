@@ -4,7 +4,7 @@ use env_logger::Env;
 use parking_lot::RwLock;
 use std::env;
 use std::sync::Arc;
-use vault_api::routes;
+use vault_api::routes::{self, utils};
 use vault_graph::Graph;
 use warp::Filter;
 
@@ -35,6 +35,7 @@ async fn main() {
 
     warp::serve(
         routes::get(app_state.clone())
+            .recover(utils::handle_rejection)
             .with(warp::cors().allow_any_origin())
             .with(warp::log("info"))
             .with(warp::compression::gzip()),
