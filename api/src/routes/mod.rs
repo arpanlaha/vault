@@ -1,8 +1,8 @@
-mod categories;
+pub mod categories;
 mod crates;
 mod keywords;
 mod state;
-mod utils;
+pub mod utils;
 
 use warp::{Filter, Rejection, Reply};
 
