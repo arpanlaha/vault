@@ -1,8 +1,8 @@
-use super::super::utils::{State, VaultError};
+use super::utils::{State, VaultError};
 use warp::{Filter, Rejection, Reply};
 
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    time_since_last_update(state.clone()).or(reset(state.clone()))
+    time_since_last_update(state.clone()).or(reset(state))
 }
 
 fn time_since_last_update(

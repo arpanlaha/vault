@@ -1,10 +1,10 @@
-use super::super::utils::{State, VaultError};
+use super::utils::{State, VaultError};
 use warp::{Filter, Rejection, Reply};
 
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_keyword(state.clone())
         .or(random(state.clone()))
-        .or(search(state.clone()))
+        .or(search(state))
 }
 
 fn get_keyword(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {

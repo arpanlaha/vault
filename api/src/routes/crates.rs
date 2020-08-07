@@ -1,4 +1,4 @@
-use super::super::utils::{State, VaultError};
+use super::utils::{State, VaultError};
 use std::collections::HashMap;
 use warp::{Filter, Rejection, Reply};
 
@@ -6,7 +6,7 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
     get_crate(state.clone())
         .or(random(state.clone()))
         .or(search(state.clone()))
-        .or(get_dependency_graph(state.clone()))
+        .or(get_dependency_graph(state))
 }
 
 fn get_crate(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -98,7 +98,7 @@ mod handlers {
                             .map(String::from)
                             .collect::<Vec<String>>()
                     } else {
-                        vec![features.to_owned()]
+                        vec![features]
                     }
                 }
                 None => vec![],
