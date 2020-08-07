@@ -6,6 +6,7 @@ use std::env;
 use std::sync::Arc;
 use vault_api::routes;
 use vault_graph::Graph;
+use warp::Filter;
 
 #[tokio::main]
 async fn main() {
@@ -34,7 +35,7 @@ async fn main() {
     //     .with(warp::cors().allow_any_origin())
     //     .with(warp::body::json());
 
-    warp::serve(routes::get(app_state.clone()))
+    warp::serve(routes::get(app_state.clone()).with(warp::cors().allow_any_origin()))
         .run((address, port))
         .await;
 }
