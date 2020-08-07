@@ -35,9 +35,13 @@ async fn main() {
     //     .with(warp::cors().allow_any_origin())
     //     .with(warp::body::json());
 
-    warp::serve(routes::get(app_state.clone()).with(warp::cors().allow_any_origin()))
-        .run((address, port))
-        .await;
+    warp::serve(
+        routes::get(app_state.clone())
+            .with(warp::cors().allow_any_origin())
+            .with(warp::compression::brotli()),
+    )
+    .run((address, port))
+    .await;
 }
 
 // #[actix_web::main]
