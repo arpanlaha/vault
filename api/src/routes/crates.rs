@@ -2,6 +2,7 @@ use super::utils::{State, VaultError};
 use std::collections::HashMap;
 use warp::{Filter, Rejection, Reply};
 
+/// Wraps all `Crate` routes.
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_crate(state.clone())
         .or(random(state.clone()))
@@ -9,24 +10,34 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
         .or(get_dependency_graph(state))
 }
 
+/// Returns the `Crate` with the given id, if found.
+///
+/// # Errors
+/// * Returns a `404` error if no `Crate` with the given id is found.
 fn get_crate(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("crates" / String)
         .and(warp::get())
         .and_then(move |crate_id| handlers::get_crate(crate_id, state.clone()))
 }
 
+/// Returns a random `Crate`.
 fn random(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("random" / "crates")
         .and(warp::get())
         .and_then(move || handlers::random(state.clone()))
 }
 
+/// Searches for crates matching the given search term.
 fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("search" / "crates" / String)
         .and(warp::get())
         .and_then(move |search_term| handlers::search(search_term, state.clone()))
 }
 
+/// Returns the `DependencyGraph` of the `Crate` ith the given id, if found.
+///
+/// # Errors
+/// * Returns a `404` error if no `Crate` with the given id is found.
 fn get_dependency_graph(
     state: State,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -78,7 +89,6 @@ mod handlers {
     /// Returns the `DependencyGraph` of the `Crate` ith the given id, if found.
     ///
     /// # Errors
-    /// * Returns a `400` error if the query string is malformed.
     /// * Returns a `404` error if no `Crate` with the given id is found.
     pub async fn get_dependency_graph(
         crate_id: String,

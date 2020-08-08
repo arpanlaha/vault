@@ -3,6 +3,7 @@ use warp::{Filter, Rejection, Reply};
 
 pub use handlers::CategoryResponse;
 
+/// Wraps all `Category` routes.
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_categories(state.clone())
         .or(get_category(state.clone()))
@@ -10,6 +11,7 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
         .or(search(state))
 }
 
+/// Returns a list of all categories.
 fn get_categories(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("categories")
         .and(warp::path::end())
@@ -17,18 +19,24 @@ fn get_categories(state: State) -> impl Filter<Extract = impl Reply, Error = Rej
         .and_then(move || handlers::get_categories(state.clone()))
 }
 
+/// Returns the `Category` with the given id, if found.
+///
+/// # Errors
+/// * Returns a `404` error if no `Category` with the given id is found.
 fn get_category(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("categories" / String)
         .and(warp::get())
         .and_then(move |category_id| handlers::get_category(category_id, state.clone()))
 }
 
+/// Returns a random `Category`.
 fn random(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("random" / "categories")
         .and(warp::get())
         .and_then(move || handlers::random(state.clone()))
 }
 
+/// Searches for categorys matching the given search term.
 fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("search" / "categories" / String)
         .and(warp::get())

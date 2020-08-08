@@ -7,16 +7,28 @@ use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 /// Shorthand for Arc<RwLock<Graph>>.
 pub type State = Arc<RwLock<Graph>>;
 
+/// An enum corresponding to custom errors which may occur.
 #[derive(Debug)]
 pub enum VaultError {
+    /// If the provided `Category` does not exist.
     CategoryNotFound(String),
+
+    /// If the provided `Crate` does not exist.
     CrateNotFound(String),
+
+    /// If the provided `Keyword` does not exist.
     KeywordNotFound(String),
+
+    /// If updating the `Graph` is not allowed.
     UpdateForbidden,
 }
 
 impl Reject for VaultError {}
 
+/// A `warp` function to handle different errors.
+///
+/// # Arguments
+/// * `err` - the `Rejection` to handle.
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let (code, message) = if err.is_not_found() {
         (StatusCode::NOT_FOUND, String::from("Route not found."))

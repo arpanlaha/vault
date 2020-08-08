@@ -8,4 +8,4 @@ Fix sidebar width jumping
 Add random graph route
 Redo client logic to allow random graphs
 Move this to GitHub issues
-Investigate memory leaks (actix beta 2?)
+Investigate memory leaks (actix beta 2?) (92.8)

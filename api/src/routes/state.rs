@@ -3,10 +3,12 @@ use warp::{Filter, Rejection, Reply};
 
 pub use handlers::LastUpdated;
 
+/// Wraps all `Graph` state routes.
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     time_since_last_update(state.clone()).or(reset(state))
 }
 
+/// Returns the time (in seconds) since the `Graph` was last updated.
 fn time_since_last_update(
     state: State,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
@@ -15,6 +17,10 @@ fn time_since_last_update(
         .and_then(move || handlers::time_since_last_update(state.clone()))
 }
 
+/// Updates the `Graph` so that it contains the latest crates.io data.
+///
+/// # Errors
+/// * Returns a `403` error if not enough time has passed since the `Graph` was last updated.
 fn reset(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("state" / "reset")
         .and(warp::put())
@@ -32,7 +38,7 @@ mod handlers {
     /// The crates.io database dump is updated daily, so this interval lies just under a day to permit some leeway.
     const INTERVAL: u64 = 60 * (60 * 23 + 55);
 
-    /// Returns a list of all categories.
+    /// Returns the time (in seconds) since the `Graph` was last updated.
     pub async fn time_since_last_update(state: State) -> Result<impl Reply, Rejection> {
         Ok(reply::json(&LastUpdated {
             seconds: state.read().time_since_last_update(),
@@ -53,10 +59,10 @@ mod handlers {
         }
     }
 
-    /// A helper method to determine if the `Graph` can be updated.
+    /// Updates the `Graph` so that it contains the latest crates.io data.
     ///
-    /// # Arguments
-    /// * `state` - the app data containing the `Graph`.
+    /// # Errors
+    /// * Returns a `403` error if not enough time has passed since the `Graph` was last updated.
     pub async fn reset(state: State) -> Result<impl Reply, Rejection> {
         if can_update(&state) {
             let new_graph = Graph::new().await;

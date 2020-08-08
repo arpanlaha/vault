@@ -12,6 +12,7 @@ use warp::Filter;
 async fn main() {
     let mut args = env::args();
 
+    // port defaults to 8080 if not provided
     let port = {
         let port_string = args.nth(1).unwrap_or_else(|| String::from("8080"));
 
@@ -31,6 +32,7 @@ async fn main() {
 
     let app_state = Arc::new(RwLock::new(Graph::new().await));
 
+    // initialize logger at `info` level
     env_logger::from_env(Env::default().default_filter_or("info")).init();
 
     warp::serve(
