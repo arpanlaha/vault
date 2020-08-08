@@ -1,6 +1,8 @@
 use super::utils::{State, VaultError};
 use warp::{Filter, Rejection, Reply};
 
+pub use handlers::LastUpdated;
+
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     time_since_last_update(state.clone()).or(reset(state))
 }
@@ -70,6 +72,6 @@ mod handlers {
     #[derive(Deserialize, Serialize)]
     pub struct LastUpdated {
         /// The time (in seconds) since the `Graph` was last updated.
-        seconds: u64,
+        pub seconds: u64,
     }
 }
