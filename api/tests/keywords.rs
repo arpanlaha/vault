@@ -3,18 +3,17 @@ extern crate lazy_static;
 
 mod common;
 
-use actix_web::{
-    http::StatusCode,
-    test::{self, TestRequest},
-    web, App,
-};
 use serde::Deserialize;
 use std::str;
-use vault_api::{routes::keywords, utils::State};
+use vault_api::routes::{
+    self,
+    utils::{self, State},
+};
 use vault_graph::Search;
+use warp::Filter;
 
 lazy_static! {
-    static ref DATA: State = common::get_data();
+    static ref STATE: State = common::get_data();
 }
 
 #[derive(Deserialize)]
@@ -23,131 +22,73 @@ struct TestKeyword {
     pub keyword: String,
 }
 
-#[actix_rt::test]
-async fn test_get_keyword_no_id() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/keywords/", web::get().to(keywords::get_keyword))
-            .app_data(DATA.clone()),
-    )
-    .await;
-
-    let req = TestRequest::get().uri("/keywords/").to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Keyword id must be provided.\""
-    );
-}
-
-#[actix_rt::test]
+#[tokio::test]
 async fn test_get_keyword_nonexistent() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/keywords/{keyword_id}",
-                web::get().to(keywords::get_keyword),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/keywords/nonexistent").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/keywords/nonexistent")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    assert_eq!(res.status(), 404);
+
     assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Keyword with id nonexistent does not exist.\""
+        res.body(),
+        "\"Keyword with id nonexistent not found.\"".as_bytes()
     );
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_get_keyword_ok() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/keywords/{keyword_id}",
-                web::get().to(keywords::get_keyword),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/keywords/actix-web").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/keywords/web")
+        .reply(&filters)
+        .await;
 
-    let graph = DATA.read().await;
+    assert_eq!(res.status(), 200);
 
-    assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
-        common::get_body_as_string(resp).await.as_str(),
-        serde_json::to_string(graph.keywords().get("actix-web").unwrap()).unwrap()
-    )
-}
-
-#[actix_rt::test]
-async fn test_random_category() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/random/keywords", web::get().to(keywords::random))
-            .app_data(DATA.clone()),
-    )
-    .await;
-
-    let req = TestRequest::get().uri("/random/keywords").to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<TestKeyword>(common::get_body_as_string(resp).await.as_str())
-            .is_ok()
+        res.body(),
+        serde_json::to_string(STATE.read().keywords().get("web").unwrap(),)
+            .unwrap()
+            .as_bytes()
     );
 }
 
-#[actix_rt::test]
-async fn test_search_keyword_no_search_term() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/search/keywords", web::get().to(keywords::search))
-            .app_data(DATA.clone()),
-    )
-    .await;
+#[tokio::test]
+async fn test_get_random_keyword() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/search/keywords").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/random/keywords")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Search term must be provided.\""
-    );
+    assert_eq!(res.status(), 200);
+
+    assert!(serde_json::from_str::<TestKeyword>(str::from_utf8(res.body()).unwrap()).is_ok(),);
 }
 
-#[actix_rt::test]
-async fn test_search_keywords_ok() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/search/keywords/{search_term}",
-                web::get().to(keywords::search),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
+#[tokio::test]
+async fn test_search_keyword() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get()
-        .uri("/search/keywords/actix")
-        .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/search/keywords/web")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(res.status(), 200);
 
-    let graph = DATA.read().await;
+    let graph = STATE.read();
+
     assert_eq!(
-        common::get_body_as_string(resp).await.as_str(),
-        serde_json::to_string(&graph.keyword_names().search("actix", graph.keywords())).unwrap()
+        res.body(),
+        serde_json::to_string(&graph.keyword_names().search("web", graph.keywords()))
+            .unwrap()
+            .as_bytes()
     )
 }

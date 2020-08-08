@@ -3,19 +3,18 @@ extern crate lazy_static;
 
 mod common;
 
-use actix_web::{
-    http::StatusCode,
-    test::{self, TestRequest},
-    web, App,
-};
 use chrono::NaiveDateTime;
 use serde::Deserialize;
 use std::str;
-use vault_api::{routes::crates, utils::State};
+use vault_api::routes::{
+    self,
+    utils::{self, State},
+};
 use vault_graph::Search;
+use warp::Filter;
 
 lazy_static! {
-    static ref DATA: State = common::get_data();
+    static ref STATE: State = common::get_data();
 }
 
 #[derive(Deserialize)]
@@ -27,225 +26,118 @@ struct TestCrate {
     pub version: String,
 }
 
-#[actix_rt::test]
-async fn test_get_crate_no_id() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/crates/", web::get().to(crates::get_crate))
-            .app_data(DATA.clone()),
-    )
-    .await;
-
-    let req = TestRequest::get().uri("/crates/").to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Crate id must be provided.\""
-    );
-}
-
-#[actix_rt::test]
+#[tokio::test]
 async fn test_get_crate_nonexistent() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/crates/{crate_id}", web::get().to(crates::get_crate))
-            .app_data(DATA.clone()),
-    )
-    .await;
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/crates/nonexistent").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/crates/nonexistent")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    assert_eq!(res.status(), 404);
+
     assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Crate with id nonexistent does not exist.\""
+        res.body(),
+        "\"Crate with id nonexistent not found.\"".as_bytes()
     );
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_get_crate_ok() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/crates/{crate_id}", web::get().to(crates::get_crate))
-            .app_data(DATA.clone()),
-    )
-    .await;
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/crates/actix-web").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/crates/warp")
+        .reply(&filters)
+        .await;
 
-    let graph = DATA.read().await;
+    assert_eq!(res.status(), 200);
 
-    assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
-        common::get_body_as_string(resp).await.as_str(),
-        serde_json::to_string(graph.crates().get("actix-web").unwrap()).unwrap()
-    )
-}
-
-#[actix_rt::test]
-async fn test_random_category() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/random/crates", web::get().to(crates::random))
-            .app_data(DATA.clone()),
-    )
-    .await;
-
-    let req = TestRequest::get().uri("/random/crates").to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<TestCrate>(common::get_body_as_string(resp).await.as_str()).is_ok()
+        res.body(),
+        serde_json::to_string(STATE.read().crates().get("warp").unwrap(),)
+            .unwrap()
+            .as_bytes()
     );
 }
 
-#[actix_rt::test]
-async fn test_search_crate_no_search_term() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/search/crates", web::get().to(crates::search))
-            .app_data(DATA.clone()),
-    )
-    .await;
+#[tokio::test]
+async fn test_get_random_crate() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/search/crates").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/random/crates")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Search term must be provided.\""
-    );
+    assert_eq!(res.status(), 200);
+
+    assert!(serde_json::from_str::<TestCrate>(str::from_utf8(res.body()).unwrap()).is_ok(),);
 }
 
-#[actix_rt::test]
-async fn test_search_crates_ok() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/search/crates/{search_term}",
-                web::get().to(crates::search),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
+#[tokio::test]
+async fn test_search_crate() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/search/crates/actix").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/search/crates/warp")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(res.status(), 200);
 
-    let graph = DATA.read().await;
+    let graph = STATE.read();
+
     assert_eq!(
-        common::get_body_as_string(resp).await.as_str(),
-        serde_json::to_string(&graph.crate_names().search("actix", graph.crates())).unwrap()
+        res.body(),
+        serde_json::to_string(&graph.crate_names().search("warp", graph.crates()))
+            .unwrap()
+            .as_bytes()
     )
 }
 
-#[actix_rt::test]
-async fn test_graph_no_id() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/graph/", web::get().to(crates::get_dependency_graph))
-            .app_data(DATA.clone()),
-    )
-    .await;
+#[tokio::test]
+async fn test_graph() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/graph/").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/graph/warp")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(res.status(), 200);
+
     assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Crate id must be provided.\""
-    );
+        res.body(),
+        serde_json::to_string(&STATE.read().get_dependency_graph("warp", vec![]))
+            .unwrap()
+            .as_bytes()
+    )
 }
 
-#[actix_rt::test]
-async fn test_graph_bad_query_string() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/graph/{crate_id}",
-                web::get().to(crates::get_dependency_graph),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
+#[tokio::test]
+async fn test_graph_features() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get()
-        .uri("/graph/actix-web?features")
-        .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/graph/warp?features=tls,websocket,compression")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(res.status(), 200);
+
     assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Bad query string.\""
-    );
-}
-
-#[actix_rt::test]
-async fn test_graph_ok() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/graph/{crate_id}",
-                web::get().to(crates::get_dependency_graph),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
-
-    let req = TestRequest::get().uri("/graph/actix-web").to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert_eq!(
-        common::get_body_as_string(resp).await,
-        serde_json::to_string(
-            &DATA
-                .read()
-                .await
-                .get_dependency_graph("actix-web", vec![])
-                .unwrap()
-        )
+        res.body(),
+        serde_json::to_string(&STATE.read().get_dependency_graph(
+            "warp",
+            vec![
+                String::from("tls"),
+                String::from("websocket"),
+                String::from("compression")
+            ]
+        ))
         .unwrap()
-    );
-}
-
-#[actix_rt::test]
-async fn test_graph_ok_features() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/graph/{crate_id}",
-                web::get().to(crates::get_dependency_graph),
-            )
-            .app_data(DATA.clone()),
+        .as_bytes()
     )
-    .await;
-
-    let req = TestRequest::get()
-        .uri("/graph/actix-web?features=tls")
-        .to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert_eq!(
-        common::get_body_as_string(resp).await,
-        serde_json::to_string(
-            &DATA
-                .read()
-                .await
-                .get_dependency_graph("actix-web", vec![String::from("tls")])
-                .unwrap()
-        )
-        .unwrap()
-    );
 }
