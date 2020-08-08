@@ -21,7 +21,7 @@
     },
     {
       "src": "/favicon.ico",
-      "dest": "/client/logo.svg"
+      "dest": "/client/static/logo.svg"
     },
     {
       "src": "^((?!robots.txt).)*$",

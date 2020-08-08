@@ -3,80 +3,75 @@ extern crate lazy_static;
 
 mod common;
 
-use actix_web::{
-    http::StatusCode,
-    test::{self, TestRequest},
-    web::{self, Data},
-    App,
-};
-use tokio::sync::RwLock;
-use vault_api::{
-    routes::state::{self, LastUpdated},
-    utils::State,
+use parking_lot::RwLock;
+use std::sync::Arc;
+use vault_api::routes::{
+    self,
+    state::LastUpdated,
+    utils::{self, State},
 };
 use vault_graph::Graph;
+use warp::Filter;
 
 lazy_static! {
-    static ref DATA: State = common::get_data();
+    static ref STATE: State = common::get_data();
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_time_since_last_update() {
-    let mut app = test::init_service(
-        App::new()
-            .route(
-                "/state/last-updated",
-                web::get().to(state::time_since_last_update),
-            )
-            .app_data(DATA.clone()),
-    )
-    .await;
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
-    let req = TestRequest::get().uri("/state/last-updated").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let res = warp::test::request()
+        .path("/state/last-updated")
+        .reply(&filters)
+        .await;
 
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert!(
-        serde_json::from_str::<LastUpdated>(common::get_body_as_string(resp).await.as_str())
-            .is_ok()
-    );
-}
+    assert_eq!(res.status(), 200);
 
-#[actix_rt::test]
-async fn test_reset_too_soon() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/state/reset", web::put().to(state::reset))
-            .app_data(DATA.clone()),
-    )
-    .await;
-
-    let req = TestRequest::put().uri("/state/reset").to_request();
-    let resp = test::call_service(&mut app, req).await;
-
-    assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Updating application state can only occur in 24-hour intervals.\""
+        res.body(),
+        serde_json::to_string(&LastUpdated {
+            seconds: STATE.read().time_since_last_update()
+        })
+        .unwrap()
+        .as_bytes()
     );
 }
 
-#[actix_rt::test]
+#[tokio::test]
+async fn test_reset_too_early() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
+
+    let res = warp::test::request()
+        .method("PUT")
+        .path("/state/reset")
+        .reply(&filters)
+        .await;
+
+    assert_eq!(res.status(), 403);
+
+    assert_eq!(
+        res.body(),
+        "\"Updating application state can only occur in 24-hour intervals.\"".as_bytes()
+    );
+}
+
+#[tokio::test]
 async fn test_reset_ok() {
-    let data = Data::new(RwLock::new(Graph::yesterday().await));
-    let mut app = test::init_service(
-        App::new()
-            .route("/state/reset", web::put().to(state::reset))
-            .app_data(data.clone()),
-    )
-    .await;
+    let yesterday_state = Arc::new(RwLock::new(Graph::yesterday().await));
 
-    let req = TestRequest::put().uri("/state/reset").to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let filters = routes::get(yesterday_state.clone()).recover(utils::handle_rejection);
 
-    assert_eq!(resp.status(), StatusCode::OK);
+    let res = warp::test::request()
+        .method("PUT")
+        .path("/state/reset")
+        .reply(&filters)
+        .await;
+
+    assert_eq!(res.status(), 200);
+
     assert_eq!(
-        common::get_body_as_string(resp).await,
-        "\"Successfully updated application state.\""
+        res.body(),
+        "\"Successfully updated application state.\"".as_bytes()
     );
 }

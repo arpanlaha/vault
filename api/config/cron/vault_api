@@ -1,0 +1,3 @@
+#!/bin/sh
+# Updates vault_api state daily.
+curl -X PUT localhost:8285/state/reset

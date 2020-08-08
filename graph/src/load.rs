@@ -138,6 +138,26 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     (collection, id_lookup)
 }
 
+/// Inserts the contents of one `Version` into another.
+///
+/// # Arguments
+/// * `version` - the `Version` with the contents to insert.
+/// * `other` - the `Version` to update.
+fn replace_version(version: Version, other: &mut Version) {
+    let Version {
+        num,
+        id,
+        created_at,
+        features,
+        ..
+    } = version;
+
+    other.num = num;
+    other.id = id;
+    other.created_at = created_at;
+    other.features = features;
+}
+
 /// Returns a map of SQL ids to versions.
 ///
 /// Only the most recent stable version of each crate is kept, if a crate has a stable version.
@@ -160,16 +180,18 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
         count += 1;
         let version: Version =
             result.unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Version", count));
+
         let Version {
-            crate_id,
             num,
-            id,
             created_at,
+            crate_id,
             ..
-        } = version.clone();
+        } = &version;
+
+        let version_clone = version.clone();
 
         versions
-            .entry(crate_id)
+            .entry(*crate_id)
             .and_modify(|existing_version| {
                 // if the crate has a version already
 
@@ -191,20 +213,17 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
                                         && version_num.minor == existing_version_num.minor
                                         && version_num.patch > existing_version_num.patch)))
                         {
-                            existing_version.num = num;
-                            existing_version.id = id;
+                            replace_version(version_clone, existing_version);
                         }
                     } else {
                         // if existing version is not SemVer adherent but current one is
-                        existing_version.num = num;
-                        existing_version.id = id;
+                        replace_version(version_clone, existing_version);
                     }
                 } else if semver_version::parse(existing_version.num.as_str()).is_err()
                     && created_at.cmp(&existing_version.created_at) == Ordering::Greater
                 {
                     // if both are not SemVer adherent and current was created more recent
-                    existing_version.num = num;
-                    existing_version.id = id;
+                    replace_version(version_clone, existing_version);
                 }
             })
             .or_insert(version);
@@ -396,7 +415,7 @@ fn load_crate_categories(
             .get_mut(category_id)
             .unwrap_or_else(|| panic!("Category with id {} not found", category_id))
             .crates
-            .insert(crate_id.to_owned());
+            .push(crate_id.to_owned());
     }
 
     println!(

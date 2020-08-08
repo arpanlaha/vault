@@ -5,7 +5,7 @@ import React, {
   useState,
   useEffect,
 } from "react";
-import { CrateDistance, Dependency } from "../utils/types";
+import { CrateDistance, Dependency, DependencyGraph } from "../utils/types";
 import loadable from "@loadable/component";
 
 const ForceGraph = loadable(() => import("./ForceGraph"));
@@ -13,8 +13,7 @@ const DIMENSION_FACTOR = 0.1;
 
 interface ForceGraphWrapperProps {
   clickedCrateName: string | null;
-  crates: CrateDistance[];
-  dependencies: Dependency[];
+  dependencyGraph: DependencyGraph | null;
   portrait: boolean;
   setClickedCrateName: Dispatch<SetStateAction<string | null>>;
 }
@@ -24,11 +23,13 @@ export default function ForceGraphWrapper(
 ): ReactElement {
   const {
     clickedCrateName,
-    crates,
-    dependencies,
+    dependencyGraph,
     portrait,
     setClickedCrateName,
   } = props;
+
+  const crates = dependencyGraph?.crates ?? [];
+  const dependencies = dependencyGraph?.dependencies ?? [];
 
   const [height, setHeight] = useState(0);
   const [width, setWidth] = useState(0);
@@ -57,8 +58,7 @@ export default function ForceGraphWrapper(
   }, [portrait]);
 
   useEffect(() => setClickedCrateName(null), [
-    crates,
-    dependencies,
+    dependencyGraph,
     setClickedCrateName,
   ]);
 

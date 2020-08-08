@@ -1,31 +1,65 @@
-use super::super::utils::State;
-use actix_web::{HttpRequest, HttpResponse};
-use vault_graph::{Random, Search};
+use super::utils::{State, VaultError};
+use warp::{Filter, Rejection, Reply};
 
-pub async fn get_keyword(req: HttpRequest, data: State) -> HttpResponse {
-    match req.match_info().get("keyword_id") {
-        None => HttpResponse::BadRequest().json("Keyword id must be provided."),
-
-        Some(keyword_id) => match data.read().await.keywords().get(keyword_id) {
-            None => HttpResponse::NotFound()
-                .json(format!("Keyword with id {} does not exist.", keyword_id)),
-
-            Some(keyword) => HttpResponse::Ok().json(keyword),
-        },
-    }
+/// Wraps all `Keyword` routes.
+pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    get_keyword(state.clone())
+        .or(random(state.clone()))
+        .or(search(state))
 }
 
-pub async fn random(data: State) -> HttpResponse {
-    HttpResponse::Ok().json(data.read().await.keywords().random())
+/// Returns the `Keyword` with the given id, if found.
+///
+/// # Errors
+/// * Returns a `404` error if no `Keyword` with the given id is found.
+fn get_keyword(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("keywords" / String)
+        .and(warp::get())
+        .and_then(move |keyword_id| handlers::get_keyword(keyword_id, state.clone()))
 }
 
-pub async fn search(req: HttpRequest, data: State) -> HttpResponse {
-    match req.match_info().get("search_term") {
-        None => HttpResponse::BadRequest().json("Search term must be provided."),
+/// Returns a random `Keyword`.
+fn random(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("random" / "keywords")
+        .and(warp::get())
+        .and_then(move || handlers::random(state.clone()))
+}
 
-        Some(search_term) => {
-            let graph = data.read().await;
-            HttpResponse::Ok().json(graph.keyword_names().search(search_term, graph.keywords()))
+/// Searches for keywords matching the given search term.
+fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("search" / "keywords" / String)
+        .and(warp::get())
+        .and_then(move |search_term| handlers::search(search_term, state.clone()))
+}
+
+mod handlers {
+    use super::{State, VaultError};
+    use vault_graph::{Random, Search};
+    use warp::{reject, reply, Rejection, Reply};
+
+    /// Returns the `Keyword` with the given id, if found.
+    ///
+    /// # Errors
+    /// * Returns a `404` error if no `Keyword` with the given id is found.
+    pub async fn get_keyword(keyword_id: String, state: State) -> Result<impl Reply, Rejection> {
+        match state.read().keywords().get(&keyword_id) {
+            None => Err(reject::custom(VaultError::KeywordNotFound(keyword_id))),
+
+            Some(keyword) => Ok(reply::json(keyword)),
         }
+    }
+
+    /// Returns a random `Keyword`.
+    pub async fn random(state: State) -> Result<impl Reply, Rejection> {
+        Ok(reply::json(state.read().keywords().random()))
+    }
+
+    /// Searches for keywords matching the given search term.
+    pub async fn search(search_term: String, state: State) -> Result<impl Reply, Rejection> {
+        let graph = state.read();
+
+        Ok(reply::json(
+            &graph.keyword_names().search(&search_term, graph.keywords()),
+        ))
     }
 }

@@ -3,6 +3,9 @@ Multiple selected crates
 Upload Cargo.toml
 Look into custom graph viz
 Exhaustive documentation
-Cron jobs to update server
 Transitive deps on node click
 Fix sidebar width jumping
+Add random graph route
+Redo client logic to allow random graphs
+Move this to GitHub issues
+Investigate memory leaks (actix beta 2?) (92.8)

@@ -1,74 +1,130 @@
-use super::super::utils::State;
-use actix_web::{HttpRequest, HttpResponse};
-use serde::Serialize;
-use vault_graph::{Category, Graph, Random, Search};
+use super::utils::{State, VaultError};
+use warp::{Filter, Rejection, Reply};
 
-#[derive(Serialize)]
-pub struct CategoryResponse<'a> {
-    category: &'a Category,
-    children: Vec<&'a Category>,
+pub use handlers::CategoryResponse;
+
+/// Wraps all `Category` routes.
+pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    get_categories(state.clone())
+        .or(get_category(state.clone()))
+        .or(random(state.clone()))
+        .or(search(state))
 }
 
-impl<'a> CategoryResponse<'a> {
-    pub fn new(category: &'a Category, graph: &'a Graph) -> CategoryResponse<'a> {
-        CategoryResponse {
-            category,
-            children: graph
-                .categories()
-                .values()
-                .filter(|list_category| {
-                    list_category.category != category.category
-                        && list_category
-                            .category
-                            .starts_with(category.category.as_str())
-                })
-                .collect(),
-        }
+/// Returns a list of all categories.
+fn get_categories(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path("categories")
+        .and(warp::path::end())
+        .and(warp::get())
+        .and_then(move || handlers::get_categories(state.clone()))
+}
+
+/// Returns the `Category` with the given id, if found.
+///
+/// # Errors
+/// * Returns a `404` error if no `Category` with the given id is found.
+fn get_category(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("categories" / String)
+        .and(warp::get())
+        .and_then(move |category_id| handlers::get_category(category_id, state.clone()))
+}
+
+/// Returns a random `Category`.
+fn random(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("random" / "categories")
+        .and(warp::get())
+        .and_then(move || handlers::random(state.clone()))
+}
+
+/// Searches for categorys matching the given search term.
+fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("search" / "categories" / String)
+        .and(warp::get())
+        .and_then(move |search_term| handlers::search(search_term, state.clone()))
+}
+
+mod handlers {
+    use super::{State, VaultError};
+    use serde::Serialize;
+    use vault_graph::{Category, Graph, Random, Search};
+    use warp::{reject, reply, Rejection, Reply};
+
+    /// Returns a list of all categories.
+    pub async fn get_categories(state: State) -> Result<impl Reply, Rejection> {
+        let graph = state.read();
+        let mut categories: Vec<&Category> = graph.categories().values().collect();
+
+        categories.sort_unstable_by_key(|category| category.category.as_str());
+        Ok(reply::json(&categories))
     }
-}
 
-pub async fn get_categories(data: State) -> HttpResponse {
-    let graph = data.read().await;
-    let mut categories = graph.categories().values().collect::<Vec<&Category>>();
-    categories.sort_unstable_by_key(|category| category.category.as_str());
+    /// Returns the `Category` with the given id, if found.
+    ///
+    /// # Errors
+    /// * Returns a `404` error if no `Category` with the given id is found.
+    pub async fn get_category(category_id: String, state: State) -> Result<impl Reply, Rejection> {
+        match state.read().categories().get(&category_id) {
+            None => Err(reject::custom(VaultError::CategoryNotFound(category_id))),
 
-    HttpResponse::Ok().json(categories)
-}
+            Some(category) => {
+                let graph = state.read();
 
-pub async fn get_category(req: HttpRequest, data: State) -> HttpResponse {
-    match req.match_info().get("category_id") {
-        None => HttpResponse::BadRequest().json("Category id must be provided."),
-
-        Some(category_id) => {
-            let graph = data.read().await;
-            match graph.categories().get(category_id) {
-                None => HttpResponse::NotFound()
-                    .json(format!("Category with id {} does not exist.", category_id)),
-
-                Some(category) => HttpResponse::Ok().json(CategoryResponse::new(category, &graph)),
+                Ok(reply::json(&CategoryResponse::new(category, &graph)))
             }
         }
     }
-}
 
-pub async fn random(data: State) -> HttpResponse {
-    let graph = data.read().await;
-    let category = graph.categories().random();
+    /// Returns a random `Category`.
+    pub async fn random(state: State) -> Result<impl Reply, Rejection> {
+        let graph = state.read();
 
-    HttpResponse::Ok().json(CategoryResponse::new(category, &graph))
-}
+        Ok(reply::json(&CategoryResponse::new(
+            graph.categories().random(),
+            &graph,
+        )))
+    }
 
-pub async fn search(req: HttpRequest, data: State) -> HttpResponse {
-    match req.match_info().get("search_term") {
-        None => HttpResponse::BadRequest().json("Search term must be provided."),
+    /// Searches for categorys matching the given search term.
+    pub async fn search(search_term: String, state: State) -> Result<impl Reply, Rejection> {
+        let graph = state.read();
 
-        Some(search_term) => {
-            let graph = data.read().await;
-            HttpResponse::Ok().json(
-                graph
-                    .category_names()
-                    .search(search_term, graph.categories()),
-            )
+        Ok(reply::json(
+            &graph
+                .category_names()
+                .search(&search_term, graph.categories()),
+        ))
+    }
+
+    #[derive(Serialize)]
+    /// A struct containing a `Category` as well as any subcategories.
+    pub struct CategoryResponse<'a> {
+        /// The `Category` in question.
+        category: &'a Category,
+
+        /// A list of any subcategories of the given `Category`.
+        children: Vec<&'a Category>,
+    }
+
+    impl<'a> CategoryResponse<'a> {
+        /// Creates a `CategoryResponse` from the given `Category.
+        ///
+        /// # Arguments
+        /// * `category` - the given `Category`.
+        /// * `graph` - the `Graph` containing the crates.io data.
+        pub fn new(category: &'a Category, graph: &'a Graph) -> CategoryResponse<'a> {
+            CategoryResponse {
+                category,
+                children: graph
+                    .categories()
+                    .values()
+                    .filter(|list_category| {
+                        list_category.category != category.category
+                            && list_category
+                                .category
+                                .starts_with(category.category.as_str())
+                    })
+                    .collect(),
+            }
         }
     }
 }
