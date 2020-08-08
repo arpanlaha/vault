@@ -107,7 +107,6 @@ async fn test_get_random_category() {
 
     assert!(
         serde_json::from_str::<TestCategoryResponse>(str::from_utf8(res.body()).unwrap()).is_ok(),
-        format!("Did not work: {}", str::from_utf8(res.body()).unwrap())
     );
 }
 
