@@ -39,7 +39,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
                 String::from("Updating application state can only occur in 24-hour intervals."),
             ),
         }
-    } else if let Some(_) = err.find::<warp::reject::MethodNotAllowed>() {
+    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         (
             StatusCode::METHOD_NOT_ALLOWED,
             String::from("Method Not Allowed"),
