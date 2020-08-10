@@ -182,7 +182,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       <Layout>
         <Content>
           <div className="column sider">
-            <h1>Current crate: {currentCrate?.crate.name}</h1>
+            {currentCrate !== null && <h1>{currentCrate.crate.name}</h1>}
             <div className="row crate-picker">
               <AutoComplete
                 options={
