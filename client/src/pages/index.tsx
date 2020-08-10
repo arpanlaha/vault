@@ -83,6 +83,7 @@ export default function Home(): ReactElement {
             crate: crateRes.result,
             selectedFeatures: features,
           });
+          setSearchTerm(urlCrateName);
         } else {
           setError(crateRes.error);
         }
