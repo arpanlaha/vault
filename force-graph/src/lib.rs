@@ -83,7 +83,7 @@ pub struct ForceLayout {
     vertices: RefCell<Vec<Vertex>>,
     edges: Vec<Edge>,
     alpha: f64,
-    octree: Octree,
+    // octree: Octree,
 }
 
 #[wasm_bindgen]
