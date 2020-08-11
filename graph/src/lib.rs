@@ -12,10 +12,8 @@ use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::process::Command;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 pub use traits::{Random, Search};
-
-const DAY_SECONDS: u64 = 60 * 60 * 24;
 
 /// A struct containing information about the crates.io registry.
 pub struct Graph {
@@ -93,47 +91,8 @@ impl Graph {
         }
     }
 
-    /// Creates a new `Graph`.
-    ///
-    /// This uses a saved backup dump of the crates.io registry and is intended for testing.
-    ///
-    /// This produces the same result as the `test` constructor, but with the `last_updated` field being set to a day prior.
-    pub async fn yesterday() -> Self {
-        let data_path = "./tests/data";
-
-        if File::open(data_path).is_err() {
-            Command::new("tar")
-                .arg("-xzf")
-                .arg("./tests/data.tar.gz")
-                .arg("-C")
-                .arg("tests")
-                .output()
-                .unwrap();
-        }
-
-        let (categories, crates, keywords) = load::get_data(data_path).await;
-
-        Self {
-            category_names: get_names(&categories),
-            categories,
-            crate_names: get_names(&crates),
-            crates,
-            keyword_names: get_names(&keywords),
-            keywords,
-            last_updated: Instant::now() - Duration::from_secs(DAY_SECONDS),
-        }
-    }
-
     /// Updates the `last_updated` time to the current time.
     pub fn update_time(&mut self) {
-        self.last_updated = Instant::now();
-    }
-
-    /// Replaces the contents of this `Graph` with the contents of the other `Graph`.
-    pub fn replace(&mut self, other: Self) {
-        self.categories = other.categories;
-        self.crates = other.crates;
-        self.keywords = other.keywords;
         self.last_updated = Instant::now();
     }
 

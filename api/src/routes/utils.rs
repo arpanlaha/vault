@@ -18,9 +18,6 @@ pub enum VaultError {
 
     /// If the provided `Keyword` does not exist.
     KeywordNotFound(String),
-
-    /// If updating the `Graph` is not allowed.
-    UpdateForbidden,
 }
 
 impl Reject for VaultError {}
@@ -45,10 +42,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
             VaultError::KeywordNotFound(keyword_id) => (
                 StatusCode::NOT_FOUND,
                 format!("Keyword with id {} not found.", keyword_id),
-            ),
-            VaultError::UpdateForbidden => (
-                StatusCode::FORBIDDEN,
-                String::from("Updating application state can only occur in 24-hour intervals."),
             ),
         }
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {

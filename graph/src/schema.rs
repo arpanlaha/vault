@@ -132,7 +132,7 @@ pub struct Dependency {
 }
 
 /// A keyword in the crates.io registry.
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct Keyword {
     /// The crates possessing the keyword.
     ///
