@@ -1,4 +1,4 @@
-# vault
+# Vault
 
 Interactively visualize your crates.io dependencies.
 
