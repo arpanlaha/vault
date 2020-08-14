@@ -16,6 +16,7 @@ export interface CrateDistance extends Crate {
 
 export interface Dependency {
   from: string;
+  target?: string;
   to: string;
 }
 
