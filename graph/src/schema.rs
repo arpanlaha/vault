@@ -7,21 +7,21 @@ use std::collections::HashMap;
 /// A category in the crates.io registry.
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Category {
-    /// The name of the category.
+    /// The name of the `Category`.
     ///
     /// This becomes the key of the category for easier search/access by the API.
     pub category: String,
 
-    /// A set of crates belonging to the category.
+    /// A set of crates belonging to the `Category`.
     ///
-    /// This is not set on deserialization and instead must be populated later when processing crate-category relationships.
+    /// This is not set on deserialization and instead must be populated later when processing `Crate`-`Category` relationships.
     #[serde(skip_deserializing, default, skip_serializing)]
     pub crates: Vec<String>,
 
-    // /The description of the category.
+    // /The description of the `Category`.
     pub description: String,
 
-    /// The id of the Category in the SQL database.
+    /// The id of the `Category` in the SQL database.
     ///
     /// This is disregarded by the API.
     #[serde(skip_serializing)]
@@ -31,13 +31,13 @@ pub struct Category {
 /// A crate in the crates.io registry.
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Crate {
-    /// A list of categories the crate belongs to.
+    /// A list of categories the `Crate` belongs to.
     ///
-    /// This is not set on deserialization and instead must be populated later when processing crate-category relationships.
+    /// This is not set on deserialization and instead must be populated later when processing `Crate`-`Category` relationships.
     #[serde(skip_deserializing, default)]
     pub categories: Vec<String>,
 
-    /// The time at which the most recent stable version (if available) of the crate was created.
+    /// The time at which the most recent stable version (if available) of the `Crate` was created.
     ///
     /// This is not set on deserialization and must be populated later when assigning versions to crates.
     ///
@@ -45,42 +45,42 @@ pub struct Crate {
     #[serde(skip_deserializing, default = "default_naive_date_time")]
     pub created_at: NaiveDateTime,
 
-    /// The dependencies of the crate.
+    /// The dependencies of the `Crate`.
     ///
     /// This is not set on deserialization and instead must be populated later when processing dependencies.
     #[serde(skip_deserializing, default, skip_serializing)]
     pub dependencies: Vec<Dependency>,
 
-    /// The description of the crate.
+    /// The description of the `Crate`.
     pub description: String,
 
-    /// The number of downloads of the crate.
+    /// The number of downloads of the `Crate`.
     pub downloads: usize,
 
-    /// The features exposed by the crate.
+    /// The features exposed by the `Crate`.
     ///
     /// This is not set on deserialization and instead must be populated later when assigning versions to crates.
     #[serde(skip_deserializing, default)]
     pub features: HashMap<String, Vec<String>>,
 
-    /// The keywords belonging to the crate.
+    /// The keywords belonging to the `Crate`.
     ///
-    /// This is not set on deserialization and instead must be populated later when processing crate-keyword relationships.
+    /// This is not set on deserialization and instead must be populated later when processing `Crate` -`Keyword` relationships.
     #[serde(skip_deserializing, default)]
     pub keywords: Vec<String>,
 
-    /// The SQL id of the crate.
+    /// The SQL id of the `Crate`.
     ///
     /// This is disregarded by the API.
     #[serde(skip_serializing)]
     pub id: usize,
 
-    /// The name of the crate.
+    /// The name of the `Crate`.
     ///
-    /// This becomes the key of the crate for easier search/access by the API.
+    /// This becomes the key of the `Crate` for easier search/access by the API.
     pub name: String,
 
-    /// The most recent stable version (if available) of the crate.
+    /// The most recent stable version (if available) of the `Crate`.
     ///
     /// This is not set on deserialization and instead must be populated later when assigning versions to crates.
     #[serde(skip_deserializing, default)]
@@ -90,20 +90,20 @@ pub struct Crate {
 /// A relationship between a crate and a category.
 #[derive(Deserialize, Debug)]
 pub struct CrateCategory {
-    /// The category this relationship belongs to.
+    /// The `Category` this relationship belongs to.
     pub category_id: usize,
 
-    /// The craet this relationship belongs to.
+    /// The `Crate` this relationship belongs to.
     pub crate_id: usize,
 }
 
 /// A relationship between a crate and a keyword.
 #[derive(Deserialize, Debug)]
 pub struct CrateKeyword {
-    /// The category this relationship belongs to.
+    /// The `Crate` this relationship belongs to.
     pub crate_id: usize,
 
-    /// The keyword this relationship belongs to.
+    /// The `Keyword` this relationship belongs to.
     pub keyword_id: usize,
 }
 
@@ -112,22 +112,25 @@ pub struct CrateKeyword {
 /// This is not directly obtained from the SQL dump - for that, see the `SqlDependency` struct.
 #[derive(Deserialize, Debug, Hash, Eq, PartialEq, Serialize)]
 pub struct Dependency {
-    /// If the dependency relies on default features.
+    /// If the `Dependency` relies on default features.
     #[serde(skip_serializing)]
     pub default_features: bool,
 
-    /// A list of features this dependency uses.
+    /// A list of features this `Dependency` uses.
     #[serde(skip_serializing)]
     pub features: Vec<String>,
 
-    /// The source crate of this dependency.
+    /// The source crate of this `Dependency`.
     pub from: String,
 
-    /// If the dependency is optional.
+    /// If the `Dependency` is optional.
     #[serde(skip_serializing)]
     pub optional: bool,
 
-    /// The destination version of the dependency.
+    /// The specific target of the `Dependency` ,if one is present.
+    pub target: Option<String>,
+
+    /// The destination version of the `Dependency`.
     pub to: String,
 }
 
@@ -136,20 +139,20 @@ pub struct Dependency {
 pub struct Keyword {
     /// The crates possessing the keyword.
     ///
-    /// This is not set on deserialization and instead must be populated later when processing crate-keyword relationships.
+    /// This is not set on deserialization and instead must be populated later when processing `Crate`-`Keyword` relationships.
     #[serde(skip_deserializing, default, skip_serializing)]
     pub crates: Vec<String>,
 
-    /// The number of crates possessing the keyword.
+    /// The number of crates possessing the `Keyword`.
     pub crates_cnt: usize,
 
-    /// The SQL id of the keyword.
+    /// The SQL id of the `Keyword`.
     ///
     /// This is disregarded by the API.
     #[serde(skip_serializing)]
     pub id: usize,
 
-    /// The name of the keyword.
+    /// The name of the `Keyword`.
     ///
     /// This becomes the key of the version for easier search/access by the API.
     pub keyword: String,
@@ -158,20 +161,20 @@ pub struct Keyword {
 /// A version in the crates.io repository.
 #[derive(Deserialize, Debug, Clone)]
 pub struct Version {
-    /// The id of the crate the version belongs to.
+    /// The id of the crate the `Version` belongs to.
     pub crate_id: usize,
 
-    /// The time at which the crate was created.
+    /// The time at which the `Version`'s crate was created.
     #[serde(with = "custom_time")]
     pub created_at: NaiveDateTime,
 
-    /// The features the version exposes.
+    /// The features the `Version` exposes.
     pub features: String,
 
-    /// The id of the version.
+    /// The id of the `Version`.
     pub id: usize,
 
-    /// The number of the version.
+    /// The number of the `Version`.
     ///
     /// This will likely be SemVer-compliant; however some versions are not.
     pub num: String,
@@ -198,6 +201,9 @@ pub struct SqlDependency {
 
     /// If the dependency is optional.
     pub optional: String,
+
+    /// The specific target of the dependency ,if one is present.
+    pub target: String,
 
     /// The destination version of the dependency.
     pub version_id: usize,
