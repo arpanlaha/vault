@@ -40,7 +40,6 @@ async fn main() {
             .recover(utils::handle_rejection)
             .with(warp::cors().allow_any_origin())
             .with(warp::log("info"))
-            .with(warp::compression::gzip()),
     )
     .run((address, port))
     .await;
