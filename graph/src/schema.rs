@@ -128,6 +128,7 @@ pub struct Dependency {
     pub optional: bool,
 
     /// The specific target of the `Dependency` ,if one is present.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 
     /// The destination version of the `Dependency`.

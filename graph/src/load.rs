@@ -347,10 +347,10 @@ fn load_dependencies(
                             .collect(),
                         from: from.to_owned(),
                         optional: optional == "t",
-                        target: if !target.is_empty() {
-                            Some(target)
-                        } else {
+                        target: if target.is_empty() {
                             None
+                        } else {
+                            Some(target)
                         },
                         to: crate_id_lookup
                             .get(&sql_dependency_crate_id)
