@@ -39,7 +39,7 @@ async fn main() {
         routes::get(app_state.clone())
             .recover(utils::handle_rejection)
             .with(warp::cors().allow_any_origin())
-            .with(warp::log("info"))
+            .with(warp::log("info")),
     )
     .run((address, port))
     .await;
