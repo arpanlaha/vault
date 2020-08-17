@@ -50,6 +50,9 @@ fn get_dependency_graph(
                 query_param_map
                     .get("features")
                     .map(|query_param| query_param.to_owned()),
+                query_param_map
+                    .get("platform")
+                    .map(|query_param| query_param.to_owned()),
                 state.clone(),
             )
         })
@@ -93,6 +96,7 @@ mod handlers {
     pub async fn get_dependency_graph(
         crate_id: String,
         features_option: Option<String>,
+        platform_option: Option<String>,
         state: State,
     ) -> Result<impl Reply, Rejection> {
         match &state.read().get_dependency_graph(
@@ -110,7 +114,7 @@ mod handlers {
                 }
                 None => vec![],
             },
-            "x86_64-unknown-linux-gnu"
+            platform_option.unwrap_or(String::from("x86_64-unknown-linux-gnu")),
         ) {
             None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 

@@ -153,7 +153,7 @@ impl Graph {
         &self,
         crate_id: &str,
         mut features: Vec<String>,
-        target: &str,
+        target: String,
     ) -> Option<DependencyGraph> {
         match self.crates().get(crate_id) {
             None => None,
@@ -221,7 +221,7 @@ impl Graph {
                                 to_feature_names.clone(),
                                 &mut dependency_queue,
                                 to_distance,
-                                target,
+                                &target,
                             );
                         }
 
@@ -237,7 +237,7 @@ impl Graph {
                             to_feature_names,
                             &mut dependency_queue,
                             to_distance,
-                            target,
+                            &target,
                         );
                     }
                 }
