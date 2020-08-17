@@ -110,6 +110,7 @@ mod handlers {
                 }
                 None => vec![],
             },
+            "x86_64-unknown-linux-gnu"
         ) {
             None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 

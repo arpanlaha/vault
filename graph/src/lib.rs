@@ -6,13 +6,16 @@ mod load;
 mod schema;
 mod traits;
 
+use cargo_platform::Platform;
 use chrono::NaiveDateTime;
-pub use schema::{Category, Crate, Dependency, Keyword};
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::process::Command;
+use std::str::FromStr;
 use std::time::Instant;
+
+pub use schema::{Category, Crate, Dependency, Keyword};
 pub use traits::{Random, Search};
 
 /// A struct containing information about the crates.io registry.
@@ -149,7 +152,8 @@ impl Graph {
     pub fn get_dependency_graph(
         &self,
         crate_id: &str,
-        features: Vec<String>,
+        mut features: Vec<String>,
+        target: &str,
     ) -> Option<DependencyGraph> {
         match self.crates().get(crate_id) {
             None => None,
@@ -170,9 +174,10 @@ impl Graph {
                 // insert the root crate
                 crate_distance_vec.push((&crate_val.name, 0));
                 crates_seen.insert(&crate_val.name, features.to_owned());
+                features.push(String::from("default"));
 
                 // add root crate dependendencies to the queue
-                dependency_graph_helper(crate_val, features, &mut dependency_queue, 0);
+                dependency_graph_helper(crate_val, features, &mut dependency_queue, 0, &target);
 
                 // while the queue is not empty
                 while let Some(QueueDependency {
@@ -216,6 +221,7 @@ impl Graph {
                                 to_feature_names.clone(),
                                 &mut dependency_queue,
                                 to_distance,
+                                target,
                             );
                         }
 
@@ -231,6 +237,7 @@ impl Graph {
                             to_feature_names,
                             &mut dependency_queue,
                             to_distance,
+                            target,
                         );
                     }
                 }
@@ -397,6 +404,7 @@ fn dependency_graph_helper(
     mut feature_names: Vec<String>,
     dependency_queue: &mut VecDeque<QueueDependency>,
     distance: usize,
+    platform: &str,
 ) {
     // dependencies included in traversal
     let mut dependencies_to_check: BTreeMap<String, Vec<String>> = BTreeMap::new();
@@ -471,6 +479,8 @@ fn dependency_graph_helper(
     }
 
     for (dependency_name, mut dependency_features) in dependencies_to_check {
+        let mut target_supported = true;
+
         if let Some(dependency) = crate_val
             .dependencies
             .iter()
@@ -479,12 +489,21 @@ fn dependency_graph_helper(
             if dependency.default_features {
                 dependency_features.push(default_string.to_owned());
             }
+
+            if let Some(dependency_target) = &dependency.target {
+                if let Ok(dependency_platform) = Platform::from_str(&dependency_target) {
+                    target_supported = dependency_platform.matches(platform, &[]);
+                }
+            }
         }
-        dependency_queue.push_back(QueueDependency {
-            from: crate_val.name.to_owned(),
-            to: dependency_name,
-            to_feature_names: dependency_features,
-            to_distance: distance + 1,
-        });
+
+        if target_supported {
+            dependency_queue.push_back(QueueDependency {
+                from: crate_val.name.to_owned(),
+                to: dependency_name,
+                to_feature_names: dependency_features,
+                to_distance: distance + 1,
+            });
+        }
     }
 }
