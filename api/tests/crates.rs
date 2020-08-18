@@ -110,9 +110,13 @@ async fn test_graph() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(&STATE.read().get_dependency_graph("warp", vec![]))
-            .unwrap()
-            .as_bytes()
+        serde_json::to_string(&STATE.read().get_dependency_graph(
+            "warp",
+            vec![],
+            String::from("x86_64-unknown-linux-gnu")
+        ))
+        .unwrap()
+        .as_bytes()
     )
 }
 
@@ -135,7 +139,8 @@ async fn test_graph_features() {
                 String::from("tls"),
                 String::from("websocket"),
                 String::from("compression")
-            ]
+            ],
+            String::from("x86_64-unknown-linux-gnu")
         ))
         .unwrap()
         .as_bytes()
