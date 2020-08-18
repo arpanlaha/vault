@@ -114,7 +114,9 @@ mod handlers {
                 }
                 None => vec![],
             },
-            platform_option.unwrap_or(String::from("x86_64-unknown-linux-gnu")),
+            platform_option
+                .unwrap_or(String::from("x86_64-unknown-linux-gnu"))
+                .as_str(),
         ) {
             None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 

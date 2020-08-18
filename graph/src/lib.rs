@@ -163,7 +163,7 @@ impl Graph {
         &self,
         crate_id: &str,
         mut features: Vec<String>,
-        target: String,
+        target: &str,
     ) -> Option<DependencyGraph> {
         match self.crates().get(crate_id) {
             None => None,
@@ -187,7 +187,7 @@ impl Graph {
                 features.push(String::from("default"));
 
                 // add root crate dependendencies to the queue
-                dependency_graph_helper(crate_val, features, &mut dependency_queue, 0, &target);
+                dependency_graph_helper(crate_val, features, &mut dependency_queue, 0, target);
 
                 // while the queue is not empty
                 while let Some(QueueDependency {
@@ -231,7 +231,7 @@ impl Graph {
                                 to_feature_names.clone(),
                                 &mut dependency_queue,
                                 to_distance,
-                                &target,
+                                target,
                             );
                         }
 
@@ -247,7 +247,7 @@ impl Graph {
                             to_feature_names,
                             &mut dependency_queue,
                             to_distance,
-                            &target,
+                            target,
                         );
                     }
                 }
@@ -306,7 +306,7 @@ fn get_targets() -> HashMap<String, Vec<Cfg>> {
             .as_slice(),
     )
     .expect("Failed parsing rustc targets as UTF-8")
-    .split("\n")
+    .split('\n')
     .map(|target| {
         (
             String::from(target),
@@ -321,7 +321,7 @@ fn get_targets() -> HashMap<String, Vec<Cfg>> {
                     .as_slice(),
             )
             .unwrap_or_else(|_| panic!("Failed parsing {} cfg attributes", target))
-            .split("\n")
+            .split('\n')
             .skip(1)
             .filter_map(|cfg_attr| {
                 if cfg_attr.contains('=') {
@@ -584,7 +584,7 @@ fn dependency_graph_helper(
             }
 
             if let Some(dependency_target) = &dependency.target {
-                if let Ok(dependency_platform) = Platform::from_str(&dependency_target) {
+                if let Ok(dependency_platform) = Platform::from_str(dependency_target) {
                     target_supported = dependency_platform.matches(platform, &[]);
                 }
             }
