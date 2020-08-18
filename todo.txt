@@ -8,4 +8,4 @@ Fix sidebar width jumping
 Add random graph route
 Redo client logic to allow random graphs
 Move this to GitHub issues
-Handle dependency targets - properly handle conversion
+Handle dependency targets - properly handle conversion - split into target attrs and names (exclude feature, test, proc_macro)

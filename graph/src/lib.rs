@@ -6,13 +6,13 @@ mod load;
 mod schema;
 mod traits;
 
-use cargo_platform::Platform;
+use cargo_platform::{Cfg, Platform};
 use chrono::NaiveDateTime;
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::process::Command;
-use std::str::FromStr;
+use std::str::{self, FromStr};
 use std::time::Instant;
 
 pub use schema::{Category, Crate, Dependency, Keyword};
@@ -25,6 +25,9 @@ pub struct Graph {
 
     /// A set of `Category` names for searching.
     category_names: BTreeSet<String>,
+
+    /// A set of cfg names (e.g. `unix`, `cargo_web`) present among all dependencies.
+    cfg_names: BTreeSet<String>,
 
     /// A mapping of `Crate` names to values.
     crates: HashMap<String, Crate>,
@@ -40,6 +43,9 @@ pub struct Graph {
 
     /// The time at which the `Graph` was last updated.
     last_updated: Instant,
+
+    /// A mapping of rustc-supported targets to cfg attributes.
+    targets: HashMap<String, Vec<Cfg>>,
 }
 
 impl Graph {
@@ -57,11 +63,13 @@ impl Graph {
         Self {
             category_names: get_names(&categories),
             categories,
+            cfg_names: get_cfg_names(&crates),
             crate_names: get_names(&crates),
             crates,
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
+            targets: get_targets(),
         }
     }
 
@@ -86,11 +94,13 @@ impl Graph {
         Self {
             category_names: get_names(&categories),
             categories,
+            cfg_names: get_cfg_names(&crates),
             crate_names: get_names(&crates),
             crates,
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
+            targets: get_targets(),
         }
     }
 
@@ -279,6 +289,89 @@ fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
     }
 
     names
+}
+
+/// Returns a mapping of rustc-supported targets to cfg attributes.
+fn get_targets() -> HashMap<String, Vec<Cfg>> {
+    println!("Collecting information about target attributes...");
+    let start = Instant::now();
+
+    let targets: HashMap<String, Vec<Cfg>> = str::from_utf8(
+        Command::new("rustc")
+            .arg("--print")
+            .arg("target-list")
+            .output()
+            .expect("Failed printing rustc-supported targets")
+            .stdout
+            .as_slice(),
+    )
+    .expect("Failed parsing rustc targets as UTF-8")
+    .split("\n")
+    .map(|target| {
+        (
+            String::from(target),
+            str::from_utf8(
+                Command::new("rustc")
+                    .arg("--target")
+                    .arg(target)
+                    .arg("--print=cfg")
+                    .output()
+                    .unwrap_or_else(|_| panic!("Failed printing cfg attributes for {}", target))
+                    .stdout
+                    .as_slice(),
+            )
+            .unwrap_or_else(|_| panic!("Failed parsing {} cfg attributes", target))
+            .split("\n")
+            .skip(1)
+            .filter_map(|cfg_attr| {
+                if cfg_attr.contains('=') {
+                    Cfg::from_str(cfg_attr).ok()
+                } else {
+                    None
+                }
+            })
+            .collect(),
+        )
+    })
+    .collect();
+
+    println!(
+        "Finished collecting information about target attributes in {} seconds.",
+        start.elapsed().as_secs_f64()
+    );
+
+    targets
+}
+
+/// Returns a set of cfg names (e.g. `unix`, `cargo_web`) present among all dependencies.
+fn get_cfg_names(crates: &HashMap<String, Crate>) -> BTreeSet<String> {
+    println!("Collecting cfg names...");
+    let start = Instant::now();
+
+    let mut cfg_names: BTreeSet<String> = BTreeSet::new();
+
+    for crate_val in crates.values() {
+        for dependency in &crate_val.dependencies {
+            if let Some(target) = &dependency.target {
+                if target.matches('(').count() == 1
+                    && target.matches(')').count() == 1
+                    && !target.contains('=')
+                    && target != "test"
+                    && target != "proc_macro"
+                    && target != "debug_assertions"
+                {
+                    cfg_names.insert(target.to_owned());
+                }
+            }
+        }
+    }
+
+    println!(
+        "Finished collecting cfg names in {} seconds.",
+        start.elapsed().as_secs_f64()
+    );
+
+    cfg_names
 }
 
 #[derive(Serialize)]
