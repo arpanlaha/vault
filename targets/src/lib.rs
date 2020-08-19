@@ -1,7 +1,11 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 use cargo_platform::Cfg;
 use rustc_ap_rustc_target::spec::{self, Target, TargetTriple};
 use std::collections::HashMap;
 
+#[must_use]
+/// Returns a mapping of supported targets to a list of cfg attributes.
 pub fn get_targets() -> HashMap<String, Vec<Cfg>> {
     spec::get_targets()
         .map(|target_triple| {
