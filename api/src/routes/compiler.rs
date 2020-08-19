@@ -1,6 +1,8 @@
 use super::utils::State;
 use warp::{Filter, Rejection, Reply};
 
+pub use handlers::{CfgNameList, TargetList};
+
 /// Wraps all compiler-related routes.
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_targets(state.clone()).or(get_cfg_names(state.clone()))
@@ -27,12 +29,9 @@ mod handlers {
 
     /// Returns a list of targets.
     pub async fn get_targets(state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-
-        let mut targets: Vec<&String> = graph.targets().keys().collect();
-        targets.sort_unstable();
-
-        Ok(reply::json(&TargetList { targets }))
+        Ok(reply::json(&TargetList {
+            targets: state.read().targets().keys().collect(),
+        }))
     }
 
     /// Returns a list of cfg names.

@@ -2,11 +2,11 @@
 
 use cargo_platform::Cfg;
 use rustc_ap_rustc_target::spec::{self, Target, TargetTriple};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 #[must_use]
 /// Returns a mapping of supported targets to a list of cfg attributes.
-pub fn get_targets() -> HashMap<String, Vec<Cfg>> {
+pub fn get_targets() -> BTreeMap<String, Vec<Cfg>> {
     spec::get_targets()
         .map(|target_triple| {
             let target =

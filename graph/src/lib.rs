@@ -45,7 +45,7 @@ pub struct Graph {
     last_updated: Instant,
 
     /// A mapping of rustc-supported targets to cfg attributes.
-    targets: HashMap<String, Vec<Cfg>>,
+    targets: BTreeMap<String, Vec<Cfg>>,
 }
 
 impl Graph {
@@ -153,7 +153,7 @@ impl Graph {
 
     #[must_use]
     /// Returns an immutable reference to the map from targets to cfg attributes.
-    pub const fn targets(&self) -> &HashMap<String, Vec<Cfg>> {
+    pub const fn targets(&self) -> &BTreeMap<String, Vec<Cfg>> {
         &self.targets
     }
 
