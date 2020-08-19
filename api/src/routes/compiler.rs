@@ -5,7 +5,7 @@ pub use handlers::{CfgNameList, TargetList};
 
 /// Wraps all compiler-related routes.
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    get_targets(state.clone()).or(get_cfg_names(state.clone()))
+    get_targets(state.clone()).or(get_cfg_names(state))
 }
 
 /// Returns a list of targets.
