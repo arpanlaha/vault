@@ -7,8 +7,8 @@ import {
 } from "use-query-params";
 import { ForceGraphWrapper, Head, Sidebar } from "../components";
 import { notification, Layout } from "antd";
-import { getCrate, getDependencyGraph, getRandomCrate } from "../utils/api";
-import { CrateInfo, DependencyGraph } from "../utils/types";
+import { getDependencyGraph, getRandomDependencyGraph } from "../utils/api";
+import { Crate, DependencyGraph } from "../utils/types";
 
 import "../styles/antd.scss";
 import "../styles/vault.scss";
@@ -26,7 +26,8 @@ const CommaArrayParam = {
 export default function Home(): ReactElement {
   const [portrait, setPortrait] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentCrate, setCurrentCrate] = useState<CrateInfo | null>(null);
+  const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [
     dependencyGraph,
@@ -43,23 +44,41 @@ export default function Home(): ReactElement {
 
   const setRandomCrate = useCallback((): void => {
     const loadRandomCrate = async (): Promise<void> => {
-      const randomCrateRes = await getRandomCrate();
-      if (randomCrateRes.success) {
-        setCurrentCrate({
-          crate: randomCrateRes.result,
-          selectedFeatures: [],
-        });
-        setSearchTerm(randomCrateRes.result.name);
-        setUrlCrateName(randomCrateRes.result.name);
+      const randomDependencyGraphRes = await getRandomDependencyGraph();
+      if (randomDependencyGraphRes.success) {
+        const crate = randomDependencyGraphRes.result.crates[0];
+        setCurrentCrate(crate);
+        setSelectedFeatures([]);
+        setSearchTerm(crate.name);
+        setUrlCrateName(crate.name);
         setUrlFeatures(undefined);
         setError("");
+        setDependencyGraph(randomDependencyGraphRes.result);
       } else {
-        setError(randomCrateRes.error);
+        setError(randomDependencyGraphRes.error);
       }
     };
 
     loadRandomCrate();
   }, [setUrlCrateName, setUrlFeatures]);
+
+  const loadDependencyGraph = async (
+    crateId: string,
+    features: string[]
+  ): Promise<void> => {
+    setSearchTerm(crateId);
+
+    const dependencyGraphRes = await getDependencyGraph(crateId, features);
+    if (dependencyGraphRes.success) {
+      const crate = dependencyGraphRes.result.crates[0];
+      setCurrentCrate(crate);
+
+      setError("");
+      setDependencyGraph(dependencyGraphRes.result);
+    } else {
+      setError(dependencyGraphRes.error);
+    }
+  };
 
   useEffect(() => {
     if (
@@ -69,28 +88,15 @@ export default function Home(): ReactElement {
     ) {
       setRandomCrate();
     } else {
-      const loadUrlCrate = async (): Promise<void> => {
-        const features = (urlFeatures !== null &&
-        urlFeatures !== undefined &&
-        urlFeatures.length > 0 &&
-        urlFeatures.every((urlFeature) => urlFeature !== null)
-          ? urlFeatures
-          : []) as string[];
+      const features = (urlFeatures !== null &&
+      urlFeatures !== undefined &&
+      urlFeatures.length > 0 &&
+      urlFeatures.every((urlFeature) => urlFeature !== null)
+        ? urlFeatures
+        : []) as string[];
 
-        const crateRes = await getCrate(urlCrateName);
-
-        if (crateRes.success) {
-          setCurrentCrate({
-            crate: crateRes.result,
-            selectedFeatures: features,
-          });
-          setSearchTerm(urlCrateName);
-        } else {
-          setError(crateRes.error);
-        }
-      };
-
-      loadUrlCrate();
+      loadDependencyGraph(urlCrateName, features);
+      setSelectedFeatures(features);
     }
 
     const checkLayout = (): void =>
@@ -104,24 +110,10 @@ export default function Home(): ReactElement {
   useEffect(() => {
     if (currentCrate !== null) {
       setFeatureNames(
-        Object.keys(currentCrate.crate.features).filter(
+        Object.keys(currentCrate.features).filter(
           (featureName) => featureName !== "default"
         )
       );
-      const loadCrateDependencies = async (): Promise<void> => {
-        const dependencyGraphRes = await getDependencyGraph(
-          currentCrate.crate.name,
-          currentCrate.selectedFeatures
-        );
-        if (dependencyGraphRes.success) {
-          setDependencyGraph(dependencyGraphRes.result);
-          setError("");
-        } else {
-          setError(dependencyGraphRes.error);
-        }
-      };
-
-      loadCrateDependencies();
     } else {
       setDependencyGraph(null);
     }
@@ -142,18 +134,20 @@ export default function Home(): ReactElement {
 
   return (
     <>
-      <Head currentCrateName={currentCrate?.crate.name} />
+      <Head currentCrateName={currentCrate?.name} />
       <Layout>
         <Sidebar
           clickedCrateName={clickedCrateName}
           currentCrate={currentCrate}
+          selectedFeatures={selectedFeatures}
           featureNames={featureNames}
           graphLinks={dependencyGraph?.dependencies ?? []}
           graphNodes={dependencyGraph?.crates ?? []}
           portrait={portrait}
           searchTerm={searchTerm}
           setClickedCrateName={setClickedCrateName}
-          setCurrentCrate={setCurrentCrate}
+          setSelectedFeatures={setSelectedFeatures}
+          loadDependencyGraph={loadDependencyGraph}
           setError={setError}
           setRandomCrate={setRandomCrate}
           setSearchTerm={setSearchTerm}

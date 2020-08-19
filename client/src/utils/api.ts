@@ -31,9 +31,6 @@ const wrapResponse = <T>(
         "Server error - please post an issue at https://github.com/arpanlaha/vault/issues",
     }));
 
-export const getCrate = (crateId: string): Promise<Response<Crate>> =>
-  wrapResponse(axios.get(`${API_URL}/crates/${crateId}`));
-
 export const getDependencyGraph = (
   crateId: string,
   features: string[] = []
@@ -46,11 +43,8 @@ export const getDependencyGraph = (
     )
   );
 
-export const searchCrate = (searchTerm: string): Promise<Response<Crate[]>> =>
+export const searchCrates = (searchTerm: string): Promise<Response<Crate[]>> =>
   wrapResponse(axios.get(`${API_URL}/search/crates/${searchTerm}`));
-
-export const getRandomCrate = (): Promise<Response<Crate>> =>
-  wrapResponse(axios.get(`${API_URL}/random/crates`));
 
 export const getRandomDependencyGraph = (): Promise<
   Response<DependencyGraph>

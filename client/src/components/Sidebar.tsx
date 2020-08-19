@@ -9,8 +9,8 @@ import {
   Layout,
   List,
 } from "antd";
-import { getLastUpdated, searchCrate } from "../utils/api";
-import { Crate, CrateDistance, CrateInfo, Dependency } from "../utils/types";
+import { getLastUpdated, searchCrates } from "../utils/api";
+import { Crate, CrateDistance, Dependency } from "../utils/types";
 import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
 import { RedoOutlined } from "@ant-design/icons";
@@ -28,23 +28,25 @@ const DAY = HOUR * 24; // eslint-disable-line @typescript-eslint/no-magic-number
 
 interface SidebarProps {
   clickedCrateName: string | null;
-  currentCrate: CrateInfo | null;
+  currentCrate: Crate | null;
   featureNames: string[];
   graphLinks: Dependency[];
   graphNodes: CrateDistance[];
+  loadDependencyGraph: (crateId: string, features: string[]) => void;
   portrait: boolean;
   searchTerm: string;
   setClickedCrateName: (clickedCrateName: string | null) => void;
-  setCurrentCrate: (crate: CrateInfo | null) => void;
   setError: (error: string) => void;
   setRandomCrate: () => void;
   setSearchTerm: (searchTerm: string) => void;
+  setSelectedFeatures: (selectedFeatures: string[]) => void;
   setUrlCrateName: (urlCrateName: string) => void;
   setUrlFeatures: (urlFeatures: string[] | undefined) => void;
+  selectedFeatures: string[];
 }
 
 export default function Sidebar(props: SidebarProps): ReactElement {
-  const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
+  const [searchedCrates, setSearchedCrates] = useState<Crate[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
@@ -54,15 +56,17 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     featureNames,
     graphLinks,
     graphNodes,
+    loadDependencyGraph,
     portrait,
     searchTerm,
     setClickedCrateName,
-    setCurrentCrate,
     setError,
     setRandomCrate,
     setSearchTerm,
+    setSelectedFeatures,
     setUrlCrateName,
     setUrlFeatures,
+    selectedFeatures,
   } = props;
 
   useEffect(() => {
@@ -93,67 +97,56 @@ export default function Sidebar(props: SidebarProps): ReactElement {
   useEffect(() => {
     if (currentCrate !== null) {
       setIndeterminate(
-        currentCrate.selectedFeatures.length > 0 &&
-          currentCrate.selectedFeatures.length < featureNames.length
+        selectedFeatures.length > 0 &&
+          selectedFeatures.length < featureNames.length
       );
     }
-  }, [featureNames, currentCrate]);
+  }, [featureNames, currentCrate, selectedFeatures]);
 
   const handleSearch = async (searchInput: string): Promise<void> => {
     setSearchTerm(searchInput);
     if (searchInput.length > 0) {
-      const searchCrateRes = await searchCrate(searchInput.toLowerCase());
-      if (searchCrateRes.success) {
-        setSearchCrates(searchCrateRes.result);
+      const searchCratesRes = await searchCrates(searchInput.toLowerCase());
+      if (searchCratesRes.success) {
+        setSearchedCrates(searchCratesRes.result);
       } else {
-        setError(searchCrateRes.error);
+        setError(searchCratesRes.error);
       }
     } else {
-      setSearchCrates([]);
+      setSearchedCrates([]);
     }
   };
 
   const handleCrateSelect = (
     crates: Crate[]
   ): ((selectedCrateName: string) => void) => (selectedCrateName: string) => {
-    setSearchTerm(selectedCrateName);
+    handleSearch(selectedCrateName);
 
-    if (
-      selectedCrateName !== "" &&
-      selectedCrateName !== currentCrate?.crate.name
-    ) {
+    if (selectedCrateName !== "" && selectedCrateName !== currentCrate?.name) {
       setUrlCrateName(selectedCrateName);
       setUrlFeatures(undefined);
       const selectedCrate = crates.find(
         (crate) => crate.name === selectedCrateName
       );
       if (selectedCrate !== undefined) {
-        setCurrentCrate(
-          selectedCrateName.length > 0
-            ? {
-                crate: crates.find(
-                  (crate) => crate.name === selectedCrateName
-                )!,
-                selectedFeatures: [],
-              }
-            : null
-        );
+        loadDependencyGraph(selectedCrateName, []);
       } else {
         setError(`Crate with id ${selectedCrateName} does not exist.`);
       }
     }
   };
 
-  const handleSearchSelect = handleCrateSelect(searchCrates);
+  const handleSearchSelect = handleCrateSelect(searchedCrates);
 
   const handlePanelSelect = handleCrateSelect(graphNodes);
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
     if (currentCrate !== null) {
-      setCurrentCrate({
-        ...currentCrate,
-        selectedFeatures: e.target.checked ? featureNames : [],
-      });
+      setSelectedFeatures(e.target.checked ? featureNames : []);
+      loadDependencyGraph(
+        currentCrate.name,
+        e.target.checked ? featureNames : []
+      );
       setUrlFeatures(e.target.checked ? featureNames : undefined);
       setIndeterminate(false);
     }
@@ -161,10 +154,8 @@ export default function Sidebar(props: SidebarProps): ReactElement {
 
   const handleCheckboxGroup = (checked: string[]): void => {
     if (currentCrate !== null) {
-      setCurrentCrate({
-        ...currentCrate,
-        selectedFeatures: checked,
-      });
+      setSelectedFeatures(checked);
+      loadDependencyGraph(currentCrate.name, checked);
       setUrlFeatures(checked);
     }
   };
@@ -182,12 +173,12 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       <Layout>
         <Content>
           <div className="column sider">
-            <h1>{currentCrate?.crate.name ?? "loading..."}</h1>
+            <h1>{currentCrate?.name ?? "loading..."}</h1>
             <div className="row crate-picker">
               <AutoComplete
                 options={
-                  searchCrates.map((searchCrate) => ({
-                    value: searchCrate.name,
+                  searchedCrates.map((searchedCrate) => ({
+                    value: searchedCrate.name,
                   })) as any
                 }
                 onSelect={handleSearchSelect}
@@ -209,11 +200,11 @@ export default function Sidebar(props: SidebarProps): ReactElement {
             {currentCrate !== null && (
               <Collapse accordion>
                 <Panel
-                  header={clickedCrateName ?? currentCrate.crate.name}
+                  header={clickedCrateName ?? currentCrate.name}
                   key="crate"
                   extra={
                     clickedCrateName !== null &&
-                    clickedCrateName !== currentCrate.crate.name ? (
+                    clickedCrateName !== currentCrate.name ? (
                       <Button
                         type="link"
                         onClick={() => handlePanelSelect(clickedCrateName)}
@@ -226,14 +217,13 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                   <CratePanelBody
                     crate={graphNodes.find(
                       (crate) =>
-                        crate.name ===
-                        (clickedCrateName ?? currentCrate.crate.name)
+                        crate.name === (clickedCrateName ?? currentCrate.name)
                     )}
                     dependencies={graphLinks
                       .filter(
                         (dependency) =>
                           dependency.from ===
-                          (clickedCrateName ?? currentCrate.crate.name)
+                          (clickedCrateName ?? currentCrate.name)
                       )
                       .map((dependency) => dependency.to)}
                     setClickedCrateName={setClickedCrateName}
@@ -244,21 +234,18 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                   <Panel
                     header="Features"
                     key="features"
-                    extra={`${currentCrate.selectedFeatures.length}/${featureNames.length}`}
+                    extra={`${selectedFeatures.length}/${featureNames.length}`}
                   >
                     <Checkbox
                       indeterminate={indeterminate}
                       onChange={handleAllFeatureToggle}
-                      checked={
-                        currentCrate.selectedFeatures.length ===
-                        featureNames.length
-                      }
+                      checked={selectedFeatures.length === featureNames.length}
                     >
                       Toggle all features
                     </Checkbox>
                     <CheckboxGroup
                       options={featureNames}
-                      value={currentCrate.selectedFeatures}
+                      value={selectedFeatures}
                       onChange={handleCheckboxGroup as any}
                     />
                   </Panel>
