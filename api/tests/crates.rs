@@ -113,7 +113,8 @@ async fn test_graph() {
         serde_json::to_string(&STATE.read().get_dependency_graph(
             "warp",
             vec![],
-            "x86_64-unknown-linux-gnu"
+            &Some(String::from("x86_64-unknown-linux-gnu")),
+            &Some(String::from("unix")),
         ))
         .unwrap()
         .as_bytes()
@@ -140,7 +141,8 @@ async fn test_graph_features() {
                 String::from("websocket"),
                 String::from("compression")
             ],
-            "x86_64-unknown-linux-gnu"
+            &Some(String::from("x86_64-unknown-linux-gnu")),
+            &Some(String::from("unix")),
         ))
         .unwrap()
         .as_bytes()
