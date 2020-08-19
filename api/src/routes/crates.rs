@@ -103,27 +103,51 @@ mod handlers {
         cfg_name_option: Option<String>,
         state: State,
     ) -> Result<impl Reply, Rejection> {
-        match &state.read().get_dependency_graph(
-            &crate_id,
-            match features_option {
-                Some(features) => {
-                    if features.contains(',') {
-                        features
-                            .split(',')
-                            .map(String::from)
-                            .collect::<Vec<String>>()
-                    } else {
-                        vec![features]
-                    }
-                }
-                None => vec![],
-            },
-            &target_option,
-            &cfg_name_option,
-        ) {
-            None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
+        let state = state.read();
 
-            Some(dependency_graph) => Ok(reply::json(dependency_graph)),
+        let mut nonexistent_options: Vec<String> = vec![];
+
+        // check if target was provided and exists
+        if let Some(target) = target_option.clone() {
+            if !state.targets().contains_key(&target) {
+                nonexistent_options.push(String::from("target"));
+            }
+        }
+
+        // check if cfg name was provided and exists
+        if let Some(cfg_name) = cfg_name_option.clone() {
+            if !state.cfg_names().contains(&cfg_name) {
+                nonexistent_options.push(String::from("cfg_name"));
+            }
+        }
+
+        if nonexistent_options.is_empty() {
+            match &state.get_dependency_graph(
+                &crate_id,
+                match features_option {
+                    Some(features) => {
+                        if features.contains(',') {
+                            features
+                                .split(',')
+                                .map(String::from)
+                                .collect::<Vec<String>>()
+                        } else {
+                            vec![features]
+                        }
+                    }
+                    None => vec![],
+                },
+                &target_option,
+                &cfg_name_option,
+            ) {
+                None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
+
+                Some(dependency_graph) => Ok(reply::json(dependency_graph)),
+            }
+        } else {
+            Err(reject::custom(VaultError::NonexistentOptions(
+                nonexistent_options,
+            )))
         }
     }
 }
