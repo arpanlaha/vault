@@ -506,7 +506,7 @@ pub struct CrateDistance<'a> {
     pub enabled_features: Vec<String>,
 
     /// The features exposed by the crate.
-    pub features: &'a HashMap<String, Vec<String>>,
+    pub features: &'a BTreeMap<String, Vec<String>>,
 
     /// The keywords belonging to the crate.
     pub keywords: &'a Vec<String>,

@@ -10,3 +10,4 @@ Redo client logic to allow random graphs
 Move this to GitHub issues
 Handle dependency targets - properly handle conversion - split into target attrs and names (exclude feature, test, proc_macro)
 Fix improper options rendering
+Reset features on crate change
