@@ -110,12 +110,11 @@ async fn test_graph() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(&STATE.read().get_dependency_graph(
-            "warp",
-            vec![],
-            &Some(String::from("x86_64-unknown-linux-gnu")),
-            &Some(String::from("unix")),
-        ))
+        serde_json::to_string(
+            &STATE
+                .read()
+                .get_dependency_graph("warp", vec![], &None, &None,)
+        )
         .unwrap()
         .as_bytes()
     )
@@ -141,8 +140,56 @@ async fn test_graph_features() {
                 String::from("websocket"),
                 String::from("compression")
             ],
+            &None,
+            &None,
+        ))
+        .unwrap()
+        .as_bytes()
+    )
+}
+
+#[tokio::test]
+async fn test_graph_features_platform() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
+
+    let res = warp::test::request()
+        .path("/graph/chrono?features=wasmbind&target=x86_64-unknown-linux-gnu")
+        .reply(&filters)
+        .await;
+
+    assert_eq!(res.status(), 200);
+
+    assert_eq!(
+        res.body(),
+        serde_json::to_string(&STATE.read().get_dependency_graph(
+            "chrono",
+            vec![String::from("wasmbind")],
             &Some(String::from("x86_64-unknown-linux-gnu")),
-            &Some(String::from("unix")),
+            &None,
+        ))
+        .unwrap()
+        .as_bytes()
+    )
+}
+
+#[tokio::test]
+async fn test_graph_cfg_name() {
+    let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
+
+    let res = warp::test::request()
+        .path("/graph/time?cfg_name=cargo_web")
+        .reply(&filters)
+        .await;
+
+    assert_eq!(res.status(), 200);
+
+    assert_eq!(
+        res.body(),
+        serde_json::to_string(&STATE.read().get_dependency_graph(
+            "time",
+            vec![],
+            &None,
+            &Some(String::from("cargo_web")),
         ))
         .unwrap()
         .as_bytes()
