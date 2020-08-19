@@ -17,7 +17,7 @@ fn get_targets(state: State) -> impl Filter<Extract = impl Reply, Error = Reject
 
 /// Returns a list of cfg names.
 fn get_cfg_names(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("compiler" / "cfg_names")
+    warp::path!("compiler" / "cfg-names")
         .and(warp::get())
         .and_then(move || handlers::get_cfg_names(state.clone()))
 }

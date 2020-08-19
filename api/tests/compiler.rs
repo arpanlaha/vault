@@ -40,7 +40,7 @@ async fn test_get_cfg_names() {
     let filters = routes::get(STATE.clone()).recover(utils::handle_rejection);
 
     let res = warp::test::request()
-        .path("/compiler/cfg_names")
+        .path("/compiler/cfg-names")
         .reply(&filters)
         .await;
 

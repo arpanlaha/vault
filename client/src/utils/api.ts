@@ -1,14 +1,13 @@
 import axios, { AxiosResponse } from "axios";
-import { Crate, DependencyGraph, LastUpdated } from "./types";
+import {
+  Crate,
+  DependencyGraph,
+  LastUpdated,
+  Response,
+  TargetList,
+} from "./types";
 
 const API_URL = process.env.GATSBY_VAULT_API_URL;
-
-type Response<T> =
-  | {
-      result: T;
-      success: true;
-    }
-  | { error: string; success: false };
 
 const wrapResponse = <T>(
   response: Promise<AxiosResponse<T>>
@@ -53,5 +52,15 @@ export const searchCrate = (searchTerm: string): Promise<Response<Crate[]>> =>
 export const getRandomCrate = (): Promise<Response<Crate>> =>
   wrapResponse(axios.get(`${API_URL}/random/crates`));
 
+export const getRandomDependencyGraph = (): Promise<
+  Response<DependencyGraph>
+> => wrapResponse(axios.get(`${API_URL}/random/graph`));
+
 export const getLastUpdated = (): Promise<Response<LastUpdated>> =>
   wrapResponse(axios.get(`${API_URL}/state/last-updated`));
+
+export const getTargets = (): Promise<Response<TargetList>> =>
+  wrapResponse(axios.get(`${API_URL}/compiler/targets`));
+
+export const getCfgNames = (): Promise<Response<LastUpdated>> =>
+  wrapResponse(axios.get(`${API_URL}/compiler/cfg-names`));
