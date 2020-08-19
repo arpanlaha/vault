@@ -468,7 +468,9 @@ fn get_cfg_names(crates: &HashMap<String, Crate>) -> BTreeSet<String> {
                     && target != "proc_macro"
                     && target != "debug_assertions"
                 {
-                    cfg_names.insert(String::from(&target[4..target.len() - 1]));
+                    cfg_names.insert(String::from(
+                        &target[target.find('(').unwrap() + 1..target.find(')').unwrap()],
+                    ));
                 }
             }
         }
