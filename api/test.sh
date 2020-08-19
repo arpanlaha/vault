@@ -1,1 +1,1 @@
-cargo test --no-fail-fast --test categories --test crates --test keywords --test state
+cargo test --no-fail-fast --test categories --test crates --test keywords --test state -- --test-threads 1
