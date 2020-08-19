@@ -9,3 +9,5 @@ Add random graph route
 Redo client logic to allow random graphs
 Move this to GitHub issues
 Handle dependency targets - properly handle conversion - split into target attrs and names (exclude feature, test, proc_macro)
+Handle incorrect params at request level (target, cfg_name)
+

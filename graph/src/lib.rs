@@ -69,7 +69,7 @@ impl Graph {
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
-            targets: get_targets(),
+            targets: vault_targets::get_targets(),
         }
     }
 
@@ -100,7 +100,7 @@ impl Graph {
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
-            targets: get_targets(),
+            targets: vault_targets::get_targets(),
         }
     }
 
@@ -449,58 +449,6 @@ fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
     }
 
     names
-}
-
-/// Returns a mapping of rustc-supported targets to cfg attributes.
-fn get_targets() -> HashMap<String, Vec<Cfg>> {
-    println!("Collecting information about target attributes...");
-    let start = Instant::now();
-
-    let targets: HashMap<String, Vec<Cfg>> = str::from_utf8(
-        Command::new("rustc")
-            .arg("--print")
-            .arg("target-list")
-            .output()
-            .expect("Failed printing rustc-supported targets")
-            .stdout
-            .as_slice(),
-    )
-    .expect("Failed parsing rustc targets as UTF-8")
-    .split('\n')
-    .map(|target| {
-        (
-            String::from(target),
-            str::from_utf8(
-                Command::new("rustc")
-                    .arg("--target")
-                    .arg(target)
-                    .arg("--print=cfg")
-                    .output()
-                    .unwrap_or_else(|_| panic!("Failed printing cfg attributes for {}", target))
-                    .stdout
-                    .as_slice(),
-            )
-            .unwrap_or_else(|_| panic!("Failed parsing {} cfg attributes", target))
-            .split('\n')
-            .skip(1)
-            .filter_map(|cfg_attr| {
-                if cfg_attr.contains('=') {
-                    Cfg::from_str(cfg_attr).ok()
-                } else {
-                    None
-                }
-            })
-            .collect(),
-        )
-    })
-    .collect();
-
-    println!(
-        "Finished collecting information about target attributes in {} seconds.",
-        start.elapsed().as_secs_f64()
-    );
-
-    targets
 }
 
 /// Returns a set of cfg names (e.g. `unix`, `cargo_web`) present among all dependencies.

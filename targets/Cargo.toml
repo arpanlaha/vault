@@ -1,0 +1,9 @@
+[package]
+name = "vault_targets"
+version = "0.1.0"
+authors = ["Arpan Laha <arpanlaha99@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+cargo-platform = "0.1"
+rustc-ap-rustc_target = "674"
