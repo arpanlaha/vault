@@ -7,7 +7,8 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
     get_crate(state.clone())
         .or(random(state.clone()))
         .or(search(state.clone()))
-        .or(get_dependency_graph(state))
+        .or(get_dependency_graph(state.clone()))
+        .or(get_random_dependency_graph(state))
 }
 
 /// Returns the `Crate` with the given id, if found.
@@ -61,6 +62,15 @@ fn get_dependency_graph(
         })
 }
 
+/// Returns the `DependencyGraph` of a random `Crate`.
+fn get_random_dependency_graph(
+    state: State,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("random" / "graph")
+        .and(warp::get())
+        .and_then(move || handlers::get_random_dependency_graph(state.clone()))
+}
+
 mod handlers {
     use super::{State, VaultError};
     use vault_graph::{Random, Search};
@@ -96,6 +106,7 @@ mod handlers {
     ///
     /// # Errors
     /// * Returns a `404` error if no `Crate` with the given id is found.
+    /// * Returns a `400` error if the `platform` or `cfg_name` query options reference nonexistent values.
     pub async fn get_dependency_graph(
         crate_id: String,
         features_option: Option<String>,
@@ -149,5 +160,16 @@ mod handlers {
                 nonexistent_options,
             )))
         }
+    }
+
+    /// Returns the `DependencyGraph` of a random `Crate`.
+    pub async fn get_random_dependency_graph(state: State) -> Result<impl Reply, Rejection> {
+        let state = state.read();
+
+        Ok(reply::json(
+            &state
+                .get_dependency_graph(&state.crates().random().name, vec![], &None, &None)
+                .unwrap(),
+        ))
     }
 }
