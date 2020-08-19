@@ -9,7 +9,6 @@ repository = "https://github.com/arpanlaha/vault.git"
 
 [dependencies]
 env_logger = "0.7"
-parking_lot = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "0.2", features = ["macros", "rt-threaded"] }
 vault_graph = { path = "../graph" }

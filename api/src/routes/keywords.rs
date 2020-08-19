@@ -42,7 +42,7 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Keyword` with the given id is found.
     pub async fn get_keyword(keyword_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.read().keywords().get(&keyword_id) {
+        match state.keywords().get(&keyword_id) {
             None => Err(reject::custom(VaultError::KeywordNotFound(keyword_id))),
 
             Some(keyword) => Ok(reply::json(keyword)),
@@ -51,15 +51,13 @@ mod handlers {
 
     /// Returns a random `Keyword`.
     pub async fn random(state: State) -> Result<impl Reply, Rejection> {
-        Ok(reply::json(state.read().keywords().random()))
+        Ok(reply::json(state.keywords().random()))
     }
 
     /// Searches for keywords matching the given search term.
     pub async fn search(search_term: String, state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-
         Ok(reply::json(
-            &graph.keyword_names().search(&search_term, graph.keywords()),
+            &state.keyword_names().search(&search_term, state.keywords()),
         ))
     }
 }

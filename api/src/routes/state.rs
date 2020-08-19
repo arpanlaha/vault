@@ -25,7 +25,7 @@ mod handlers {
     /// Returns the time (in seconds) since the `Graph` was last updated.
     pub async fn time_since_last_update(state: State) -> Result<impl Reply, Rejection> {
         Ok(reply::json(&LastUpdated {
-            seconds: state.read().time_since_last_update(),
+            seconds: state.time_since_last_update(),
         }))
     }
 

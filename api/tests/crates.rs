@@ -56,7 +56,7 @@ async fn test_get_crate_ok() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(STATE.read().crates().get("warp").unwrap(),)
+        serde_json::to_string(STATE.crates().get("warp").unwrap(),)
             .unwrap()
             .as_bytes()
     );
@@ -87,11 +87,9 @@ async fn test_search_crate() {
 
     assert_eq!(res.status(), 200);
 
-    let graph = STATE.read();
-
     assert_eq!(
         res.body(),
-        serde_json::to_string(&graph.crate_names().search("warp", graph.crates()))
+        serde_json::to_string(&STATE.crate_names().search("warp", STATE.crates()))
             .unwrap()
             .as_bytes()
     )
@@ -110,13 +108,9 @@ async fn test_graph() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(
-            &STATE
-                .read()
-                .get_dependency_graph("warp", vec![], &None, &None,)
-        )
-        .unwrap()
-        .as_bytes()
+        serde_json::to_string(&STATE.get_dependency_graph("warp", vec![], &None, &None,))
+            .unwrap()
+            .as_bytes()
     )
 }
 
@@ -133,7 +127,7 @@ async fn test_graph_features() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(&STATE.read().get_dependency_graph(
+        serde_json::to_string(&STATE.get_dependency_graph(
             "warp",
             vec![
                 String::from("tls"),
@@ -161,7 +155,7 @@ async fn test_graph_features_platform() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(&STATE.read().get_dependency_graph(
+        serde_json::to_string(&STATE.get_dependency_graph(
             "chrono",
             vec![String::from("wasmbind")],
             &Some(String::from("x86_64-unknown-linux-gnu")),
@@ -185,7 +179,7 @@ async fn test_graph_cfg_name() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(&STATE.read().get_dependency_graph(
+        serde_json::to_string(&STATE.get_dependency_graph(
             "time",
             vec![],
             &None,

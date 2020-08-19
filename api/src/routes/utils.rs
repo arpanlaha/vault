@@ -1,11 +1,10 @@
-use parking_lot::RwLock;
 use std::convert::Infallible;
 use std::sync::Arc;
 use vault_graph::Graph;
 use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 
-/// Shorthand for Arc<RwLock<Graph>>.
-pub type State = Arc<RwLock<Graph>>;
+/// Shorthand for Arc<Graph>.
+pub type State = Arc<Graph>;
 
 /// An enum corresponding to custom errors which may occur.
 #[derive(Debug)]

@@ -81,7 +81,7 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Crate` with the given id is found.
     pub async fn get_crate(crate_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.read().crates().get(&crate_id) {
+        match state.crates().get(&crate_id) {
             None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 
             Some(crate_val) => Ok(reply::json(crate_val)),
@@ -90,15 +90,13 @@ mod handlers {
 
     /// Returns a random `Crate`.
     pub async fn random(state: State) -> Result<impl Reply, Rejection> {
-        Ok(reply::json(state.read().crates().random()))
+        Ok(reply::json(state.crates().random()))
     }
 
     /// Searches for crates matching the given search term.
     pub async fn search(search_term: String, state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-
         Ok(reply::json(
-            &graph.crate_names().search(&search_term, graph.crates()),
+            &state.crate_names().search(&search_term, state.crates()),
         ))
     }
 
@@ -114,8 +112,6 @@ mod handlers {
         cfg_name_option: Option<String>,
         state: State,
     ) -> Result<impl Reply, Rejection> {
-        let state = state.read();
-
         let mut nonexistent_options: Vec<String> = vec![];
 
         // check if target was provided and exists
@@ -164,8 +160,6 @@ mod handlers {
 
     /// Returns the `DependencyGraph` of a random `Crate`.
     pub async fn get_random_dependency_graph(state: State) -> Result<impl Reply, Rejection> {
-        let state = state.read();
-
         Ok(reply::json(
             &state
                 .get_dependency_graph(&state.crates().random().name, vec![], &None, &None)

@@ -30,14 +30,14 @@ mod handlers {
     /// Returns a list of targets.
     pub async fn get_targets(state: State) -> Result<impl Reply, Rejection> {
         Ok(reply::json(&TargetList {
-            targets: state.read().targets().keys().collect(),
+            targets: state.targets().keys().collect(),
         }))
     }
 
     /// Returns a list of cfg names.
     pub async fn get_cfg_names(state: State) -> Result<impl Reply, Rejection> {
         Ok(reply::json(&CfgNameList {
-            cfg_names: state.read().cfg_names().iter().collect(),
+            cfg_names: state.cfg_names().iter().collect(),
         }))
     }
 

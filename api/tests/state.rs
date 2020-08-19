@@ -28,7 +28,7 @@ async fn test_time_since_last_update() {
     assert_eq!(
         res.body(),
         serde_json::to_string(&LastUpdated {
-            seconds: STATE.read().time_since_last_update()
+            seconds: STATE.time_since_last_update()
         })
         .unwrap()
         .as_bytes()

@@ -28,7 +28,7 @@ async fn test_get_targets() {
     assert_eq!(
         res.body(),
         serde_json::to_string(&TargetList {
-            targets: STATE.read().targets().keys().collect(),
+            targets: STATE.targets().keys().collect(),
         })
         .unwrap()
         .as_bytes()
@@ -49,7 +49,7 @@ async fn test_get_cfg_names() {
     assert_eq!(
         res.body(),
         serde_json::to_string(&CfgNameList {
-            cfg_names: STATE.read().cfg_names().iter().collect()
+            cfg_names: STATE.cfg_names().iter().collect()
         })
         .unwrap()
         .as_bytes()
