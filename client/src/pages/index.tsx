@@ -51,6 +51,7 @@ export default function Home(): ReactElement {
         });
         setSearchTerm(randomCrateRes.result.name);
         setUrlCrateName(randomCrateRes.result.name);
+        setUrlFeatures(undefined);
         setError("");
       } else {
         setError(randomCrateRes.error);
@@ -58,7 +59,7 @@ export default function Home(): ReactElement {
     };
 
     loadRandomCrate();
-  }, [setUrlCrateName]);
+  }, [setUrlCrateName, setUrlFeatures]);
 
   useEffect(() => {
     if (
