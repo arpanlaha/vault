@@ -52,8 +52,8 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
             VaultError::NonexistentOptions(nonexistent_options) => (
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "The following options were provided with improper values: {:?},",
-                    nonexistent_options
+                    "The following options were provided with improper values: {},",
+                    nonexistent_options.join(", ")
                 ),
             ),
         }
