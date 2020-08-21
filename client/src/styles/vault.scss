@@ -86,6 +86,14 @@ aside .ant-layout {
   line-height: 2;
 }
 
+.crate-config-item {
+  margin-bottom: 2vh;
+
+  .ant-select-auto-complete {
+    min-width: 80%;
+  }
+}
+
 .ant-checkbox-group {
   @extend .column;
 

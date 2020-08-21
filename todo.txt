@@ -5,5 +5,4 @@ Look into custom graph viz
 Exhaustive documentation
 Fix sidebar width jumping
 Move this to GitHub issues
-Handle dependency targets - properly handle conversion - split into target attrs and names (exclude feature, test, proc_macro)
 Add API docs
