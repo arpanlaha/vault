@@ -187,29 +187,41 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     }
   };
 
-  const handleTargetSelect = (target: string): void => {
-    setSelectedTarget(target);
+  const handleTargetSearch = (target: string): void => {
     setTargetSearchTerm(target);
-    if (currentCrate !== null) {
-      loadDependencyGraph(
-        currentCrate.name,
-        selectedFeatures,
-        target,
-        selectedCfgName
-      );
+  };
+
+  const handleCfgNameSearch = (cfgName: string): void => {
+    setCfgNameSearchTerm(cfgName);
+  };
+
+  const handleTargetSelect = (target: string): void => {
+    if (target !== "") {
+      setSelectedTarget(target);
+      setTargetSearchTerm(target);
+      if (currentCrate !== null) {
+        loadDependencyGraph(
+          currentCrate.name,
+          selectedFeatures,
+          target,
+          selectedCfgName
+        );
+      }
     }
   };
 
   const handleCfgNameSelect = (cfgName: string): void => {
-    setSelectedCfgName(cfgName);
-    setCfgNameSearchTerm(cfgName);
-    if (currentCrate !== null) {
-      loadDependencyGraph(
-        currentCrate.name,
-        selectedFeatures,
-        selectedTarget,
-        cfgName
-      );
+    if (cfgName !== "") {
+      setSelectedCfgName(cfgName);
+      setCfgNameSearchTerm(cfgName);
+      if (currentCrate !== null) {
+        loadDependencyGraph(
+          currentCrate.name,
+          selectedFeatures,
+          selectedTarget,
+          cfgName
+        );
+      }
     }
   };
 
@@ -285,7 +297,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
 
                 <Panel header="Configuration" key="configuration">
                   {featureNames.length > 0 && (
-                    <>
+                    <div className="crate-config-item">
                       <h3>
                         Features (
                         {`${selectedFeatures.length}/${featureNames.length}`}{" "}
@@ -305,46 +317,50 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                         value={selectedFeatures}
                         onChange={handleCheckboxGroup as any}
                       />
-                    </>
+                    </div>
                   )}
-                  <h3>Target</h3>
-                  <AutoComplete
-                    options={targets
-                      .filter((target) => target.startsWith(targetSearchTerm))
-                      .map((target) => ({
-                        value: target,
-                      }))}
-                    onChange={setTargetSearchTerm}
-                    onSelect={handleTargetSelect}
-                    value={targetSearchTerm}
-                  >
-                    <Search
-                      placeholder="Pick a target"
-                      onSearch={handleTargetSelect}
-                      allowClear
-                      enterButton
-                    />
-                  </AutoComplete>
-                  <h3>Cfg name</h3>
-                  <AutoComplete
-                    options={cfgNames
-                      .filter((cfgName) =>
-                        cfgName.startsWith(cfgNameSearchTerm)
-                      )
-                      .map((cfgName) => ({
-                        value: cfgName,
-                      }))}
-                    onChange={setCfgNameSearchTerm}
-                    onSelect={handleCfgNameSelect}
-                    value={cfgNameSearchTerm}
-                  >
-                    <Search
-                      placeholder="Pick a target"
-                      onSearch={handleCfgNameSelect}
-                      allowClear
-                      enterButton
-                    />
-                  </AutoComplete>
+                  <div className="crate-config-item">
+                    <h3>Target</h3>
+                    <AutoComplete
+                      options={targets
+                        .filter((target) => target.startsWith(targetSearchTerm))
+                        .map((target) => ({
+                          value: target,
+                        }))}
+                      onChange={handleTargetSearch}
+                      onSelect={handleTargetSelect}
+                      value={targetSearchTerm}
+                    >
+                      <Search
+                        placeholder="Pick a target"
+                        onSearch={handleTargetSelect}
+                        allowClear
+                        enterButton
+                      />
+                    </AutoComplete>
+                  </div>
+                  <div className="crate-config-item">
+                    <h3>Cfg name</h3>
+                    <AutoComplete
+                      options={cfgNames
+                        .filter((cfgName) =>
+                          cfgName.startsWith(cfgNameSearchTerm)
+                        )
+                        .map((cfgName) => ({
+                          value: cfgName,
+                        }))}
+                      onChange={handleCfgNameSearch}
+                      onSelect={handleCfgNameSelect}
+                      value={cfgNameSearchTerm}
+                    >
+                      <Search
+                        placeholder="Pick a target"
+                        onSearch={handleCfgNameSelect}
+                        allowClear
+                        enterButton
+                      />
+                    </AutoComplete>
+                  </div>
                 </Panel>
                 <Panel
                   header="Included crates"
