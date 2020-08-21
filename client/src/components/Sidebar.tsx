@@ -27,22 +27,37 @@ const HOUR = MINUTE * 60;
 const DAY = HOUR * 24; // eslint-disable-line @typescript-eslint/no-magic-numbers
 
 interface SidebarProps {
+  cfgNames: string[];
+  cfgNameSearchTerm: string;
   clickedCrateName: string | null;
   currentCrate: Crate | null;
   featureNames: string[];
   graphLinks: Dependency[];
   graphNodes: CrateDistance[];
-  loadDependencyGraph: (crateId: string, features: string[]) => void;
+  loadDependencyGraph: (
+    crateId: string,
+    features?: string[],
+    target?: string,
+    cfgName?: string
+  ) => void;
   portrait: boolean;
   searchTerm: string;
+  setCfgNameSearchTerm: (cfgNameSearchTerm: string) => void;
   setClickedCrateName: (clickedCrateName: string | null) => void;
   setError: (error: string) => void;
   setRandomCrate: () => void;
   setSearchTerm: (searchTerm: string) => void;
+  setSelectedCfgName: (selectedCfgName: string) => void;
   setSelectedFeatures: (selectedFeatures: string[]) => void;
+  setSelectedTarget: (selectedTarget: string) => void;
+  setTargetSearchTerm: (targetSearchTerm: string) => void;
   setUrlCrateName: (urlCrateName: string) => void;
   setUrlFeatures: (urlFeatures: string[] | undefined) => void;
+  selectedCfgName: string;
   selectedFeatures: string[];
+  selectedTarget: string;
+  targets: string[];
+  targetSearchTerm: string;
 }
 
 export default function Sidebar(props: SidebarProps): ReactElement {
@@ -51,6 +66,8 @@ export default function Sidebar(props: SidebarProps): ReactElement {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const {
+    cfgNames,
+    cfgNameSearchTerm,
     clickedCrateName,
     currentCrate,
     featureNames,
@@ -59,14 +76,22 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     loadDependencyGraph,
     portrait,
     searchTerm,
+    setCfgNameSearchTerm,
     setClickedCrateName,
     setError,
     setRandomCrate,
     setSearchTerm,
+    setSelectedCfgName,
     setSelectedFeatures,
+    setSelectedTarget,
+    setTargetSearchTerm,
     setUrlCrateName,
     setUrlFeatures,
+    selectedCfgName,
     selectedFeatures,
+    selectedTarget,
+    targets,
+    targetSearchTerm,
   } = props;
 
   useEffect(() => {
@@ -129,7 +154,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
         (crate) => crate.name === selectedCrateName
       );
       if (selectedCrate !== undefined) {
-        loadDependencyGraph(selectedCrateName, []);
+        loadDependencyGraph(selectedCrateName);
       } else {
         setError(`Crate with id ${selectedCrateName} does not exist.`);
       }
@@ -145,7 +170,9 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       setSelectedFeatures(e.target.checked ? featureNames : []);
       loadDependencyGraph(
         currentCrate.name,
-        e.target.checked ? featureNames : []
+        e.target.checked ? featureNames : [],
+        selectedTarget,
+        selectedCfgName
       );
       setUrlFeatures(e.target.checked ? featureNames : undefined);
       setIndeterminate(false);
@@ -157,6 +184,32 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       setSelectedFeatures(checked);
       loadDependencyGraph(currentCrate.name, checked);
       setUrlFeatures(checked);
+    }
+  };
+
+  const handleTargetSelect = (target: string): void => {
+    setSelectedTarget(target);
+    setTargetSearchTerm(target);
+    if (currentCrate !== null) {
+      loadDependencyGraph(
+        currentCrate.name,
+        selectedFeatures,
+        target,
+        selectedCfgName
+      );
+    }
+  };
+
+  const handleCfgNameSelect = (cfgName: string): void => {
+    setSelectedCfgName(cfgName);
+    setCfgNameSearchTerm(cfgName);
+    if (currentCrate !== null) {
+      loadDependencyGraph(
+        currentCrate.name,
+        selectedFeatures,
+        selectedTarget,
+        cfgName
+      );
     }
   };
 
@@ -230,26 +283,69 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                   />
                 </Panel>
 
-                {featureNames.length > 0 && (
-                  <Panel
-                    header="Features"
-                    key="features"
-                    extra={`${selectedFeatures.length}/${featureNames.length}`}
+                <Panel header="Configuration" key="configuration">
+                  {featureNames.length > 0 && (
+                    <>
+                      <h3>
+                        Features (
+                        {`${selectedFeatures.length}/${featureNames.length}`}{" "}
+                        selected)
+                      </h3>
+                      <Checkbox
+                        indeterminate={indeterminate}
+                        onChange={handleAllFeatureToggle}
+                        checked={
+                          selectedFeatures.length === featureNames.length
+                        }
+                      >
+                        Toggle all features
+                      </Checkbox>
+                      <CheckboxGroup
+                        options={featureNames}
+                        value={selectedFeatures}
+                        onChange={handleCheckboxGroup as any}
+                      />
+                    </>
+                  )}
+                  <h3>Target</h3>
+                  <AutoComplete
+                    options={targets
+                      .filter((target) => target.startsWith(targetSearchTerm))
+                      .map((target) => ({
+                        value: target,
+                      }))}
+                    onChange={setTargetSearchTerm}
+                    onSelect={handleTargetSelect}
+                    value={targetSearchTerm}
                   >
-                    <Checkbox
-                      indeterminate={indeterminate}
-                      onChange={handleAllFeatureToggle}
-                      checked={selectedFeatures.length === featureNames.length}
-                    >
-                      Toggle all features
-                    </Checkbox>
-                    <CheckboxGroup
-                      options={featureNames}
-                      value={selectedFeatures}
-                      onChange={handleCheckboxGroup as any}
+                    <Search
+                      placeholder="Pick a target"
+                      onSearch={handleTargetSelect}
+                      allowClear
+                      enterButton
                     />
-                  </Panel>
-                )}
+                  </AutoComplete>
+                  <h3>Cfg name</h3>
+                  <AutoComplete
+                    options={cfgNames
+                      .filter((cfgName) =>
+                        cfgName.startsWith(cfgNameSearchTerm)
+                      )
+                      .map((cfgName) => ({
+                        value: cfgName,
+                      }))}
+                    onChange={setCfgNameSearchTerm}
+                    onSelect={handleCfgNameSelect}
+                    value={cfgNameSearchTerm}
+                  >
+                    <Search
+                      placeholder="Pick a target"
+                      onSearch={handleCfgNameSelect}
+                      allowClear
+                      enterButton
+                    />
+                  </AutoComplete>
+                </Panel>
                 <Panel
                   header="Included crates"
                   key="crates"

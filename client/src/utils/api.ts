@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import {
+  CfgNameLIst,
   Crate,
   DependencyGraph,
   LastUpdated,
@@ -33,14 +34,18 @@ const wrapResponse = <T>(
 
 export const getDependencyGraph = (
   crateId: string,
-  features: string[] = []
+  features: string[] = [],
+  target: string | undefined = undefined,
+  cfgName: string | undefined = undefined
 ): Promise<Response<DependencyGraph>> =>
   wrapResponse(
-    axios.get(
-      `${API_URL}/graph/${crateId}${
-        features.length > 0 ? `?features=${features.join(",")}` : ""
-      }`
-    )
+    axios.get(`${API_URL}/graph/${crateId}`, {
+      params: {
+        features,
+        target,
+        cfg_name: cfgName,
+      },
+    })
   );
 
 export const searchCrates = (searchTerm: string): Promise<Response<Crate[]>> =>
@@ -56,5 +61,5 @@ export const getLastUpdated = (): Promise<Response<LastUpdated>> =>
 export const getTargets = (): Promise<Response<TargetList>> =>
   wrapResponse(axios.get(`${API_URL}/compiler/targets`));
 
-export const getCfgNames = (): Promise<Response<LastUpdated>> =>
+export const getCfgNames = (): Promise<Response<CfgNameLIst>> =>
   wrapResponse(axios.get(`${API_URL}/compiler/cfg-names`));

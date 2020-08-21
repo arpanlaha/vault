@@ -7,7 +7,12 @@ import {
 } from "use-query-params";
 import { ForceGraphWrapper, Head, Sidebar } from "../components";
 import { notification, Layout } from "antd";
-import { getDependencyGraph, getRandomDependencyGraph } from "../utils/api";
+import {
+  getCfgNames,
+  getDependencyGraph,
+  getRandomDependencyGraph,
+  getTargets,
+} from "../utils/api";
 import { Crate, DependencyGraph } from "../utils/types";
 
 import "../styles/antd.scss";
@@ -23,11 +28,20 @@ const CommaArrayParam = {
     decodeDelimitedArray(arrayStr, ","),
 };
 
+const DEFAULT_TARGET = "x86_64-unknown-linux-gnu";
+const DEFAULT_CFG_NAME = "unix";
+
 export default function Home(): ReactElement {
   const [portrait, setPortrait] = useState(false);
+  const [targets, setTargets] = useState<string[]>([]);
+  const [cfgNames, setCfgNames] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentCrate, setCurrentCrate] = useState<Crate | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [selectedTarget, setSelectedTarget] = useState(DEFAULT_TARGET);
+  const [selectedCfgName, setSelectedCfgName] = useState(DEFAULT_CFG_NAME);
+  const [targetSearchTerm, setTargetSearchTerm] = useState("");
+  const [cfgNameSearchTerm, setCfgNameSearchTerm] = useState("");
   const [featureNames, setFeatureNames] = useState<string[]>([]);
   const [
     dependencyGraph,
@@ -41,6 +55,8 @@ export default function Home(): ReactElement {
     "features",
     CommaArrayParam
   );
+  const [urlTarget, setUrlTarget] = useQueryParam("target", StringParam);
+  const [urlCfgName, setUrlCfgName] = useQueryParam("cfg_name", StringParam);
 
   const setRandomCrate = useCallback((): void => {
     const loadRandomCrate = async (): Promise<void> => {
@@ -52,6 +68,8 @@ export default function Home(): ReactElement {
         setSearchTerm(crate.name);
         setUrlCrateName(crate.name);
         setUrlFeatures(undefined);
+        setUrlTarget(undefined);
+        setUrlCfgName(undefined);
         setError("");
         setDependencyGraph(randomDependencyGraphRes.result);
       } else {
@@ -60,15 +78,22 @@ export default function Home(): ReactElement {
     };
 
     loadRandomCrate();
-  }, [setUrlCrateName, setUrlFeatures]);
+  }, [setUrlCrateName, setUrlFeatures, setUrlTarget, setUrlCfgName]);
 
   const loadDependencyGraph = async (
     crateId: string,
-    features: string[]
+    features: string[] = [],
+    target: string | undefined = undefined,
+    cfgName: string | undefined = undefined
   ): Promise<void> => {
     setSearchTerm(crateId);
 
-    const dependencyGraphRes = await getDependencyGraph(crateId, features);
+    const dependencyGraphRes = await getDependencyGraph(
+      crateId,
+      features,
+      target,
+      cfgName
+    );
     if (dependencyGraphRes.success) {
       const crate = dependencyGraphRes.result.crates[0];
       setCurrentCrate(crate);
@@ -81,6 +106,22 @@ export default function Home(): ReactElement {
   };
 
   useEffect(() => {
+    getCfgNames().then((cfgNamesRes) => {
+      if (cfgNamesRes.success) {
+        setCfgNames(cfgNamesRes.result.cfg_names);
+      } else {
+        setError(cfgNamesRes.error);
+      }
+    });
+
+    getTargets().then((targetsRes) => {
+      if (targetsRes.success) {
+        setTargets(targetsRes.result.targets);
+      } else {
+        setError(targetsRes.error);
+      }
+    });
+
     if (
       urlCrateName === null ||
       urlCrateName === undefined ||
@@ -95,7 +136,12 @@ export default function Home(): ReactElement {
         ? urlFeatures
         : []) as string[];
 
-      loadDependencyGraph(urlCrateName, features);
+      loadDependencyGraph(
+        urlCrateName,
+        features,
+        urlTarget ?? undefined,
+        urlCfgName ?? undefined
+      );
       setSelectedFeatures(features);
     }
 
@@ -118,6 +164,36 @@ export default function Home(): ReactElement {
       setDependencyGraph(null);
     }
   }, [currentCrate]);
+
+  useEffect(
+    () =>
+      setUrlFeatures(
+        selectedFeatures.length > 0 ? selectedFeatures : undefined
+      ),
+    [selectedFeatures, setUrlFeatures]
+  );
+
+  useEffect(
+    () =>
+      setUrlTarget(
+        selectedTarget !== DEFAULT_TARGET ? selectedTarget : undefined
+      ),
+    [selectedTarget, setUrlTarget]
+  );
+
+  useEffect(
+    () =>
+      setUrlCfgName(
+        selectedCfgName !== DEFAULT_CFG_NAME ? selectedCfgName : undefined
+      ),
+    [selectedCfgName, setUrlCfgName]
+  );
+
+  useEffect(() => {
+    setCfgNameSearchTerm(selectedCfgName);
+  }, [selectedCfgName]);
+
+  useEffect(() => setTargetSearchTerm(selectedTarget), [selectedTarget]);
 
   useEffect(
     () =>
@@ -153,6 +229,16 @@ export default function Home(): ReactElement {
           setSearchTerm={setSearchTerm}
           setUrlCrateName={setUrlCrateName}
           setUrlFeatures={setUrlFeatures}
+          targets={targets}
+          cfgNames={cfgNames}
+          setSelectedCfgName={setSelectedCfgName}
+          setSelectedTarget={setSelectedTarget}
+          selectedCfgName={selectedCfgName}
+          selectedTarget={selectedTarget}
+          targetSearchTerm={targetSearchTerm}
+          setTargetSearchTerm={setTargetSearchTerm}
+          cfgNameSearchTerm={cfgNameSearchTerm}
+          setCfgNameSearchTerm={setCfgNameSearchTerm}
         />
         <Content className="content">
           <div className="column dependency-graph-container">
