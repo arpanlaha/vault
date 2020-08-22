@@ -40,8 +40,7 @@ async fn test_get_categories() {
 
     assert_eq!(res.status(), 200);
 
-    let graph = STATE.read();
-    let mut categories: Vec<&Category> = graph.categories().values().collect();
+    let mut categories: Vec<&Category> = STATE.categories().values().collect();
 
     categories.sort_unstable_by_key(|category| category.category.as_str());
 
@@ -81,13 +80,11 @@ async fn test_get_category_ok() {
 
     assert_eq!(res.status(), 200);
 
-    let graph = STATE.read();
-
     assert_eq!(
         res.body(),
         serde_json::to_string(&CategoryResponse::new(
-            graph.categories().get("Asynchronous").unwrap(),
-            &graph
+            STATE.categories().get("Asynchronous").unwrap(),
+            &STATE
         ))
         .unwrap()
         .as_bytes()
@@ -121,11 +118,9 @@ async fn test_search_category() {
 
     assert_eq!(res.status(), 200);
 
-    let graph = STATE.read();
-
     assert_eq!(
         res.body(),
-        serde_json::to_string(&graph.category_names().search("web", graph.categories()))
+        serde_json::to_string(&STATE.category_names().search("web", STATE.categories()))
             .unwrap()
             .as_bytes()
     )

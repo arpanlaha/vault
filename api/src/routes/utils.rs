@@ -1,11 +1,10 @@
-use parking_lot::RwLock;
 use std::convert::Infallible;
 use std::sync::Arc;
 use vault_graph::Graph;
 use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 
-/// Shorthand for Arc<RwLock<Graph>>.
-pub type State = Arc<RwLock<Graph>>;
+/// Shorthand for Arc<Graph>.
+pub type State = Arc<Graph>;
 
 /// An enum corresponding to custom errors which may occur.
 #[derive(Debug)]
@@ -19,8 +18,8 @@ pub enum VaultError {
     /// If the provided `Keyword` does not exist.
     KeywordNotFound(String),
 
-    /// If updating the `Graph` is not allowed.
-    UpdateForbidden,
+    /// If options passed in query parameters do not exist.
+    NonexistentOptions(Vec<String>),
 }
 
 impl Reject for VaultError {}
@@ -38,17 +37,23 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
                 StatusCode::NOT_FOUND,
                 format!("Category with id {} not found.", category_id),
             ),
+
             VaultError::CrateNotFound(crate_id) => (
                 StatusCode::NOT_FOUND,
                 format!("Crate with id {} not found.", crate_id),
             ),
+
             VaultError::KeywordNotFound(keyword_id) => (
                 StatusCode::NOT_FOUND,
                 format!("Keyword with id {} not found.", keyword_id),
             ),
-            VaultError::UpdateForbidden => (
-                StatusCode::FORBIDDEN,
-                String::from("Updating application state can only occur in 24-hour intervals."),
+
+            VaultError::NonexistentOptions(nonexistent_options) => (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The following options were provided with improper values: {},",
+                    nonexistent_options.join(", ")
+                ),
             ),
         }
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {

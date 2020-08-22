@@ -318,6 +318,7 @@ fn load_dependencies(
             features,
             kind,
             optional,
+            target,
             version_id,
             ..
         } = sql_dependency;
@@ -346,6 +347,11 @@ fn load_dependencies(
                             .collect(),
                         from: from.to_owned(),
                         optional: optional == "t",
+                        target: if target.is_empty() {
+                            None
+                        } else {
+                            Some(target)
+                        },
                         to: crate_id_lookup
                             .get(&sql_dependency_crate_id)
                             .unwrap_or_else(|| {

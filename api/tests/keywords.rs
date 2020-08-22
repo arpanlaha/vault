@@ -52,7 +52,7 @@ async fn test_get_keyword_ok() {
 
     assert_eq!(
         res.body(),
-        serde_json::to_string(STATE.read().keywords().get("web").unwrap(),)
+        serde_json::to_string(STATE.keywords().get("web").unwrap(),)
             .unwrap()
             .as_bytes()
     );
@@ -83,11 +83,9 @@ async fn test_search_keyword() {
 
     assert_eq!(res.status(), 200);
 
-    let graph = STATE.read();
-
     assert_eq!(
         res.body(),
-        serde_json::to_string(&graph.keyword_names().search("web", graph.keywords()))
+        serde_json::to_string(&STATE.keyword_names().search("web", STATE.keywords()))
             .unwrap()
             .as_bytes()
     )

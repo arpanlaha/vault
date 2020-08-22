@@ -7,7 +7,8 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
     get_crate(state.clone())
         .or(random(state.clone()))
         .or(search(state.clone()))
-        .or(get_dependency_graph(state))
+        .or(get_dependency_graph(state.clone()))
+        .or(get_random_dependency_graph(state))
 }
 
 /// Returns the `Crate` with the given id, if found.
@@ -50,9 +51,24 @@ fn get_dependency_graph(
                 query_param_map
                     .get("features")
                     .map(|query_param| query_param.to_owned()),
+                query_param_map
+                    .get("target")
+                    .map(|query_param| query_param.to_owned()),
+                query_param_map
+                    .get("cfg_name")
+                    .map(|query_param| query_param.to_owned()),
                 state.clone(),
             )
         })
+}
+
+/// Returns the `DependencyGraph` of a random `Crate`.
+fn get_random_dependency_graph(
+    state: State,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("random" / "graph")
+        .and(warp::get())
+        .and_then(move || handlers::get_random_dependency_graph(state.clone()))
 }
 
 mod handlers {
@@ -65,7 +81,7 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Crate` with the given id is found.
     pub async fn get_crate(crate_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.read().crates().get(&crate_id) {
+        match state.crates().get(&crate_id) {
             None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
 
             Some(crate_val) => Ok(reply::json(crate_val)),
@@ -74,15 +90,13 @@ mod handlers {
 
     /// Returns a random `Crate`.
     pub async fn random(state: State) -> Result<impl Reply, Rejection> {
-        Ok(reply::json(state.read().crates().random()))
+        Ok(reply::json(state.crates().random()))
     }
 
     /// Searches for crates matching the given search term.
     pub async fn search(search_term: String, state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-
         Ok(reply::json(
-            &graph.crate_names().search(&search_term, graph.crates()),
+            &state.crate_names().search(&search_term, state.crates()),
         ))
     }
 
@@ -90,30 +104,66 @@ mod handlers {
     ///
     /// # Errors
     /// * Returns a `404` error if no `Crate` with the given id is found.
+    /// * Returns a `400` error if the `platform` or `cfg_name` query options reference nonexistent values.
     pub async fn get_dependency_graph(
         crate_id: String,
         features_option: Option<String>,
+        target_option: Option<String>,
+        cfg_name_option: Option<String>,
         state: State,
     ) -> Result<impl Reply, Rejection> {
-        match &state.read().get_dependency_graph(
-            &crate_id,
-            match features_option {
-                Some(features) => {
-                    if features.contains(',') {
-                        features
-                            .split(',')
-                            .map(String::from)
-                            .collect::<Vec<String>>()
-                    } else {
-                        vec![features]
-                    }
-                }
-                None => vec![],
-            },
-        ) {
-            None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
+        let mut nonexistent_options: Vec<String> = vec![];
 
-            Some(dependency_graph) => Ok(reply::json(dependency_graph)),
+        // check if target was provided and exists
+        if let Some(target) = target_option.clone() {
+            if !state.targets().contains_key(&target) {
+                nonexistent_options.push(String::from("target"));
+            }
         }
+
+        // check if cfg name was provided and exists
+        if let Some(cfg_name) = cfg_name_option.clone() {
+            if !state.cfg_names().contains(&cfg_name) {
+                nonexistent_options.push(String::from("cfg_name"));
+            }
+        }
+
+        if nonexistent_options.is_empty() {
+            match &state.get_dependency_graph(
+                &crate_id,
+                match features_option {
+                    Some(features) => {
+                        if features.contains(',') {
+                            features
+                                .split(',')
+                                .map(String::from)
+                                .collect::<Vec<String>>()
+                        } else {
+                            vec![features]
+                        }
+                    }
+                    None => vec![],
+                },
+                &target_option,
+                &cfg_name_option,
+            ) {
+                None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
+
+                Some(dependency_graph) => Ok(reply::json(dependency_graph)),
+            }
+        } else {
+            Err(reject::custom(VaultError::NonexistentOptions(
+                nonexistent_options,
+            )))
+        }
+    }
+
+    /// Returns the `DependencyGraph` of a random `Crate`.
+    pub async fn get_random_dependency_graph(state: State) -> Result<impl Reply, Rejection> {
+        Ok(reply::json(
+            &state
+                .get_dependency_graph(&state.crates().random().name, vec![], &None, &None)
+                .unwrap(),
+        ))
     }
 }

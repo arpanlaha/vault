@@ -9,8 +9,8 @@ import {
   Layout,
   List,
 } from "antd";
-import { getLastUpdated, searchCrate } from "../utils/api";
-import { Crate, CrateDistance, CrateInfo, Dependency } from "../utils/types";
+import { getLastUpdated, searchCrates } from "../utils/api";
+import { Crate, CrateDistance, Dependency } from "../utils/types";
 import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
 import { RedoOutlined } from "@ant-design/icons";
@@ -27,42 +27,71 @@ const HOUR = MINUTE * 60;
 const DAY = HOUR * 24; // eslint-disable-line @typescript-eslint/no-magic-numbers
 
 interface SidebarProps {
+  cfgNames: string[];
+  cfgNameSearchTerm: string;
   clickedCrateName: string | null;
-  currentCrate: CrateInfo | null;
+  currentCrate: Crate | null;
   featureNames: string[];
   graphLinks: Dependency[];
   graphNodes: CrateDistance[];
+  loadDependencyGraph: (
+    crateId: string,
+    features?: string[],
+    target?: string,
+    cfgName?: string
+  ) => void;
   portrait: boolean;
   searchTerm: string;
+  setCfgNameSearchTerm: (cfgNameSearchTerm: string) => void;
   setClickedCrateName: (clickedCrateName: string | null) => void;
-  setCurrentCrate: (crate: CrateInfo | null) => void;
   setError: (error: string) => void;
   setRandomCrate: () => void;
   setSearchTerm: (searchTerm: string) => void;
+  setSelectedCfgName: (selectedCfgName: string) => void;
+  setSelectedFeatures: (selectedFeatures: string[]) => void;
+  setSelectedTarget: (selectedTarget: string) => void;
+  setTargetSearchTerm: (targetSearchTerm: string) => void;
   setUrlCrateName: (urlCrateName: string) => void;
   setUrlFeatures: (urlFeatures: string[] | undefined) => void;
+  selectedCfgName: string;
+  selectedFeatures: string[];
+  selectedTarget: string;
+  targets: string[];
+  targetSearchTerm: string;
 }
 
 export default function Sidebar(props: SidebarProps): ReactElement {
-  const [searchCrates, setSearchCrates] = useState<Crate[]>([]);
+  const [searchedCrates, setSearchedCrates] = useState<Crate[]>([]);
   const [indeterminate, setIndeterminate] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const {
+    cfgNames,
+    cfgNameSearchTerm,
     clickedCrateName,
     currentCrate,
     featureNames,
     graphLinks,
     graphNodes,
+    loadDependencyGraph,
     portrait,
     searchTerm,
+    setCfgNameSearchTerm,
     setClickedCrateName,
-    setCurrentCrate,
     setError,
     setRandomCrate,
     setSearchTerm,
+    setSelectedCfgName,
+    setSelectedFeatures,
+    setSelectedTarget,
+    setTargetSearchTerm,
     setUrlCrateName,
     setUrlFeatures,
+    selectedCfgName,
+    selectedFeatures,
+    selectedTarget,
+    targets,
+    targetSearchTerm,
   } = props;
 
   useEffect(() => {
@@ -93,67 +122,58 @@ export default function Sidebar(props: SidebarProps): ReactElement {
   useEffect(() => {
     if (currentCrate !== null) {
       setIndeterminate(
-        currentCrate.selectedFeatures.length > 0 &&
-          currentCrate.selectedFeatures.length < featureNames.length
+        selectedFeatures.length > 0 &&
+          selectedFeatures.length < featureNames.length
       );
     }
-  }, [featureNames, currentCrate]);
+  }, [featureNames, currentCrate, selectedFeatures]);
 
   const handleSearch = async (searchInput: string): Promise<void> => {
     setSearchTerm(searchInput);
     if (searchInput.length > 0) {
-      const searchCrateRes = await searchCrate(searchInput.toLowerCase());
-      if (searchCrateRes.success) {
-        setSearchCrates(searchCrateRes.result);
+      const searchCratesRes = await searchCrates(searchInput.toLowerCase());
+      if (searchCratesRes.success) {
+        setSearchedCrates(searchCratesRes.result);
       } else {
-        setError(searchCrateRes.error);
+        setError(searchCratesRes.error);
       }
     } else {
-      setSearchCrates([]);
+      setSearchedCrates([]);
     }
   };
 
   const handleCrateSelect = (
     crates: Crate[]
   ): ((selectedCrateName: string) => void) => (selectedCrateName: string) => {
-    setSearchTerm(selectedCrateName);
+    handleSearch(selectedCrateName);
 
-    if (
-      selectedCrateName !== "" &&
-      selectedCrateName !== currentCrate?.crate.name
-    ) {
+    if (selectedCrateName !== "" && selectedCrateName !== currentCrate?.name) {
       setUrlCrateName(selectedCrateName);
       setUrlFeatures(undefined);
       const selectedCrate = crates.find(
         (crate) => crate.name === selectedCrateName
       );
       if (selectedCrate !== undefined) {
-        setCurrentCrate(
-          selectedCrateName.length > 0
-            ? {
-                crate: crates.find(
-                  (crate) => crate.name === selectedCrateName
-                )!,
-                selectedFeatures: [],
-              }
-            : null
-        );
+        loadDependencyGraph(selectedCrateName);
       } else {
         setError(`Crate with id ${selectedCrateName} does not exist.`);
       }
     }
   };
 
-  const handleSearchSelect = handleCrateSelect(searchCrates);
+  const handleSearchSelect = handleCrateSelect(searchedCrates);
 
   const handlePanelSelect = handleCrateSelect(graphNodes);
 
   const handleAllFeatureToggle = (e: CheckboxChangeEvent): void => {
     if (currentCrate !== null) {
-      setCurrentCrate({
-        ...currentCrate,
-        selectedFeatures: e.target.checked ? featureNames : [],
-      });
+      setSelectedFeatures(e.target.checked ? featureNames : []);
+      loadDependencyGraph(
+        currentCrate.name,
+        e.target.checked ? featureNames : [],
+        selectedTarget,
+        selectedCfgName
+      );
       setUrlFeatures(e.target.checked ? featureNames : undefined);
       setIndeterminate(false);
     }
@@ -161,11 +181,47 @@ export default function Sidebar(props: SidebarProps): ReactElement {
 
   const handleCheckboxGroup = (checked: string[]): void => {
     if (currentCrate !== null) {
-      setCurrentCrate({
-        ...currentCrate,
-        selectedFeatures: checked,
-      });
+      setSelectedFeatures(checked);
+      loadDependencyGraph(currentCrate.name, checked);
       setUrlFeatures(checked);
+    }
+  };
+
+  const handleTargetSearch = (target: string): void => {
+    setTargetSearchTerm(target);
+  };
+
+  const handleCfgNameSearch = (cfgName: string): void => {
+    setCfgNameSearchTerm(cfgName);
+  };
+
+  const handleTargetSelect = (target: string): void => {
+    if (target !== "") {
+      setSelectedTarget(target);
+      setTargetSearchTerm(target);
+      if (currentCrate !== null) {
+        loadDependencyGraph(
+          currentCrate.name,
+          selectedFeatures,
+          target,
+          selectedCfgName
+        );
+      }
+    }
+  };
+
+  const handleCfgNameSelect = (cfgName: string): void => {
+    if (cfgName !== "") {
+      setSelectedCfgName(cfgName);
+      setCfgNameSearchTerm(cfgName);
+      if (currentCrate !== null) {
+        loadDependencyGraph(
+          currentCrate.name,
+          selectedFeatures,
+          selectedTarget,
+          cfgName
+        );
+      }
     }
   };
 
@@ -182,12 +238,12 @@ export default function Sidebar(props: SidebarProps): ReactElement {
       <Layout>
         <Content>
           <div className="column sider">
-            <h1>Current crate: {currentCrate?.crate.name}</h1>
+            <h1>{currentCrate?.name ?? "loading..."}</h1>
             <div className="row crate-picker">
               <AutoComplete
                 options={
-                  searchCrates.map((searchCrate) => ({
-                    value: searchCrate.name,
+                  searchedCrates.map((searchedCrate) => ({
+                    value: searchedCrate.name,
                   })) as any
                 }
                 onSelect={handleSearchSelect}
@@ -209,11 +265,11 @@ export default function Sidebar(props: SidebarProps): ReactElement {
             {currentCrate !== null && (
               <Collapse accordion>
                 <Panel
-                  header={clickedCrateName ?? currentCrate.crate.name}
+                  header={clickedCrateName ?? currentCrate.name}
                   key="crate"
                   extra={
                     clickedCrateName !== null &&
-                    clickedCrateName !== currentCrate.crate.name ? (
+                    clickedCrateName !== currentCrate.name ? (
                       <Button
                         type="link"
                         onClick={() => handlePanelSelect(clickedCrateName)}
@@ -226,43 +282,86 @@ export default function Sidebar(props: SidebarProps): ReactElement {
                   <CratePanelBody
                     crate={graphNodes.find(
                       (crate) =>
-                        crate.name ===
-                        (clickedCrateName ?? currentCrate.crate.name)
+                        crate.name === (clickedCrateName ?? currentCrate.name)
                     )}
                     dependencies={graphLinks
                       .filter(
                         (dependency) =>
                           dependency.from ===
-                          (clickedCrateName ?? currentCrate.crate.name)
+                          (clickedCrateName ?? currentCrate.name)
                       )
                       .map((dependency) => dependency.to)}
                     setClickedCrateName={setClickedCrateName}
                   />
                 </Panel>
 
-                {featureNames.length > 0 && (
-                  <Panel
-                    header="Features"
-                    key="features"
-                    extra={`${currentCrate.selectedFeatures.length}/${featureNames.length}`}
-                  >
-                    <Checkbox
-                      indeterminate={indeterminate}
-                      onChange={handleAllFeatureToggle}
-                      checked={
-                        currentCrate.selectedFeatures.length ===
-                        featureNames.length
-                      }
+                <Panel header="Configuration" key="configuration">
+                  {featureNames.length > 0 && (
+                    <div className="crate-config-item">
+                      <h3>
+                        Features (
+                        {`${selectedFeatures.length}/${featureNames.length}`}{" "}
+                        selected)
+                      </h3>
+                      <Checkbox
+                        indeterminate={indeterminate}
+                        onChange={handleAllFeatureToggle}
+                        checked={
+                          selectedFeatures.length === featureNames.length
+                        }
+                      >
+                        Toggle all features
+                      </Checkbox>
+                      <CheckboxGroup
+                        options={featureNames}
+                        value={selectedFeatures}
+                        onChange={handleCheckboxGroup as any}
+                      />
+                    </div>
+                  )}
+                  <div className="crate-config-item">
+                    <h3>Target</h3>
+                    <AutoComplete
+                      options={targets
+                        .filter((target) => target.startsWith(targetSearchTerm))
+                        .map((target) => ({
+                          value: target,
+                        }))}
+                      onChange={handleTargetSearch}
+                      onSelect={handleTargetSelect}
+                      value={targetSearchTerm}
                     >
-                      Toggle all features
-                    </Checkbox>
-                    <CheckboxGroup
-                      options={featureNames}
-                      value={currentCrate.selectedFeatures}
-                      onChange={handleCheckboxGroup as any}
-                    />
-                  </Panel>
-                )}
+                      <Search
+                        placeholder="Pick a target"
+                        onSearch={handleTargetSelect}
+                        allowClear
+                        enterButton
+                      />
+                    </AutoComplete>
+                  </div>
+                  <div className="crate-config-item">
+                    <h3>Cfg name</h3>
+                    <AutoComplete
+                      options={cfgNames
+                        .filter((cfgName) =>
+                          cfgName.startsWith(cfgNameSearchTerm)
+                        )
+                        .map((cfgName) => ({
+                          value: cfgName,
+                        }))}
+                      onChange={handleCfgNameSearch}
+                      onSelect={handleCfgNameSelect}
+                      value={cfgNameSearchTerm}
+                    >
+                      <Search
+                        placeholder="Pick a target"
+                        onSearch={handleCfgNameSelect}
+                        allowClear
+                        enterButton
+                      />
+                    </AutoComplete>
+                  </div>
+                </Panel>
                 <Panel
                   header="Included crates"
                   key="crates"

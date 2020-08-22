@@ -1,37 +1,12 @@
-name: graph
+name: targets
 
 on: push
 
 defaults:
   run:
-    working-directory: graph
+    working-directory: targets
 
 jobs:
-  bench:
-    runs-on: ubuntu-latest
-    name: bench
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v2
-
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            graph/target
-          key: nightly-vault-graph-bench
-
-      - name: Install rust toolchain (nightly)
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-
-      - name: Run benchmarks
-        run: cargo +nightly bench --tests
-
   format:
     runs-on: ubuntu-latest
     name: format
@@ -45,8 +20,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            graph/target
-          key: nightly-vault-graph-format
+            targets/target
+          key: nightly-vault-targets-format
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
@@ -71,8 +46,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            graph/target
-          key: nightly-vault-graph-lint
+            targets/target
+          key: nightly-vault-targets-lint
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1

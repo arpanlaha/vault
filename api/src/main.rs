@@ -1,7 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use env_logger::Env;
-use parking_lot::RwLock;
 use std::env;
 use std::sync::Arc;
 use vault_api::routes::{self, utils};
@@ -30,7 +29,7 @@ async fn main() {
         }
     });
 
-    let app_state = Arc::new(RwLock::new(Graph::new().await));
+    let app_state = Arc::new(Graph::new().await);
 
     // initialize logger at `info` level
     env_logger::from_env(Env::default().default_filter_or("info")).init();
@@ -39,8 +38,7 @@ async fn main() {
         routes::get(app_state.clone())
             .recover(utils::handle_rejection)
             .with(warp::cors().allow_any_origin())
-            .with(warp::log("info"))
-            .with(warp::compression::gzip()),
+            .with(warp::log("info")),
     )
     .run((address, port))
     .await;

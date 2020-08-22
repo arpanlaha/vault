@@ -51,8 +51,7 @@ mod handlers {
 
     /// Returns a list of all categories.
     pub async fn get_categories(state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-        let mut categories: Vec<&Category> = graph.categories().values().collect();
+        let mut categories: Vec<&Category> = state.categories().values().collect();
 
         categories.sort_unstable_by_key(|category| category.category.as_str());
         Ok(reply::json(&categories))
@@ -63,35 +62,27 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Category` with the given id is found.
     pub async fn get_category(category_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.read().categories().get(&category_id) {
+        match state.categories().get(&category_id) {
             None => Err(reject::custom(VaultError::CategoryNotFound(category_id))),
 
-            Some(category) => {
-                let graph = state.read();
-
-                Ok(reply::json(&CategoryResponse::new(category, &graph)))
-            }
+            Some(category) => Ok(reply::json(&CategoryResponse::new(category, &state))),
         }
     }
 
     /// Returns a random `Category`.
     pub async fn random(state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-
         Ok(reply::json(&CategoryResponse::new(
-            graph.categories().random(),
-            &graph,
+            state.categories().random(),
+            &state,
         )))
     }
 
     /// Searches for categorys matching the given search term.
     pub async fn search(search_term: String, state: State) -> Result<impl Reply, Rejection> {
-        let graph = state.read();
-
         Ok(reply::json(
-            &graph
+            &state
                 .category_names()
-                .search(&search_term, graph.categories()),
+                .search(&search_term, state.categories()),
         ))
     }
 

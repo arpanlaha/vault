@@ -1,0 +1,12 @@
+[package]
+authors = ["Arpan Laha <arpanlaha99@gmail.com>"]
+edition = "2018"
+name = "vault_targets"
+version = "0.1.0"
+description = "Interactively visualize your crates.io dependencies."
+license = "MIT"
+repository = "https://github.com/arpanlaha/vault.git"
+
+[dependencies]
+cargo-platform = "0.1"
+rustc-ap-rustc_target = "674"

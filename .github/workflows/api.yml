@@ -21,17 +21,17 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             api/target
-          key: vault-api-format
+          key: nightly-vault-api-format
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           components: rustfmt
 
       - name: Run rustfmt
-        run: cargo +stable fmt -- --check
+        run: cargo +nightly fmt -- --check
 
   lint:
     runs-on: ubuntu-latest
@@ -47,17 +47,17 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             api/target
-          key: vault-api-lint
+          key: nightly-vault-api-lint
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           components: clippy
 
       - name: Run clippy
-        run: cargo +stable clippy -- -D warnings
+        run: cargo +nightly clippy -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -73,13 +73,13 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             api/target
-          key: vault-api-test
+          key: nightly-vault-api-test
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
 
       - name: Run tests
-        run: cargo +stable test --no-fail-fast --test categories --test crates --test keywords --test state
+        run: cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1
