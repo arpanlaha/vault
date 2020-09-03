@@ -17,16 +17,16 @@ const wrapResponse = <T>(
     .then((response) =>
       response.status === 200
         ? {
-            success: true as true,
+            success: true as const,
             result: response.data,
           }
         : {
-            success: false as false,
+            success: false as const,
             error: String(response.data),
           }
     )
     .catch((error) => ({
-      success: false as false,
+      success: false as const,
       error:
         error?.response?.data ??
         "Server error - please post an issue at https://github.com/arpanlaha/vault/issues",
