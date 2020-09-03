@@ -36,7 +36,7 @@
     "use-query-params": "^1.1.6"
   },
   "devDependencies": {
-    "@hack4impact-uiuc/eslint-plugin": "^2.0.3",
+    "@hack4impact-uiuc/eslint-plugin": "^2.0.4",
     "@types/loadable__component": "^5.13.0",
     "@types/react-helmet": "^6.1.0",
     "eslint": "^7.8.1",
