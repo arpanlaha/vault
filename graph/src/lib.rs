@@ -111,61 +111,60 @@ impl Graph {
         self.last_updated = Instant::now();
     }
 
-    #[must_use]
     /// Returns an immutable reference to the `Category` map.
+    #[must_use]
     pub const fn categories(&self) -> &HashMap<String, Category> {
         &self.categories
     }
 
-    #[must_use]
     /// Returns an immutable reference to the set of cfg names.
+    #[must_use]
     pub const fn cfg_names(&self) -> &BTreeSet<String> {
         &self.cfg_names
     }
 
-    #[must_use]
     /// Returns an immutable reference to the `Crate` map.
+    #[must_use]
     pub const fn crates(&self) -> &HashMap<String, Crate> {
         &self.crates
     }
 
-    #[must_use]
     /// Returns an immutable reference to the `Keyword` map.
+    #[must_use]
     pub const fn keywords(&self) -> &HashMap<String, Keyword> {
         &self.keywords
     }
 
-    #[must_use]
     /// Returns an immutable reference to the `Category` name set.
+    #[must_use]
     pub const fn category_names(&self) -> &BTreeSet<String> {
         &self.category_names
     }
 
-    #[must_use]
     /// Returns an immutable reference to the `Crate` name set.
+    #[must_use]
     pub const fn crate_names(&self) -> &BTreeSet<String> {
         &self.crate_names
     }
 
-    #[must_use]
     /// Returns an immutable reference to the `Keyword` name set.
+    #[must_use]
     pub const fn keyword_names(&self) -> &BTreeSet<String> {
         &self.keyword_names
     }
 
-    #[must_use]
     /// Returns an immutable reference to the map from targets to cfg attributes.
+    #[must_use]
     pub const fn targets(&self) -> &BTreeMap<String, Vec<Cfg>> {
         &self.targets
     }
 
-    #[must_use]
     /// Returns the time since the `Graph` was last updated in seconds.
+    #[must_use]
     pub fn time_since_last_update(&self) -> u64 {
         self.last_updated.elapsed().as_secs()
     }
 
-    #[must_use]
     /// Returns the dependency graph of the specified crate with the specified features enabled.
     ///
     /// If no crate matches the specified name, returns `None`.
@@ -173,6 +172,7 @@ impl Graph {
     /// # Arguments
     /// * `crate_id` - the name of the crate to analyze.
     /// * `features` - the list of features to enable.
+    #[must_use]
     pub fn get_dependency_graph(
         &self,
         crate_id: &str,
@@ -527,12 +527,12 @@ pub struct CrateDistanceInfo<'a> {
 }
 
 impl<'a> CrateDistance<'a> {
-    #[must_use]
     /// Creates a new `CrateDistance`.
     ///
     /// # Arguments
     /// * `crate_distance_info` - a the `CrateDistanceInfo` containing the relevant information.
     /// * `crates` - the `HashMap` containing the crate values.
+    #[must_use]
     pub fn new(
         crate_distance_info: CrateDistanceInfo<'a>,
         crates: &'a HashMap<String, Crate>,
