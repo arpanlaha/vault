@@ -4,6 +4,7 @@ use warp::{Filter, Rejection, Reply};
 pub use handlers::CategoryResponse;
 
 /// Wraps all `Category` routes.
+#[must_use]
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_categories(state.clone())
         .or(get_category(state.clone()))
@@ -102,6 +103,7 @@ mod handlers {
         /// # Arguments
         /// * `category` - the given `Category`.
         /// * `graph` - the `Graph` containing the crates.io data.
+        #[must_use]
         pub fn new(category: &'a Category, graph: &'a Graph) -> CategoryResponse<'a> {
             CategoryResponse {
                 category,

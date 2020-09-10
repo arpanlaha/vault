@@ -1,6 +1,4 @@
-use std::fs;
-use std::process::Command;
-use std::time::Instant;
+use std::{fs, process::Command, time::Instant};
 use tempfile::TempDir;
 
 /// Returns the location of the `data` directory inside the crates.io database dump.

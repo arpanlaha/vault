@@ -2,6 +2,7 @@ use super::utils::{State, VaultError};
 use warp::{Filter, Rejection, Reply};
 
 /// Wraps all `Keyword` routes.
+#[must_use]
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_keyword(state.clone())
         .or(random(state.clone()))

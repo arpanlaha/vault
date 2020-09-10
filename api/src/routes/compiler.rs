@@ -4,6 +4,7 @@ use warp::{Filter, Rejection, Reply};
 pub use handlers::{CfgNameList, TargetList};
 
 /// Wraps all compiler-related routes.
+#[must_use]
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_targets(state.clone()).or(get_cfg_names(state))
 }

@@ -1,8 +1,9 @@
 use super::utils::{State, VaultError};
-use std::collections::HashMap;
+use std::{borrow::ToOwned, collections::HashMap};
 use warp::{Filter, Rejection, Reply};
 
 /// Wraps all `Crate` routes.
+#[must_use]
 pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_crate(state.clone())
         .or(random(state.clone()))
@@ -48,15 +49,9 @@ fn get_dependency_graph(
         .and_then(move |crate_id, query_param_map: HashMap<String, String>| {
             handlers::get_dependency_graph(
                 crate_id,
-                query_param_map
-                    .get("features")
-                    .map(|query_param| query_param.to_owned()),
-                query_param_map
-                    .get("target")
-                    .map(|query_param| query_param.to_owned()),
-                query_param_map
-                    .get("cfg_name")
-                    .map(|query_param| query_param.to_owned()),
+                query_param_map.get("features").map(ToOwned::to_owned),
+                query_param_map.get("target").map(ToOwned::to_owned),
+                query_param_map.get("cfg_name").map(ToOwned::to_owned),
                 state.clone(),
             )
         })

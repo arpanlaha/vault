@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc)]
+
 use std::convert::Infallible;
 use std::sync::Arc;
 use vault_graph::Graph;
