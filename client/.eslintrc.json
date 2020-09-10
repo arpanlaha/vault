@@ -6,7 +6,6 @@
     "plugin:@hack4impact-uiuc/typescript"
   ],
   "rules": {
-    "@hack4impact-uiuc/no-access-state-after-set": "off",
     "@typescript-eslint/camelcase": "off",
     "no-console": "error"
   }
