@@ -1,8 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use env_logger::Env;
-use std::env;
-use std::sync::Arc;
+use std::{env, sync::Arc};
 use vault_api::routes::{self, utils};
 use vault_graph::Graph;
 use warp::Filter;

@@ -1,7 +1,6 @@
 #![allow(clippy::missing_errors_doc)]
 
-use std::convert::Infallible;
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 use vault_graph::Graph;
 use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 

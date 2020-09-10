@@ -9,11 +9,13 @@ mod traits;
 use cargo_platform::{Cfg, Platform};
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
-use std::fs::File;
-use std::process::Command;
-use std::str::{self, FromStr};
-use std::time::Instant;
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
+    fs::File,
+    process::Command,
+    str::{self, FromStr},
+    time::Instant,
+};
 
 pub use schema::{Category, Crate, Dependency, Keyword};
 pub use traits::{Random, Search};

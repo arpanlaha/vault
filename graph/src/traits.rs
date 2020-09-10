@@ -1,8 +1,10 @@
 use super::schema::{Category, Crate, Keyword};
 use rand::Rng;
-use std::collections::{BTreeSet, HashMap, VecDeque};
-use std::hash::BuildHasher;
-use std::ops::Bound::{Excluded, Included};
+use std::{
+    collections::{BTreeSet, HashMap, VecDeque},
+    hash::BuildHasher,
+    ops::Bound::{Excluded, Included},
+};
 
 /// The max search results length permitted for collection searches.
 const MAX_SEARCH_LENGTH: usize = 10;

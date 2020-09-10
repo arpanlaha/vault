@@ -7,14 +7,10 @@ use super::{
 use csv::Reader;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
-use std::any;
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use std::time::Instant;
+use std::{
+    any, cmp::Ordering, collections::HashMap, fmt::Debug, fs::File, io::BufReader, path::Path,
+    time::Instant,
+};
 use tokio::join;
 
 /// Returns the path of the file containing rows for the specified collection.
