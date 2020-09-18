@@ -86,7 +86,6 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     setSelectedTarget,
     setTargetSearchTerm,
     setUrlCrateName,
-    setUrlFeatures,
     selectedCfgName,
     selectedFeatures,
     selectedTarget,
@@ -149,7 +148,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
 
     if (selectedCrateName !== "" && selectedCrateName !== currentCrate?.name) {
       setUrlCrateName(selectedCrateName);
-      setUrlFeatures(undefined);
+      setSelectedFeatures([]);
       const selectedCrate = crates.find(
         (crate) => crate.name === selectedCrateName
       );
@@ -174,8 +173,6 @@ export default function Sidebar(props: SidebarProps): ReactElement {
         selectedTarget,
         selectedCfgName
       );
-      setUrlFeatures(e.target.checked ? featureNames : undefined);
-      setIndeterminate(false);
     }
   };
 
@@ -183,7 +180,6 @@ export default function Sidebar(props: SidebarProps): ReactElement {
     if (currentCrate !== null) {
       setSelectedFeatures(checked);
       loadDependencyGraph(currentCrate.name, checked);
-      setUrlFeatures(checked);
     }
   };
 
