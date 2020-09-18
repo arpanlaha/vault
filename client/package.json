@@ -6,7 +6,7 @@
   "scripts": {
     "build": "gatsby clean && gatsby build",
     "clean": "gatsby clean",
-    "develop": "gatsby develop",
+    "develop": "GATSBY_TELEMETRY_DISABLED=1 gatsby develop",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "lint": "eslint src --ext .tsx,.ts && stylelint \"src/**/*.scss\"",
@@ -28,6 +28,7 @@
     "gatsby-plugin-typescript": "^2.4.19",
     "gatsby-plugin-use-query-params": "^1.0.1",
     "node-sass": "^4.14.1",
+    "qs": "^6.9.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-force-graph": "^1.36.9",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@hack4impact-uiuc/eslint-plugin": "^2.0.4",
     "@types/loadable__component": "^5.13.0",
+    "@types/qs": "^6.9.5",
     "@types/react-helmet": "^6.1.0",
     "eslint": "^7.8.1",
     "markdownlint-cli": "^0.23.2",

@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from "axios";
+import { stringify } from "qs";
 import {
   CfgNameLIst,
   Crate,
@@ -45,6 +46,7 @@ export const getDependencyGraph = (
         target,
         cfg_name: cfgName,
       },
+      paramsSerializer: (param) => stringify(param, { arrayFormat: "comma" }),
     })
   );
 

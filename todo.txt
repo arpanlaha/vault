@@ -6,3 +6,4 @@ Exhaustive documentation
 Fix sidebar width jumping
 Move this to GitHub issues
 Add API docs
+Check to make sure that feature/dependency renames work (open-ssl vs openssl)
