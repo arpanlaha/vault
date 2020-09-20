@@ -452,13 +452,7 @@ impl Default for Graph {
 /// # Arguments
 /// * `collection` - the collection to convert.
 fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
-    let mut names: BTreeSet<String> = BTreeSet::new();
-
-    for name in collection.keys() {
-        names.insert(name.to_owned());
-    }
-
-    names
+    collection.keys().cloned().collect()
 }
 
 /// Returns a set of cfg names (e.g. `unix`, `cargo_web`) present among all dependencies.
