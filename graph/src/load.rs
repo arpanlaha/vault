@@ -344,11 +344,7 @@ fn load_dependencies(
     }
 
     for (crate_id, dependency_count) in crate_dependency_counts {
-        crates
-            .get_mut(&crate_id)
-            .unwrap()
-            .dependencies
-            .reserve(dependency_count);
+        crates.get_mut(&crate_id).unwrap().dependencies = Vec::with_capacity(dependency_count);
     }
 
     for result in Reader::from_reader(BufReader::new(
