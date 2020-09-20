@@ -9,7 +9,7 @@ use test::Bencher;
 use vault_graph::{Graph, Search};
 
 lazy_static! {
-    static ref GRAPH: Graph = executor::block_on(Graph::test());
+    static ref GRAPH: Graph = Graph::test();
 }
 
 #[bench]

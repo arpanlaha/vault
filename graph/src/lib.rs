@@ -54,12 +54,12 @@ impl Graph {
     /// Creates a new `Graph`.
     ///
     /// This pulls in the latest crates.io dump and is intended for production use.
-    pub async fn new() -> Self {
+    pub fn new() -> Self {
         let temp_dir = fs::fetch_data();
 
         let data_path = fs::get_data_path(&temp_dir).unwrap();
 
-        let (categories, crates, keywords) = load::get_data(data_path.as_str()).await;
+        let (categories, crates, keywords) = load::get_data(data_path.as_str());
         fs::clean_tempdir(temp_dir);
 
         Self {
@@ -78,7 +78,7 @@ impl Graph {
     /// Creates a new `Graph`.
     ///
     /// This uses a saved backup dump of the crates.io registry and is intended for testing.
-    pub async fn test() -> Self {
+    pub fn test() -> Self {
         let data_path = "./tests/data";
 
         if File::open(data_path).is_err() {
@@ -91,7 +91,7 @@ impl Graph {
                 .unwrap();
         }
 
-        let (categories, crates, keywords) = load::get_data(data_path).await;
+        let (categories, crates, keywords) = load::get_data(data_path);
 
         Self {
             category_names: get_names(&categories),

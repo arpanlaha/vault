@@ -11,7 +11,6 @@ use std::{
     any, cmp::Ordering, collections::HashMap, fmt::Debug, fs::File, io::BufReader, path::Path,
     time::Instant,
 };
-use tokio::join;
 
 /// Returns the path of the file containing rows for the specified collection.
 ///
@@ -26,7 +25,7 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 ///
 /// # Arguments
 /// * `data_path` - the path to the `data` directory inside the database dump.
-pub async fn get_data(
+pub fn get_data(
     data_path: &str,
 ) -> (
     HashMap<String, Category>,
@@ -40,10 +39,10 @@ pub async fn get_data(
         (mut categories, category_id_lookup),
         (mut crates, crate_id_lookup),
         (mut keywords, keyword_id_lookup),
-    ) = join!(
+    ) = (
         load_vertices::<Category>(data_path, "categories"),
         load_vertices::<Crate>(data_path, "crates"),
-        load_vertices::<Keyword>(data_path, "keywords")
+        load_vertices::<Keyword>(data_path, "keywords"),
     );
 
     let versions_to_crates = create_versioned_crates(data_path, &mut crates, &crate_id_lookup);
@@ -88,7 +87,7 @@ pub async fn get_data(
 /// # Arguments
 /// * `data_path` - the path to the `data` directory inside the database dump.
 /// * `collection_name` - the name of the vertex collection.
-async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
+fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
 ) -> (HashMap<String, T>, HashMap<usize, String>) {
