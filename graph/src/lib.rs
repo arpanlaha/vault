@@ -54,6 +54,7 @@ impl Graph {
     /// Creates a new `Graph`.
     ///
     /// This pulls in the latest crates.io dump and is intended for production use.
+    #[must_use]
     pub fn new() -> Self {
         let temp_dir = fs::fetch_data();
 
@@ -78,6 +79,7 @@ impl Graph {
     /// Creates a new `Graph`.
     ///
     /// This uses a saved backup dump of the crates.io registry and is intended for testing.
+    #[must_use]
     pub fn test() -> Self {
         let data_path = "./tests/data";
 
@@ -436,6 +438,12 @@ impl Graph {
                 });
             }
         }
+    }
+}
+
+impl Default for Graph {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

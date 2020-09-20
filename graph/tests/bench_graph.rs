@@ -4,7 +4,6 @@ extern crate test;
 #[macro_use]
 extern crate lazy_static;
 
-use futures::executor;
 use test::Bencher;
 use vault_graph::Graph;
 
