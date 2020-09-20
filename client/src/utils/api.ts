@@ -42,7 +42,7 @@ export const getDependencyGraph = (
   wrapResponse(
     axios.get(`${API_URL}/graph/${crateId}`, {
       params: {
-        features,
+        features: features.length > 0 ? features : undefined,
         target,
         cfg_name: cfgName,
       },
