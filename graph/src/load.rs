@@ -8,10 +8,15 @@ use csv::Reader;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::{
-    any, cmp::Ordering, collections::HashMap, fmt::Debug, fs::File, io::BufReader, path::Path,
+    any,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::Debug,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::Path,
     time::Instant,
 };
-use tokio::join;
 
 /// Returns the path of the file containing rows for the specified collection.
 ///
@@ -26,7 +31,7 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 ///
 /// # Arguments
 /// * `data_path` - the path to the `data` directory inside the database dump.
-pub async fn get_data(
+pub fn get_data(
     data_path: &str,
 ) -> (
     HashMap<String, Category>,
@@ -40,10 +45,10 @@ pub async fn get_data(
         (mut categories, category_id_lookup),
         (mut crates, crate_id_lookup),
         (mut keywords, keyword_id_lookup),
-    ) = join!(
+    ) = (
         load_vertices::<Category>(data_path, "categories"),
         load_vertices::<Crate>(data_path, "crates"),
-        load_vertices::<Keyword>(data_path, "keywords")
+        load_vertices::<Keyword>(data_path, "keywords"),
     );
 
     let versions_to_crates = create_versioned_crates(data_path, &mut crates, &crate_id_lookup);
@@ -55,23 +60,23 @@ pub async fn get_data(
         &crate_id_lookup,
     );
 
-    load_crate_categories(
-        data_path,
-        &mut crates,
-        &mut categories,
-        &crate_id_lookup,
-        &category_id_lookup,
-    );
+    // load_crate_categories(
+    //     data_path,
+    //     &mut crates,
+    //     &mut categories,
+    //     &crate_id_lookup,
+    //     &category_id_lookup,
+    // );
 
-    load_crate_keywords(
-        data_path,
-        &mut crates,
-        &mut keywords,
-        &crate_id_lookup,
-        &keyword_id_lookup,
-    );
+    // load_crate_keywords(
+    //     data_path,
+    //     &mut crates,
+    //     &mut keywords,
+    //     &crate_id_lookup,
+    //     &keyword_id_lookup,
+    // );
 
-    alphabetize_crate_contents(&mut crates);
+    // alphabetize_crate_contents(&mut crates);
 
     println!(
         "Finished loading registry graph in {} seconds.",
@@ -88,7 +93,7 @@ pub async fn get_data(
 /// # Arguments
 /// * `data_path` - the path to the `data` directory inside the database dump.
 /// * `collection_name` - the name of the vertex collection.
-async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
+fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
 ) -> (HashMap<String, T>, HashMap<usize, String>) {
@@ -98,11 +103,18 @@ async fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
 
     let file_path = get_collection_path(data_path, collection_name);
 
+    let collection_count = Reader::from_reader(BufReader::new(
+        File::open(Path::new(&file_path))
+            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
+    ))
+    .records()
+    .count();
+
     // map names to objects
-    let mut collection = HashMap::<String, T>::new();
+    let mut collection: HashMap<String, T> = HashMap::with_capacity(collection_count);
 
     // map SQL ids to names
-    let mut id_lookup = HashMap::<usize, String>::new();
+    let mut id_lookup: HashMap<usize, String> = HashMap::with_capacity(collection_count);
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path))
@@ -164,9 +176,17 @@ fn replace_version(version: Version, other: &mut Version) {
 fn get_versions(data_path: &str) -> HashMap<usize, Version> {
     println!("Loading versions...");
     let start = Instant::now();
-    let mut versions = HashMap::<usize, Version>::new();
-    let mut count = 0_usize;
     let filename = get_collection_path(data_path, "versions");
+
+    let mut versions = HashMap::<usize, Version>::with_capacity(
+        Reader::from_reader(BufReader::new(
+            File::open(Path::new(&filename))
+                .unwrap_or_else(|_| panic!("Unable to open {}", filename)),
+        ))
+        .records()
+        .count(),
+    );
+    let mut count = 0_usize;
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&filename)).unwrap_or_else(|_| panic!("Unable to open {}", filename)),
@@ -246,7 +266,7 @@ fn create_versioned_crates(
     crate_id_lookup: &HashMap<usize, String>,
 ) -> HashMap<usize, String> {
     let versions = get_versions(data_path);
-    let mut version_to_crates = HashMap::<usize, String>::new();
+    let mut version_to_crates = HashMap::<usize, String>::with_capacity(versions.len());
     println!("Creating versioned crates...");
 
     let start = Instant::now();
@@ -267,12 +287,12 @@ fn create_versioned_crates(
             .get_mut(crate_id)
             .unwrap_or_else(|| panic!("Crate with id {} does not exist", crate_id));
 
-        version_crate.created_at = created_at.to_owned();
+        version_crate.created_at = created_at.clone();
         version_crate.features = serde_json::from_str(features)
             .unwrap_or_else(|_| panic!("Unable to deserialize {} as HashMap", features));
-        version_crate.version = num.to_owned();
+        version_crate.version = num.clone();
 
-        version_to_crates.insert(id.to_owned(), crate_id.to_owned());
+        version_to_crates.insert(id.clone(), crate_id.clone());
     }
 
     println!(
@@ -300,6 +320,36 @@ fn load_dependencies(
     let start = Instant::now();
     let mut count = 0_usize;
     let dependencies_path = get_collection_path(data_path, "dependencies");
+
+    let mut crate_dependency_counts: HashMap<String, usize> = HashMap::with_capacity(crates.len());
+
+    for result in Reader::from_reader(BufReader::new(
+        File::open(Path::new(&dependencies_path))
+            .unwrap_or_else(|_| panic!("Unable to open {}", dependencies_path)),
+    ))
+    .deserialize()
+    {
+        let SqlDependency {
+            kind, version_id, ..
+        } = result
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Dependency", count));
+        if let Some(from) = versions_to_crates.get(&version_id) {
+            if kind == 0 {
+                crate_dependency_counts
+                    .entry(from.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+            }
+        }
+    }
+
+    for (crate_id, dependency_count) in crate_dependency_counts {
+        crates
+            .get_mut(&crate_id)
+            .unwrap()
+            .dependencies
+            .reserve(dependency_count);
+    }
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&dependencies_path))
@@ -341,7 +391,7 @@ fn load_dependencies(
                                 }
                             })
                             .collect(),
-                        from: from.to_owned(),
+                        from: from.clone(),
                         optional: optional == "t",
                         target: if target.is_empty() {
                             None
@@ -353,7 +403,7 @@ fn load_dependencies(
                             .unwrap_or_else(|| {
                                 panic!("Crate with id {} not found", sql_dependency_crate_id)
                             })
-                            .to_owned(),
+                            .clone(),
                     });
             }
         }
@@ -411,13 +461,13 @@ fn load_crate_categories(
             .get_mut(crate_id)
             .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
             .categories
-            .push(category_id.to_owned());
+            .push(category_id.clone());
 
         categories
             .get_mut(category_id)
             .unwrap_or_else(|| panic!("Category with id {} not found", category_id))
             .crates
-            .push(crate_id.to_owned());
+            .push(crate_id.clone());
     }
 
     println!(
@@ -473,13 +523,13 @@ fn load_crate_keywords(
             .get_mut(crate_id)
             .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
             .keywords
-            .push(keyword_id.to_owned());
+            .push(keyword_id.clone());
 
         keywords
             .get_mut(keyword_id)
             .unwrap_or_else(|| panic!("Keyword with id {} not found", keyword_id))
             .crates
-            .push(crate_id.to_owned());
+            .push(crate_id.clone());
     }
 
     println!(
@@ -502,7 +552,7 @@ fn alphabetize_crate_contents(crates: &mut HashMap<String, Crate>) {
         crate_val.keywords.sort_unstable();
         crate_val
             .dependencies
-            .sort_unstable_by_key(|dependency| dependency.to.to_owned());
+            .sort_unstable_by_key(|dependency| dependency.to.clone());
     }
 
     println!(

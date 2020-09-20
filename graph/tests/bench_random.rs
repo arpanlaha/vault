@@ -4,12 +4,11 @@ extern crate test;
 #[macro_use]
 extern crate lazy_static;
 
-use futures::executor;
 use test::Bencher;
 use vault_graph::{Graph, Random};
 
 lazy_static! {
-    static ref GRAPH: Graph = executor::block_on(Graph::test());
+    static ref GRAPH: Graph = Graph::test();
 }
 
 #[bench]

@@ -54,12 +54,12 @@ impl Graph {
     /// Creates a new `Graph`.
     ///
     /// This pulls in the latest crates.io dump and is intended for production use.
-    pub async fn new() -> Self {
+    pub fn new() -> Self {
         let temp_dir = fs::fetch_data();
 
         let data_path = fs::get_data_path(&temp_dir).unwrap();
 
-        let (categories, crates, keywords) = load::get_data(data_path.as_str()).await;
+        let (categories, crates, keywords) = load::get_data(data_path.as_str());
         fs::clean_tempdir(temp_dir);
 
         Self {
@@ -91,7 +91,7 @@ impl Graph {
                 .unwrap();
         }
 
-        let (categories, crates, keywords) = load::get_data(data_path).await;
+        let (categories, crates, keywords) = load::get_data(data_path);
 
         Self {
             category_names: get_names(&categories),
@@ -444,13 +444,7 @@ impl Graph {
 /// # Arguments
 /// * `collection` - the collection to convert.
 fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
-    let mut names: BTreeSet<String> = BTreeSet::new();
-
-    for name in collection.keys() {
-        names.insert(name.to_owned());
-    }
-
-    names
+    collection.keys().cloned().collect()
 }
 
 /// Returns a set of cfg names (e.g. `unix`, `cargo_web`) present among all dependencies.
