@@ -8,13 +8,7 @@ use csv::Reader;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
 use std::{
-    any,
-    cmp::Ordering,
-    collections::HashMap,
-    fmt::Debug,
-    fs::File,
-    io::{BufRead, BufReader},
-    path::Path,
+    any, cmp::Ordering, collections::HashMap, fmt::Debug, fs::File, io::BufReader, path::Path,
     time::Instant,
 };
 
@@ -60,23 +54,23 @@ pub fn get_data(
         &crate_id_lookup,
     );
 
-    // load_crate_categories(
-    //     data_path,
-    //     &mut crates,
-    //     &mut categories,
-    //     &crate_id_lookup,
-    //     &category_id_lookup,
-    // );
+    load_crate_categories(
+        data_path,
+        &mut crates,
+        &mut categories,
+        &crate_id_lookup,
+        &category_id_lookup,
+    );
 
-    // load_crate_keywords(
-    //     data_path,
-    //     &mut crates,
-    //     &mut keywords,
-    //     &crate_id_lookup,
-    //     &keyword_id_lookup,
-    // );
+    load_crate_keywords(
+        data_path,
+        &mut crates,
+        &mut keywords,
+        &crate_id_lookup,
+        &keyword_id_lookup,
+    );
 
-    // alphabetize_crate_contents(&mut crates);
+    alphabetize_crate_contents(&mut crates);
 
     println!(
         "Finished loading registry graph in {} seconds.",
@@ -343,8 +337,8 @@ fn load_dependencies(
         }
     }
 
-    for (crate_id, dependency_count) in crate_dependency_counts {
-        crates.get_mut(&crate_id).unwrap().dependencies = Vec::with_capacity(dependency_count);
+    for (crate_id, dependency_count) in &crate_dependency_counts {
+        crates.get_mut(crate_id).unwrap().dependencies = Vec::with_capacity(*dependency_count);
     }
 
     for result in Reader::from_reader(BufReader::new(
@@ -404,6 +398,7 @@ fn load_dependencies(
             }
         }
     }
+
     println!(
         "Loaded {} dependencies into database in {} seconds.",
         count,
