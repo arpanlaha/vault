@@ -4,13 +4,11 @@ use super::{
     },
     traits::Vertex,
 };
+use ahash::AHashMap;
 use csv::Reader;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
-use std::{
-    any, cmp::Ordering, collections::HashMap, fmt::Debug, fs::File, io::BufReader, path::Path,
-    time::Instant,
-};
+use std::{any, cmp::Ordering, fmt::Debug, fs::File, io::BufReader, path::Path, time::Instant};
 
 /// Returns the path of the file containing rows for the specified collection.
 ///
@@ -28,9 +26,9 @@ fn get_collection_path(data_path: &str, collection_name: &str) -> String {
 pub fn get_data(
     data_path: &str,
 ) -> (
-    HashMap<String, Category>,
-    HashMap<String, Crate>,
-    HashMap<String, Keyword>,
+    AHashMap<String, Category>,
+    AHashMap<String, Crate>,
+    AHashMap<String, Keyword>,
 ) {
     let start = Instant::now();
     println!("Loading registry graph...");
@@ -90,7 +88,7 @@ pub fn get_data(
 fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
-) -> (HashMap<String, T>, HashMap<usize, String>) {
+) -> (AHashMap<String, T>, AHashMap<usize, String>) {
     println!("Loading {}...", collection_name);
     let start = Instant::now();
     let mut count = 0_usize;
@@ -98,10 +96,10 @@ fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     let file_path = get_collection_path(data_path, collection_name);
 
     // map names to objects
-    let mut collection = HashMap::<String, T>::new();
+    let mut collection = AHashMap::<String, T>::new();
 
     // map SQL ids to names
-    let mut id_lookup = HashMap::<usize, String>::new();
+    let mut id_lookup = AHashMap::<usize, String>::new();
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path))
@@ -160,10 +158,10 @@ fn replace_version(version: Version, other: &mut Version) {
 ///
 /// # Arguments
 /// * `data_path` - the path to the `data` directory inside the database dump.
-fn get_versions(data_path: &str) -> HashMap<usize, Version> {
+fn get_versions(data_path: &str) -> AHashMap<usize, Version> {
     println!("Loading versions...");
     let start = Instant::now();
-    let mut versions = HashMap::<usize, Version>::new();
+    let mut versions = AHashMap::<usize, Version>::new();
     let mut count = 0_usize;
     let filename = get_collection_path(data_path, "versions");
 
@@ -241,11 +239,11 @@ fn get_versions(data_path: &str) -> HashMap<usize, Version> {
 /// * `crate_id_lookup` - a map of crate SQL ids to names.
 fn create_versioned_crates(
     data_path: &str,
-    crates: &mut HashMap<String, Crate>,
-    crate_id_lookup: &HashMap<usize, String>,
-) -> HashMap<usize, String> {
+    crates: &mut AHashMap<String, Crate>,
+    crate_id_lookup: &AHashMap<usize, String>,
+) -> AHashMap<usize, String> {
     let versions = get_versions(data_path);
-    let mut version_to_crates = HashMap::<usize, String>::new();
+    let mut version_to_crates = AHashMap::<usize, String>::new();
     println!("Creating versioned crates...");
 
     let start = Instant::now();
@@ -268,7 +266,7 @@ fn create_versioned_crates(
 
         version_crate.created_at = created_at.to_owned();
         version_crate.features = serde_json::from_str(features)
-            .unwrap_or_else(|_| panic!("Unable to deserialize {} as HashMap", features));
+            .unwrap_or_else(|_| panic!("Unable to deserialize {} as AHashMap", features));
         version_crate.version = num.to_owned();
 
         version_to_crates.insert(id.to_owned(), crate_id.to_owned());
@@ -291,9 +289,9 @@ fn create_versioned_crates(
 /// * `crate_id_lookup` - a map of crate SQL ids to names.
 fn load_dependencies(
     data_path: &str,
-    crates: &mut HashMap<String, Crate>,
-    versions_to_crates: &HashMap<usize, String>,
-    crate_id_lookup: &HashMap<usize, String>,
+    crates: &mut AHashMap<String, Crate>,
+    versions_to_crates: &AHashMap<usize, String>,
+    crate_id_lookup: &AHashMap<usize, String>,
 ) {
     println!("Loading dependencies...");
     let start = Instant::now();
@@ -374,10 +372,10 @@ fn load_dependencies(
 /// * `category_id_lookup` - a map of category SQL ids to names.
 fn load_crate_categories(
     data_path: &str,
-    crates: &mut HashMap<String, Crate>,
-    categories: &mut HashMap<String, Category>,
-    crate_id_lookup: &HashMap<usize, String>,
-    category_id_lookup: &HashMap<usize, String>,
+    crates: &mut AHashMap<String, Crate>,
+    categories: &mut AHashMap<String, Category>,
+    crate_id_lookup: &AHashMap<usize, String>,
+    category_id_lookup: &AHashMap<usize, String>,
 ) {
     println!("Loading crate categories...");
     let start = Instant::now();
@@ -436,10 +434,10 @@ fn load_crate_categories(
 /// * `keyword_id_lookup` - a map of keyword SQL ids to names.
 fn load_crate_keywords(
     data_path: &str,
-    crates: &mut HashMap<String, Crate>,
-    keywords: &mut HashMap<String, Keyword>,
-    crate_id_lookup: &HashMap<usize, String>,
-    keyword_id_lookup: &HashMap<usize, String>,
+    crates: &mut AHashMap<String, Crate>,
+    keywords: &mut AHashMap<String, Keyword>,
+    crate_id_lookup: &AHashMap<usize, String>,
+    keyword_id_lookup: &AHashMap<usize, String>,
 ) {
     println!("Loading crate keywords...");
     let start = Instant::now();
@@ -492,7 +490,7 @@ fn load_crate_keywords(
 ///
 /// # Arguments
 /// * `crates` - a map of crate names to values.
-fn alphabetize_crate_contents(crates: &mut HashMap<String, Crate>) {
+fn alphabetize_crate_contents(crates: &mut AHashMap<String, Crate>) {
     println!("Alphabetizing crate contents...");
     let start = Instant::now();
 

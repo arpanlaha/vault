@@ -6,11 +6,12 @@ mod load;
 mod schema;
 mod traits;
 
+use ahash::{AHashMap, AHashSet};
 use cargo_platform::{Cfg, Platform};
 use chrono::NaiveDateTime;
 use serde::Serialize;
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     fs::File,
     process::Command,
     str::{self, FromStr},
@@ -23,7 +24,7 @@ pub use traits::{Random, Search};
 /// A struct containing information about the crates.io registry.
 pub struct Graph {
     /// A mapping of `Category` names to values.
-    categories: HashMap<String, Category>,
+    categories: AHashMap<String, Category>,
 
     /// A set of `Category` names for searching.
     category_names: BTreeSet<String>,
@@ -32,13 +33,13 @@ pub struct Graph {
     cfg_names: BTreeSet<String>,
 
     /// A mapping of `Crate` names to values.
-    crates: HashMap<String, Crate>,
+    crates: AHashMap<String, Crate>,
 
     /// A set of `Crate` names for searching.
     crate_names: BTreeSet<String>,
 
     /// A set of `Keyword` names for searching.
-    keywords: HashMap<String, Keyword>,
+    keywords: AHashMap<String, Keyword>,
 
     /// A set of `Keyword` names for searching.
     keyword_names: BTreeSet<String>,
@@ -115,7 +116,7 @@ impl Graph {
 
     /// Returns an immutable reference to the `Category` map.
     #[must_use]
-    pub const fn categories(&self) -> &HashMap<String, Category> {
+    pub const fn categories(&self) -> &AHashMap<String, Category> {
         &self.categories
     }
 
@@ -127,13 +128,13 @@ impl Graph {
 
     /// Returns an immutable reference to the `Crate` map.
     #[must_use]
-    pub const fn crates(&self) -> &HashMap<String, Crate> {
+    pub const fn crates(&self) -> &AHashMap<String, Crate> {
         &self.crates
     }
 
     /// Returns an immutable reference to the `Keyword` map.
     #[must_use]
-    pub const fn keywords(&self) -> &HashMap<String, Keyword> {
+    pub const fn keywords(&self) -> &AHashMap<String, Keyword> {
         &self.keywords
     }
 
@@ -189,12 +190,12 @@ impl Graph {
                 // a list of crate names and distances from the root crate
                 let mut crate_distance_vec: Vec<(&String, usize)> = vec![];
                 // a map of crates seen and which features have already been enabled for them
-                let mut crates_seen: HashMap<&String, Vec<String>> = HashMap::new();
+                let mut crates_seen: AHashMap<&String, Vec<String>> = AHashMap::new();
 
                 // a list of dependencies to return
                 let mut dependencies: Vec<&Dependency> = vec![];
                 // a set of dependencies seen so far by source and destination name
-                let mut dependencies_seen: HashSet<(String, String)> = HashSet::new();
+                let mut dependencies_seen: AHashSet<(String, String)> = AHashSet::new();
                 // the queue of dependnencies to process.
                 let mut dependency_queue: VecDeque<QueueDependency> = VecDeque::new();
 
@@ -447,16 +448,16 @@ impl Default for Graph {
     }
 }
 
-/// Creates a set of names from a `HashMap`.
+/// Creates a set of names from a `AHashMap`.
 ///
 /// # Arguments
 /// * `collection` - the collection to convert.
-fn get_names<T>(collection: &HashMap<String, T>) -> BTreeSet<String> {
+fn get_names<T>(collection: &AHashMap<String, T>) -> BTreeSet<String> {
     collection.keys().cloned().collect()
 }
 
 /// Returns a set of cfg names (e.g. `unix`, `cargo_web`) present among all dependencies.
-fn get_cfg_names(crates: &HashMap<String, Crate>) -> BTreeSet<String> {
+fn get_cfg_names(crates: &AHashMap<String, Crate>) -> BTreeSet<String> {
     println!("Collecting cfg names...");
     let start = Instant::now();
 
@@ -533,11 +534,11 @@ impl<'a> CrateDistance<'a> {
     ///
     /// # Arguments
     /// * `crate_distance_info` - a the `CrateDistanceInfo` containing the relevant information.
-    /// * `crates` - the `HashMap` containing the crate values.
+    /// * `crates` - the `AHashMap` containing the crate values.
     #[must_use]
     pub fn new(
         crate_distance_info: CrateDistanceInfo<'a>,
-        crates: &'a HashMap<String, Crate>,
+        crates: &'a AHashMap<String, Crate>,
     ) -> CrateDistance<'a> {
         let CrateDistanceInfo {
             crate_id,

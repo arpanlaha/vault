@@ -1,7 +1,8 @@
 use super::schema::{Category, Crate, Keyword};
+use ahash::AHashMap;
 use rand::Rng;
 use std::{
-    collections::{BTreeSet, HashMap, VecDeque},
+    collections::{BTreeSet, VecDeque},
     hash::BuildHasher,
     ops::Bound::{Excluded, Included},
 };
@@ -77,8 +78,8 @@ pub trait Random<T> {
     fn random(&self) -> &T;
 }
 
-impl<T, U, S: BuildHasher> Random<T> for HashMap<U, T, S> {
-    /// Returns a random element from a `HashMap`.
+impl<T, U, S: BuildHasher> Random<T> for AHashMap<U, T, S> {
+    /// Returns a random element from a `AHashMap`.
     fn random(&self) -> &T {
         self.values()
             .nth(rand::thread_rng().gen_range(0, self.len()))
@@ -92,8 +93,9 @@ pub trait Search<T: Vertex> {
     ///
     /// # Arguments
     /// * `search_term` - the term being searched.
-    /// * `collection` - the `HashMap` containing the values of the collection.
-    fn search<'a>(&self, search_term: &str, collection: &'a HashMap<String, T>) -> VecDeque<&'a T>;
+    /// * `collection` - the `AHashMap` containing the values of the collection.
+    fn search<'a>(&self, search_term: &str, collection: &'a AHashMap<String, T>)
+        -> VecDeque<&'a T>;
 }
 
 impl<T: Vertex> Search<T> for BTreeSet<String> {
@@ -101,8 +103,12 @@ impl<T: Vertex> Search<T> for BTreeSet<String> {
     ///
     /// # Arguments
     /// * `search_term` - the term being searched.
-    /// * `collection` - the `HashMap` containing the values of the collection.
-    fn search<'a>(&self, search_term: &str, collection: &'a HashMap<String, T>) -> VecDeque<&'a T> {
+    /// * `collection` - the `AHashMap` containing the values of the collection.
+    fn search<'a>(
+        &self,
+        search_term: &str,
+        collection: &'a AHashMap<String, T>,
+    ) -> VecDeque<&'a T> {
         // Search results are sorted by popularity, with tiebreakers favoring shorter results.
         // As the results are traversed in alphabetical order, further ties will be broken by lexicographic order.
         let should_replace = |a: &T, b: &T| {

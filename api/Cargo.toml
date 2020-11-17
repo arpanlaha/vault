@@ -8,6 +8,7 @@ license = "MIT"
 repository = "https://github.com/arpanlaha/vault.git"
 
 [dependencies]
+ahash = "0.5"
 env_logger = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "0.3", features = ["macros", "rt-multi-thread"] }
