@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use env_logger::Env;
+use env_logger::{Builder, Env};
 use std::{env, sync::Arc};
 use vault_api::routes::{self, utils};
 use vault_graph::Graph;
@@ -31,7 +31,7 @@ async fn main() {
     let app_state = Arc::new(Graph::new());
 
     // initialize logger at `info` level
-    env_logger::from_env(Env::default().default_filter_or("info")).init();
+    Builder::from_env(Env::default().default_filter_or("info")).init();
 
     warp::serve(
         routes::get(app_state.clone())
