@@ -30,7 +30,13 @@ jobs:
           toolchain: nightly
 
       - name: Run benchmarks
-        run: cargo +nightly bench --tests
+        run: cargo +nightly bench --tests > bench.txt
+
+      - name: Upload benchmarks
+        uses: actions/upload-artifact@v2
+        with:
+          name: Benchmark Results
+          path: bench.txt
 
   format:
     runs-on: ubuntu-latest

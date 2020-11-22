@@ -82,4 +82,10 @@ jobs:
           toolchain: nightly
 
       - name: Run tests
-        run: cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1
+        run: cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
+
+      - name: Upload tests
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test Results
+          path: tests.txt
