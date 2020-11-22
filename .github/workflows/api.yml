@@ -88,4 +88,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Test Results
-          path: tests.txt
+          path: api/tests.txt
