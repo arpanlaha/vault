@@ -1,6 +1,10 @@
 name: graph
 
-on: push
+on:
+  push:
+    paths:
+      - graph/**
+      - .github/workflows/graph.yml
 
 defaults:
   run:

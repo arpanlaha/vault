@@ -1,6 +1,10 @@
 name: targets
 
-on: push
+on:
+  push:
+    paths:
+      - targets/**
+      - .github/workflows/targets.yml
 
 defaults:
   run:

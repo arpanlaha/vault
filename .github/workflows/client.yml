@@ -1,6 +1,10 @@
 name: client
 
-on: push
+on:
+  push:
+    paths:
+      - client/**
+      - .github/workflows/client.yml
 
 defaults:
   run:
