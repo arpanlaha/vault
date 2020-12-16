@@ -34,7 +34,7 @@ jobs:
           toolchain: nightly-2020-11-22
 
       - name: Run benchmarks
-        run: cargo +nightly bench --tests > bench.txt
+        run: cargo bench --tests > bench.txt
 
       - name: Upload benchmarks
         uses: actions/upload-artifact@v2
@@ -66,7 +66,7 @@ jobs:
           components: rustfmt
 
       - name: Run rustfmt
-        run: cargo +nightly fmt -- --check
+        run: cargo fmt -- --check
 
   lint:
     runs-on: ubuntu-latest
@@ -92,4 +92,4 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        run: cargo +nightly clippy -- -D warnings
+        run: cargo clippy -- -D warnings
