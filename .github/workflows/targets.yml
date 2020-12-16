@@ -35,7 +35,7 @@ jobs:
           components: rustfmt
 
       - name: Run rustfmt
-        run: cargo fmt -- --check
+        run: cargo +nightly-2020-11-22 fmt -- --check
 
   lint:
     runs-on: ubuntu-latest
@@ -61,4 +61,4 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo +nightly-2020-11-22 clippy -- -D warnings

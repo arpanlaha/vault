@@ -35,7 +35,7 @@ jobs:
           components: rustfmt
 
       - name: Run rustfmt
-        run: cargo fmt -- --check
+        run: cargo +nightly-2020-11-22 fmt -- --check
 
   lint:
     runs-on: ubuntu-latest
@@ -61,7 +61,7 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo +nightly-2020-11-22 clippy -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
           toolchain: nightly-2020-11-22
 
       - name: Run tests
-        run: cargo test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
+        run: cargo +nightly-2020-11-22 test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
 
       - name: Upload tests
         uses: actions/upload-artifact@v2
