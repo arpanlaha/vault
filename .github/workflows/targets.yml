@@ -31,7 +31,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: nightly-2020-11-22
           components: rustfmt
 
       - name: Run rustfmt
@@ -57,7 +57,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: nightly-2020-11-22
           components: clippy
 
       - name: Run clippy
