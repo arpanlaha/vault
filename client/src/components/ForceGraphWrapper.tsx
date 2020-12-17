@@ -5,10 +5,9 @@ import React, {
   useState,
   useEffect,
 } from "react";
+import ForceGraph3D from "react-force-graph-3d";
 import { CrateDistance, Dependency, DependencyGraph } from "../utils/types";
-import loadable from "@loadable/component";
 
-const ForceGraph = loadable(() => import("./ForceGraph"));
 const DIMENSION_FACTOR = 0.1;
 
 interface ForceGraphWrapperProps {
@@ -102,7 +101,7 @@ export default function ForceGraphWrapper(
   };
 
   return (
-    <ForceGraph
+    <ForceGraph3D
       graphData={{
         nodes: crates,
         links: dependencies,
