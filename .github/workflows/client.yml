@@ -5,6 +5,7 @@ on:
     paths:
       - client/**
       - .github/workflows/client.yml
+      - vercel.json
 
 defaults:
   run:
