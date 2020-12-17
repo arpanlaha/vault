@@ -1,0 +1,12 @@
+{
+  "plugins": ["@hack4impact-uiuc"],
+  "extends": [
+    "plugin:@hack4impact-uiuc/base",
+    "plugin:@hack4impact-uiuc/react",
+    "plugin:@hack4impact-uiuc/typescript"
+  ],
+  "rules": {
+    "@typescript-eslint/camelcase": "off",
+    "no-console": "error"
+  }
+}
