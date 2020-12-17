@@ -15,19 +15,12 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "/client/$1"
-    },
-    {
       "src": "/favicon.ico",
       "dest": "/client/public/logo.svg"
     },
     {
-      "src": "^((?!robots.txt).)*$",
-      "status": 308,
-      "headers": {
-        "Location": "https://arpanlaha.com/page-not-found"
-      }
+      "src": "/(.*)",
+      "dest": "client/index.html"
     }
   ]
 }
