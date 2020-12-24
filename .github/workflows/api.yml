@@ -64,7 +64,9 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        run: cargo +nightly clippy -- -D warnings
+        run: |
+          touch .env
+          cargo +nightly clippy -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -89,7 +91,9 @@ jobs:
           toolchain: nightly
 
       - name: Run tests
-        run: cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
+        run: |
+          touch .env
+          cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
 
       - name: Upload tests
         uses: actions/upload-artifact@v2
