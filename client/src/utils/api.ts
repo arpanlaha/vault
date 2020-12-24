@@ -9,7 +9,7 @@ import {
   TargetList,
 } from "./types";
 
-const API_URL = process.env.GATSBY_VAULT_API_URL;
+const API_URL = process.env.REACT_APP_VAULT_API_URL;
 
 const wrapResponse = <T>(
   response: Promise<AxiosResponse<T>>

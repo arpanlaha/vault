@@ -1,0 +1,10 @@
+{
+  "name": "Vault",
+  "short_name": "Interactively visualize your crates.io dependencies.",
+  "description": "Interactively visualize your crates.io dependencies.",
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "display": "browser",
+  "icon": "static/logo.svg"
+}
