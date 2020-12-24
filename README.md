@@ -12,7 +12,7 @@ This application is a work in progress, and may break from time to time until it
 
 ### Client
 
-This application uses [Gatsby](https://www.gatsbyjs.org/) on the frontend, with [Ant Design](https://ant.design/) supplying UI components and [react-force-graph](https://github.com/vasturiano/react-force-graph) powering the graph visualization.
+This application uses React on the frontend, with [Ant Design](https://ant.design/) supplying UI components and [react-force-graph](https://github.com/vasturiano/react-force-graph) powering the graph visualization.
 
 ### API
 
