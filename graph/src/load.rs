@@ -6,10 +6,13 @@ use super::{
 };
 use ahash::AHashMap;
 use cargo_platform::Cfg;
-use csv::Reader;
+use csv::{Reader, ReaderBuilder};
 use semver_parser::version as semver_version;
-use serde::de::DeserializeOwned;
-use std::{any, cmp::Ordering, collections::BTreeMap, fmt::Debug, fs::File, io::{BufReader, BufRead}, path::Path, time::Instant};
+use serde::{de::DeserializeOwned, Deserialize};
+use std::{
+    any, cmp::Ordering, collections::BTreeMap, fmt::Debug, fs::File, io::BufReader, path::Path,
+    time::Instant,
+};
 
 /// Returns the path of the file containing rows for the specified collection.
 ///
@@ -509,20 +512,45 @@ fn alphabetize_crate_contents(crates: &mut AHashMap<String, Crate>) {
     );
 }
 
+/// A struct for deserialization based on the structure in targets.txt.
+#[derive(Deserialize)]
+struct Target {
+    /// The target triple.
+    triple: String,
+
+    /// The target's cfg pairs.
+    cfgs: Vec<Vec<String>>,
+}
+
 /// Loads targets from specified filename.
 ///
 /// # Arguments
 /// * `filename` - the file to load from.
 pub fn get_targets(filename: &str) -> BTreeMap<String, Vec<Cfg>> {
     let mut targets = BTreeMap::new();
+    let mut count = 0;
 
-    for record in Reader::from_reader(BufReader::new(File::open(filename).unwrap_or_else(|_| panic!("Error opening {}.", filename)))).records() {
-        // let line = line.unwrap();
+    for record in ReaderBuilder::new()
+        .delimiter(b';')
+        .from_reader(BufReader::new(
+            File::open(filename).unwrap_or_else(|_| panic!("Error opening {}.", filename)),
+        ))
+        .deserialize()
+    {
+        count += 1;
+        let target: Target = record.unwrap();
+        let cfgs = target
+            .cfgs
+            .iter()
+            .map(|cfg| match cfg.len() {
+                1 => Cfg::Name(cfg[0].to_owned()),
+                2 => Cfg::KeyPair(cfg[0].to_owned(), cfg[1].to_owned()),
+                _ => panic!("Invalid cfg entry: {:?}.", cfg),
+            })
+            .collect();
 
-        // let split = line.split(",");
-        // targets.insert
+        targets.insert(target.triple, cfgs);
     }
 
     targets
-
 }
