@@ -527,30 +527,25 @@ struct Target {
 /// # Arguments
 /// * `filename` - the file to load from.
 pub fn get_targets(filename: &str) -> BTreeMap<String, Vec<Cfg>> {
-    let mut targets = BTreeMap::new();
-    let mut count = 0;
-
-    for record in ReaderBuilder::new()
+    ReaderBuilder::new()
         .delimiter(b';')
         .from_reader(BufReader::new(
             File::open(filename).unwrap_or_else(|_| panic!("Error opening {}.", filename)),
         ))
         .deserialize()
-    {
-        count += 1;
-        let target: Target = record.unwrap();
-        let cfgs = target
-            .cfgs
-            .iter()
-            .map(|cfg| match cfg.len() {
-                1 => Cfg::Name(cfg[0].to_owned()),
-                2 => Cfg::KeyPair(cfg[0].to_owned(), cfg[1].to_owned()),
-                _ => panic!("Invalid cfg entry: {:?}.", cfg),
-            })
-            .collect();
+        .map(|record| {
+            let target: Target = record.unwrap();
+            let cfgs = target
+                .cfgs
+                .iter()
+                .map(|cfg| match cfg.len() {
+                    1 => Cfg::Name(cfg[0].to_owned()),
+                    2 => Cfg::KeyPair(cfg[0].to_owned(), cfg[1].to_owned()),
+                    _ => panic!("Invalid cfg entry: {:?}.", cfg),
+                })
+                .collect();
 
-        targets.insert(target.triple, cfgs);
-    }
-
-    targets
+            (target.triple, cfgs)
+        })
+        .collect()
 }
