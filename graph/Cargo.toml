@@ -12,7 +12,6 @@ ahash = "0.6"
 cargo-platform = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1.1"
-dotenv_codegen = "0.15"
 rand = "0.8"
 semver-parser = "0.10"
 serde = { version = "1.0", features = ["derive"] }

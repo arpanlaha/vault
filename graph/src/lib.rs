@@ -1,9 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(clippy::cast_precision_loss)]
 
-#[macro_use]
-extern crate dotenv_codegen;
-
 mod fs;
 mod load;
 mod schema;
@@ -76,7 +73,7 @@ impl Graph {
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
-            targets: load::get_targets(dotenv!("TARGETS_PATH")),
+            targets: load::get_targets(env!("VAULT_TARGETS_PATH")),
         }
     }
 
@@ -108,7 +105,7 @@ impl Graph {
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
-            targets: load::get_targets(dotenv!("TARGETS_PATH")),
+            targets: load::get_targets(env!("VAULT_TARGETS_PATH")),
         }
     }
 

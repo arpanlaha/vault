@@ -11,7 +11,7 @@ defaults:
     working-directory: api
 
 env:
-  TARGETS_PATH: temp
+  VAULT_TARGETS_PATH: temp
 
 jobs:
   format:
@@ -64,9 +64,7 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        run: |
-          touch .env
-          cargo +nightly clippy -- -D warnings
+        run: cargo +nightly clippy -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -91,9 +89,7 @@ jobs:
           toolchain: nightly
 
       - name: Run tests
-        run: |
-          touch .env
-          cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
+        run: cargo +nightly test --no-fail-fast --test categories --test compiler --test crates --test keywords --test state -- --test-threads 1 > tests.txt
 
       - name: Upload tests
         uses: actions/upload-artifact@v2
