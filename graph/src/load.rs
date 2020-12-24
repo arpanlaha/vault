@@ -5,10 +5,11 @@ use super::{
     traits::Vertex,
 };
 use ahash::AHashMap;
+use cargo_platform::Cfg;
 use csv::Reader;
 use semver_parser::version as semver_version;
 use serde::de::DeserializeOwned;
-use std::{any, cmp::Ordering, fmt::Debug, fs::File, io::BufReader, path::Path, time::Instant};
+use std::{any, cmp::Ordering, collections::BTreeMap, fmt::Debug, fs::File, io::{BufReader, BufRead}, path::Path, time::Instant};
 
 /// Returns the path of the file containing rows for the specified collection.
 ///
@@ -506,4 +507,22 @@ fn alphabetize_crate_contents(crates: &mut AHashMap<String, Crate>) {
         "Alphabetized crate contents in {} seconds.",
         start.elapsed().as_secs_f64()
     );
+}
+
+/// Loads targets from specified filename.
+///
+/// # Arguments
+/// * `filename` - the file to load from.
+pub fn get_targets(filename: &str) -> BTreeMap<String, Vec<Cfg>> {
+    let mut targets = BTreeMap::new();
+
+    for record in Reader::from_reader(BufReader::new(File::open(filename).unwrap_or_else(|_| panic!("Error opening {}.", filename)))).records() {
+        // let line = line.unwrap();
+
+        // let split = line.split(",");
+        // targets.insert
+    }
+
+    targets
+
 }

@@ -82,7 +82,7 @@ impl<T, U, S: BuildHasher> Random<T> for AHashMap<U, T, S> {
     /// Returns a random element from a `AHashMap`.
     fn random(&self) -> &T {
         self.values()
-            .nth(rand::thread_rng().gen_range(0, self.len()))
+            .nth(rand::thread_rng().gen_range(0..self.len()))
             .unwrap()
     }
 }

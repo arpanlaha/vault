@@ -73,7 +73,7 @@ impl Graph {
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
-            targets: vault_targets::get_targets(),
+            targets: load::get_targets("../targets.txt"),
         }
     }
 
@@ -105,7 +105,7 @@ impl Graph {
             keyword_names: get_names(&keywords),
             keywords,
             last_updated: Instant::now(),
-            targets: vault_targets::get_targets(),
+            targets: load::get_targets("../targets.txt"),
         }
     }
 
