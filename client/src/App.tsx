@@ -5,18 +5,18 @@ import {
   StringParam,
   useQueryParam,
 } from "use-query-params";
-import { ForceGraphWrapper, Head, Sidebar } from "../components";
+import { ForceGraphWrapper, Head, Sidebar } from "./components";
 import { notification, Layout } from "antd";
 import {
   getCfgNames,
   getDependencyGraph,
   getRandomDependencyGraph,
   getTargets,
-} from "../utils/api";
-import { Crate, DependencyGraph } from "../utils/types";
+} from "./utils/api";
+import { Crate, DependencyGraph } from "./utils/types";
 
-import "../styles/antd.scss";
-import "../styles/vault.scss";
+import "./styles/antd.scss";
+import "./styles/vault.scss";
 
 const { Content } = Layout;
 
@@ -31,7 +31,7 @@ const CommaArrayParam = {
 const DEFAULT_TARGET = "x86_64-unknown-linux-gnu";
 const DEFAULT_CFG_NAME = "unix";
 
-export default function Home(): ReactElement {
+export default function App(): ReactElement {
   const [portrait, setPortrait] = useState(false);
   const [targets, setTargets] = useState<string[]>([]);
   const [cfgNames, setCfgNames] = useState<string[]>([]);
