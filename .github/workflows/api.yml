@@ -9,6 +9,8 @@ on:
 defaults:
   run:
     working-directory: api
+  env:
+    TARGETS_PATH: temp
 
 jobs:
   format:
