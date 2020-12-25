@@ -28,7 +28,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             graph/target
-          key: nightly-vault-graph-bench
+          key: vault-graph-bench
 
       - name: Install rust toolchain (nightly)
         uses: actions-rs/toolchain@v1
@@ -59,7 +59,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             graph/target
-          key: nightly-vault-graph-format
+          key: vault-graph-format
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
@@ -85,7 +85,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             graph/target
-          key: nightly-vault-graph-lint
+          key: vault-graph-lint
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
