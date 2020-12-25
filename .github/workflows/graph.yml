@@ -11,7 +11,7 @@ defaults:
     working-directory: graph
 
 env:
-  VAULT_TARGETS_PATH: temp
+  VAULT_TARGETS_PATH: targets.txt
 
 jobs:
   bench:
