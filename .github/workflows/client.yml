@@ -30,7 +30,7 @@ jobs:
           key: client-cache
 
       - name: Install dependencies
-        run: npm install
+        run: npm instal
 
       - name: Check formatting
         run: npm run format:check
