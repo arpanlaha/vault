@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/arpanlaha/vault.git"
 
 [dependencies]
-ahash = "0.6"
+ahash = "0.7"
 cargo-platform = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1.1"
