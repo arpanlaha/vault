@@ -1,4 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::unused_async)]
 
 use env_logger::{Builder, Env};
 use std::{env, sync::Arc};
