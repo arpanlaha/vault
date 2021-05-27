@@ -2,6 +2,7 @@ use cargo_platform::Cfg;
 use std::{env, fs::File, io::Write};
 
 fn main() {
+    // vault_targets::get_targets();
     let targets = vault_targets::get_targets();
 
     let mut file = File::create(env::args().nth(1).expect("Output file not specified.")).unwrap();

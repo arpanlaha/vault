@@ -9,4 +9,4 @@ repository = "https://github.com/arpanlaha/vault.git"
 
 [dependencies]
 cargo-platform = "0.1"
-rustc-ap-rustc_target = "677.0.0"
+rustc-ap-rustc_target = "721.0.0"
