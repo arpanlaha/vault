@@ -1,5 +1,6 @@
 cargo build --release
 sudo cp target/release/vault_api /usr/sbin/vault_api
+sudo cp ../targets.txt /etc/vault_api/targets.txt
 sudo cp config/systemd/vault_api.service /etc/systemd/system/vault_api.service
 sudo cp config/syslog/vault_api.conf /etc/rsyslog.d/vault_api.conf
 sudo mkdir /var/log/vault_api
