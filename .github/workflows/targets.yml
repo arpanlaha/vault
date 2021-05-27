@@ -31,11 +31,11 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2020-11-22
+          toolchain: nightly
           components: rustfmt
 
       - name: Run rustfmt
-        run: cargo +nightly-2020-11-22 fmt -- --check
+        run: cargo +nightly fmt -- --check
 
   lint:
     runs-on: ubuntu-latest
@@ -57,8 +57,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2020-11-22
+          toolchain: nightly
           components: clippy
 
       - name: Run clippy
-        run: cargo +nightly-2020-11-22 clippy -- -D warnings
+        run: cargo +nightly clippy -- -D warnings
