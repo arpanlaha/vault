@@ -1,4 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::missing_panics_doc)]
 
 use cargo_platform::Cfg;
 use rustc_ap_rustc_target::spec::{Target, TargetTriple, TARGETS};

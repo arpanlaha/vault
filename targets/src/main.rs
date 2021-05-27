@@ -1,3 +1,5 @@
+#![allow(clippy::missing_panics_doc)]
+
 use cargo_platform::Cfg;
 use std::{env, fs::File, io::Write};
 
