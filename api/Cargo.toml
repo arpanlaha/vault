@@ -13,7 +13,7 @@ repository = "https://github.com/arpanlaha/vault.git"
 ahash = "0.7"
 env_logger = "0.8"
 serde = { version = "1.0", features = ["derive"] }
-tokio = {version = "1.0", features=["macros", "rt-multi-thread"]}
+tokio = {version = "1.8", features=["macros", "rt-multi-thread"]}
 vault_graph = { path = "../graph" }
 warp = "0.3"
 
