@@ -1,5 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_precision_loss, clippy::missing_panics_doc)]
 
 mod fs;
 mod load;
@@ -415,14 +415,14 @@ impl Graph {
                 .find(|dependency| dependency.to == dependency_name)
             {
                 if dependency.default_features {
-                    dependency_features.push(default_string.to_owned());
+                    dependency_features.push(default_string.clone());
                 }
 
                 if let Some(dependency_target) = &dependency.target {
                     if let Ok(dependency_platform) = Platform::from_str(dependency_target) {
-                        let mut cfg_attributes = self.targets.get(target).unwrap().to_owned();
+                        let mut cfg_attributes = self.targets.get(target).unwrap().clone();
 
-                        cfg_attributes.push(cfg_name.to_owned());
+                        cfg_attributes.push(cfg_name.clone());
 
                         target_supported =
                             dependency_platform.matches(target, cfg_attributes.as_slice());
@@ -432,7 +432,7 @@ impl Graph {
 
             if target_supported {
                 dependency_queue.push_back(QueueDependency {
-                    from: crate_val.name.to_owned(),
+                    from: crate_val.name.clone(),
                     to: dependency_name,
                     to_feature_names: dependency_features,
                     to_distance: distance + 1,

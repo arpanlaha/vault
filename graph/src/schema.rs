@@ -213,7 +213,7 @@ pub struct SqlDependency {
 ///
 /// This creates a `NaiveDateTime` with 0 seconds and 0 nanoseconds since January 1, 1970.
 fn default_naive_date_time() -> NaiveDateTime {
-    NaiveDateTime::from_timestamp(0, 0)
+    NaiveDateTime::from_timestamp_opt(0, 0).unwrap()
 }
 
 impl Version {
