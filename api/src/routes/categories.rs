@@ -98,7 +98,7 @@ mod handlers {
     }
 
     impl<'a> CategoryResponse<'a> {
-        /// Creates a `CategoryResponse` from the given `Category.
+        /// Creates a `CategoryResponse` from the given `Category`.
         ///
         /// # Arguments
         /// * `category` - the given `Category`.
