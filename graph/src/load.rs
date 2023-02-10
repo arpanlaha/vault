@@ -20,7 +20,7 @@ use std::{
 /// * `data_path` - the path to the `data` directory inside the database dump.
 /// * `collection_name` - the name of the collection.
 fn get_collection_path(data_path: &str, collection_name: &str) -> String {
-    format!("{}/{}.csv", data_path, collection_name)
+    format!("{data_path}/{collection_name}.csv")
 }
 
 /// Returns a tuple containing the categories, crates, and keywords loaded from a crates.io database dump.
@@ -93,7 +93,7 @@ fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     data_path: &str,
     collection_name: &str,
 ) -> (AHashMap<String, T>, AHashMap<usize, String>) {
-    println!("Loading {}...", collection_name);
+    println!("Loading {collection_name}...");
     let start = Instant::now();
     let mut count = 0_usize;
 
@@ -107,7 +107,7 @@ fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path))
-            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
+            .unwrap_or_else(|_| panic!("Unable to open {file_path}")),
     ))
     .deserialize()
     {
@@ -170,13 +170,13 @@ fn get_versions(data_path: &str) -> AHashMap<usize, Version> {
     let filename = get_collection_path(data_path, "versions");
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&filename)).unwrap_or_else(|_| panic!("Unable to open {}", filename)),
+        File::open(Path::new(&filename)).unwrap_or_else(|_| panic!("Unable to open {filename}")),
     ))
     .deserialize()
     {
         count += 1;
         let version: Version =
-            result.unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Version", count));
+            result.unwrap_or_else(|_| panic!("Unable to deserialize entry {count} as Version"));
 
         let Version {
             num,
@@ -262,18 +262,18 @@ fn create_versioned_crates(
     {
         let crate_id = crate_id_lookup
             .get(crate_id)
-            .unwrap_or_else(|| panic!("Crate with SQL id {} does not exist", crate_id));
+            .unwrap_or_else(|| panic!("Crate with SQL id {crate_id} does not exist"));
 
         let version_crate = crates
             .get_mut(crate_id)
-            .unwrap_or_else(|| panic!("Crate with id {} does not exist", crate_id));
+            .unwrap_or_else(|| panic!("Crate with id {crate_id} does not exist"));
 
-        version_crate.created_at = created_at.to_owned();
+        version_crate.created_at = *created_at;
         version_crate.features = serde_json::from_str(features)
-            .unwrap_or_else(|_| panic!("Unable to deserialize {} as AHashMap", features));
-        version_crate.version = num.to_owned();
+            .unwrap_or_else(|_| panic!("Unable to deserialize {features} as AHashMap"));
+        version_crate.version = num.clone();
 
-        version_to_crates.insert(id.to_owned(), crate_id.to_owned());
+        version_to_crates.insert(id.to_owned(), crate_id.clone());
     }
 
     println!(
@@ -304,12 +304,12 @@ fn load_dependencies(
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&dependencies_path))
-            .unwrap_or_else(|_| panic!("Unable to open {}", dependencies_path)),
+            .unwrap_or_else(|_| panic!("Unable to open {dependencies_path}")),
     ))
     .deserialize()
     {
         let sql_dependency: SqlDependency = result
-            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as Dependency", count));
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {count} as Dependency"));
         let SqlDependency {
             default_features,
             features,
@@ -328,7 +328,7 @@ fn load_dependencies(
 
                 crates
                     .get_mut(from)
-                    .unwrap_or_else(|| panic!("Crate with id {} not found", from))
+                    .unwrap_or_else(|| panic!("Crate with id {from} not found"))
                     .dependencies
                     .push(Dependency {
                         default_features: default_features == "t",
@@ -342,7 +342,7 @@ fn load_dependencies(
                                 }
                             })
                             .collect(),
-                        from: from.to_owned(),
+                        from: from.clone(),
                         optional: optional == "t",
                         target: if target.is_empty() {
                             None
@@ -352,9 +352,8 @@ fn load_dependencies(
                         to: crate_id_lookup
                             .get(&sql_dependency_crate_id)
                             .unwrap_or_else(|| {
-                                panic!("Crate with id {} not found", sql_dependency_crate_id)
-                            })
-                            .to_owned(),
+                                panic!("Crate with id {sql_dependency_crate_id} not found")
+                            }).clone(),
                     });
             }
         }
@@ -389,7 +388,7 @@ fn load_crate_categories(
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path))
-            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
+            .unwrap_or_else(|_| panic!("Unable to open {file_path}")),
     ))
     .deserialize()
     {
@@ -398,27 +397,27 @@ fn load_crate_categories(
             category_id,
             crate_id,
         } = result
-            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as crate category", count));
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {count} as crate category"));
 
         let category_id = category_id_lookup
             .get(&category_id)
-            .unwrap_or_else(|| panic!("Category with id {} not found", category_id));
+            .unwrap_or_else(|| panic!("Category with id {category_id} not found"));
 
         let crate_id = crate_id_lookup
             .get(&crate_id)
-            .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id));
+            .unwrap_or_else(|| panic!("Crate with id {crate_id} not found"));
 
         crates
             .get_mut(crate_id)
-            .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
+            .unwrap_or_else(|| panic!("Crate with id {crate_id} not found"))
             .categories
-            .push(category_id.to_owned());
+            .push(category_id.clone());
 
         categories
             .get_mut(category_id)
-            .unwrap_or_else(|| panic!("Category with id {} not found", category_id))
+            .unwrap_or_else(|| panic!("Category with id {category_id} not found"))
             .crates
-            .push(crate_id.to_owned());
+            .push(crate_id.clone());
     }
 
     println!(
@@ -451,7 +450,7 @@ fn load_crate_keywords(
 
     for result in Reader::from_reader(BufReader::new(
         File::open(Path::new(&file_path))
-            .unwrap_or_else(|_| panic!("Unable to open {}", file_path)),
+            .unwrap_or_else(|_| panic!("Unable to open {file_path}")),
     ))
     .deserialize()
     {
@@ -460,27 +459,27 @@ fn load_crate_keywords(
             crate_id,
             keyword_id,
         } = result
-            .unwrap_or_else(|_| panic!("Unable to deserialize entry {} as crate keyword", count));
+            .unwrap_or_else(|_| panic!("Unable to deserialize entry {count} as crate keyword"));
 
         let crate_id = crate_id_lookup
             .get(&crate_id)
-            .unwrap_or_else(|| panic!("Unable to find crate with id {}", crate_id));
+            .unwrap_or_else(|| panic!("Unable to find crate with id {crate_id}"));
 
         let keyword_id = keyword_id_lookup
             .get(&keyword_id)
-            .unwrap_or_else(|| panic!("Unable to find keyword with id {}", keyword_id));
+            .unwrap_or_else(|| panic!("Unable to find keyword with id {keyword_id}"));
 
         crates
             .get_mut(crate_id)
-            .unwrap_or_else(|| panic!("Crate with id {} not found", crate_id))
+            .unwrap_or_else(|| panic!("Crate with id {crate_id} not found"))
             .keywords
-            .push(keyword_id.to_owned());
+            .push(keyword_id.clone());
 
         keywords
             .get_mut(keyword_id)
-            .unwrap_or_else(|| panic!("Keyword with id {} not found", keyword_id))
+            .unwrap_or_else(|| panic!("Keyword with id {keyword_id} not found"))
             .crates
-            .push(crate_id.to_owned());
+            .push(crate_id.clone());
     }
 
     println!(
@@ -503,7 +502,7 @@ fn alphabetize_crate_contents(crates: &mut AHashMap<String, Crate>) {
         crate_val.keywords.sort_unstable();
         crate_val
             .dependencies
-            .sort_unstable_by_key(|dependency| dependency.to.to_owned());
+            .sort_unstable_by_key(|dependency| dependency.to.clone());
     }
 
     println!(
@@ -530,7 +529,7 @@ pub fn get_targets(filename: &str) -> BTreeMap<String, Vec<Cfg>> {
     ReaderBuilder::new()
         .delimiter(b';')
         .from_reader(BufReader::new(
-            File::open(filename).unwrap_or_else(|_| panic!("Error opening {}.", filename)),
+            File::open(filename).unwrap_or_else(|_| panic!("Error opening {filename}.")),
         ))
         .deserialize()
         .map(|record| {
@@ -539,9 +538,9 @@ pub fn get_targets(filename: &str) -> BTreeMap<String, Vec<Cfg>> {
                 .cfgs
                 .iter()
                 .map(|cfg| match cfg.len() {
-                    1 => Cfg::Name(cfg[0].to_owned()),
-                    2 => Cfg::KeyPair(cfg[0].to_owned(), cfg[1].to_owned()),
-                    _ => panic!("Invalid cfg entry: {:?}.", cfg),
+                    1 => Cfg::Name(cfg[0].clone()),
+                    2 => Cfg::KeyPair(cfg[0].clone(), cfg[1].clone()),
+                    _ => panic!("Invalid cfg entry: {cfg:?}."),
                 })
                 .collect();
 

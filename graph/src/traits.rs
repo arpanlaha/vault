@@ -138,7 +138,7 @@ impl<T: Vertex> Search<T> for BTreeSet<String> {
                     if search_results.is_empty() {
                         // add if first element found
                         search_results.push_back(prefixed_vertex);
-                    } else if should_replace(prefixed_vertex, *search_results.back().unwrap()) {
+                    } else if should_replace(prefixed_vertex, search_results.back().unwrap()) {
                         if let Some((index, _)) =
                             search_results
                                 .iter()

@@ -183,135 +183,131 @@ impl Graph {
         target: &Option<String>,
         cfg_name: &Option<String>,
     ) -> Option<DependencyGraph> {
-        match self.crates().get(crate_id) {
-            None => None,
+        self.crates().get(crate_id).map(|crate_val| {
+            // a list of crate names and distances from the root crate
+            let mut crate_distance_vec: Vec<(&String, usize)> = vec![];
+            // a map of crates seen and which features have already been enabled for them
+            let mut crates_seen: AHashMap<&String, Vec<String>> = AHashMap::new();
 
-            Some(crate_val) => {
-                // a list of crate names and distances from the root crate
-                let mut crate_distance_vec: Vec<(&String, usize)> = vec![];
-                // a map of crates seen and which features have already been enabled for them
-                let mut crates_seen: AHashMap<&String, Vec<String>> = AHashMap::new();
+            // a list of dependencies to return
+            let mut dependencies: Vec<&Dependency> = vec![];
+            // a set of dependencies seen so far by source and destination name
+            let mut dependencies_seen: AHashSet<(String, String)> = AHashSet::new();
+            // the queue of dependnencies to process.
+            let mut dependency_queue: VecDeque<QueueDependency> = VecDeque::new();
 
-                // a list of dependencies to return
-                let mut dependencies: Vec<&Dependency> = vec![];
-                // a set of dependencies seen so far by source and destination name
-                let mut dependencies_seen: AHashSet<(String, String)> = AHashSet::new();
-                // the queue of dependnencies to process.
-                let mut dependency_queue: VecDeque<QueueDependency> = VecDeque::new();
+            let target = String::from(
+                target
+                    .as_ref()
+                    .map_or("x86_64-unknown-linux-gnu", |target| target),
+            );
 
-                let target = String::from(match target {
-                    Some(target) => target,
-                    None => "x86_64-unknown-linux-gnu",
-                });
+            let cfg_name = Cfg::from_str(
+                cfg_name
+                    .as_ref()
+                    .map_or("unix", |cfg_name| cfg_name.as_str()),
+            )
+            .unwrap();
 
-                let cfg_name = Cfg::from_str(match cfg_name {
-                    Some(cfg_name) => cfg_name.as_str(),
-                    None => "unix",
-                })
-                .unwrap();
+            // insert the root crate
+            crate_distance_vec.push((&crate_val.name, 0));
+            crates_seen.insert(&crate_val.name, features.clone());
+            features.push(String::from("default"));
 
-                // insert the root crate
-                crate_distance_vec.push((&crate_val.name, 0));
-                crates_seen.insert(&crate_val.name, features.to_owned());
-                features.push(String::from("default"));
+            // add root crate dependendencies to the queue
+            self.dependency_graph_helper(
+                crate_val,
+                features,
+                &mut dependency_queue,
+                0,
+                &target,
+                &cfg_name,
+            );
 
-                // add root crate dependendencies to the queue
-                self.dependency_graph_helper(
-                    crate_val,
-                    features,
-                    &mut dependency_queue,
-                    0,
-                    &target,
-                    &cfg_name,
-                );
+            // while the queue is not empty
+            while let Some(QueueDependency {
+                from,
+                to,
+                mut to_feature_names,
+                to_distance,
+            }) = dependency_queue.pop_front()
+            {
+                let from_crate_val = self.crates.get(&from).unwrap();
+                let to_crate_val = self.crates.get(&to).unwrap();
+                let dependency_tuple = (from_crate_val.name.clone(), to_crate_val.name.clone());
 
-                // while the queue is not empty
-                while let Some(QueueDependency {
-                    from,
-                    to,
-                    mut to_feature_names,
-                    to_distance,
-                }) = dependency_queue.pop_front()
-                {
-                    let from_crate_val = self.crates.get(&from).unwrap();
-                    let to_crate_val = self.crates.get(&to).unwrap();
-                    let dependency_tuple =
-                        (from_crate_val.name.to_owned(), to_crate_val.name.to_owned());
+                // add dependency to list and set if not seen yet
+                if !dependencies_seen.contains(&dependency_tuple) {
+                    dependencies.push(
+                        from_crate_val
+                            .dependencies
+                            .iter()
+                            .find(|dependency| dependency.to == to)
+                            .unwrap(),
+                    );
 
-                    // add dependency to list and set if not seen yet
-                    if !dependencies_seen.contains(&dependency_tuple) {
-                        dependencies.push(
-                            from_crate_val
-                                .dependencies
-                                .iter()
-                                .find(|dependency| dependency.to == to)
-                                .unwrap(),
-                        );
+                    dependencies_seen.insert(dependency_tuple);
+                }
 
-                        dependencies_seen.insert(dependency_tuple);
-                    }
+                if let Some(crate_feature_names) = crates_seen.get_mut(&to_crate_val.name) {
+                    // if crate has been seen
 
-                    if let Some(crate_feature_names) = crates_seen.get_mut(&to_crate_val.name) {
-                        // if crate has been seen
+                    // remove already seen features
+                    to_feature_names.retain(|dependency_feature_name| {
+                        !crate_feature_names.contains(dependency_feature_name)
+                    });
 
-                        // remove already seen features
-                        to_feature_names.retain(|dependency_feature_name| {
-                            !crate_feature_names.contains(dependency_feature_name)
-                        });
-
-                        if !to_feature_names.is_empty() {
-                            // but has features that haven't been enabled yet
-                            // add dependencies to queue
-                            self.dependency_graph_helper(
-                                to_crate_val,
-                                to_feature_names.clone(),
-                                &mut dependency_queue,
-                                to_distance,
-                                &target,
-                                &cfg_name,
-                            );
-                        }
-
-                        crate_feature_names.append(&mut to_feature_names);
-                    } else {
-                        // add crate to list and map
-                        crate_distance_vec.push((&to_crate_val.name, to_distance));
-                        crates_seen.insert(&to_crate_val.name, to_feature_names.to_owned());
-
-                        // add crate dependencies to queue
+                    if !to_feature_names.is_empty() {
+                        // but has features that haven't been enabled yet
+                        // add dependencies to queue
                         self.dependency_graph_helper(
                             to_crate_val,
-                            to_feature_names,
+                            to_feature_names.clone(),
                             &mut dependency_queue,
                             to_distance,
                             &target,
                             &cfg_name,
                         );
                     }
+
+                    crate_feature_names.append(&mut to_feature_names);
+                } else {
+                    // add crate to list and map
+                    crate_distance_vec.push((&to_crate_val.name, to_distance));
+                    crates_seen.insert(&to_crate_val.name, to_feature_names.clone());
+
+                    // add crate dependencies to queue
+                    self.dependency_graph_helper(
+                        to_crate_val,
+                        to_feature_names,
+                        &mut dependency_queue,
+                        to_distance,
+                        &target,
+                        &cfg_name,
+                    );
                 }
-
-                Some(DependencyGraph {
-                    crates: crate_distance_vec
-                        .iter()
-                        .map(|&(crate_id, distance)| {
-                            let mut enabled_features =
-                                crates_seen.get(crate_id).unwrap().to_owned();
-                            enabled_features.retain(|feature_name| feature_name != "default");
-
-                            CrateDistance::new(
-                                CrateDistanceInfo {
-                                    crate_id,
-                                    distance,
-                                    enabled_features,
-                                },
-                                &self.crates,
-                            )
-                        })
-                        .collect(),
-                    dependencies,
-                })
             }
-        }
+
+            DependencyGraph {
+                crates: crate_distance_vec
+                    .iter()
+                    .map(|&(crate_id, distance)| {
+                        let mut enabled_features = crates_seen.get(crate_id).unwrap().clone();
+                        enabled_features.retain(|feature_name| feature_name != "default");
+
+                        CrateDistance::new(
+                            CrateDistanceInfo {
+                                crate_id,
+                                distance,
+                                enabled_features,
+                            },
+                            &self.crates,
+                        )
+                    })
+                    .collect(),
+                dependencies,
+            }
+        })
     }
 
     /// A helper function to construct the dependency graph.
@@ -338,17 +334,16 @@ impl Graph {
         // add mandatory dependencies
         for dependency in &crate_val.dependencies {
             if !dependency.optional {
-                dependencies_to_check
-                    .insert(dependency.to.to_owned(), dependency.features.to_owned());
+                dependencies_to_check.insert(dependency.to.clone(), dependency.features.clone());
             }
         }
 
         let default_string = String::from("default");
         let default_features_enabled = feature_names.contains(&default_string);
-        let default_features = match crate_val.features.get(&default_string) {
-            Some(default_features) => default_features.to_owned(),
-            None => vec![],
-        };
+        let default_features = crate_val
+            .features
+            .get(&default_string)
+            .map_or_else(Vec::new, Clone::clone);
 
         // add dependencies enabled by features
         for (feature_name, feature_dependencies) in &crate_val.features {
@@ -361,7 +356,7 @@ impl Graph {
                         // if feature enables another feature
                         if !feature_names.contains(feature_dependency) {
                             // if the enabled feature is not already included
-                            feature_names.push(feature_dependency.to_owned());
+                            feature_names.push(feature_dependency.clone());
                         }
                     } else if let Some(slash_index) = feature_dependency.find('/') {
                         // if features enabled
@@ -399,7 +394,7 @@ impl Graph {
                     {
                         // if features not enabled, insert dependency if not already present
                         dependencies_to_check
-                            .entry(feature_dependency.to_owned())
+                            .entry(feature_dependency.clone())
                             .or_insert_with(Vec::new);
                     }
                 }
