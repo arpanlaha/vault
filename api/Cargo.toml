@@ -1,8 +1,6 @@
-cargo-features = ["strip"]
-
 [package]
 authors = ["Arpan Laha <arpanlaha99@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "vault_api"
 version = "0.1.0"
 description = "Interactively visualize your crates.io dependencies."
@@ -10,10 +8,10 @@ license = "MIT"
 repository = "https://github.com/arpanlaha/vault.git"
 
 [dependencies]
-ahash = "0.7"
-env_logger = "0.9"
+ahash = "0.8"
+env_logger = "0.10"
 serde = { version = "1.0", features = ["derive"] }
-tokio = {version = "1.0", features=["macros", "rt-multi-thread"]}
+tokio = { version = "1.25", features = ["macros", "rt-multi-thread"] }
 vault_graph = { path = "../graph" }
 warp = "0.3"
 
