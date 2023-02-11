@@ -5,7 +5,7 @@ pub use handlers::CategoryResponse;
 
 /// Wraps all `Category` routes.
 #[must_use]
-pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     get_categories(state.clone())
         .or(get_category(state.clone()))
         .or(random(state.clone()))
@@ -13,7 +13,7 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
 }
 
 /// Returns a list of all categories.
-fn get_categories(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn get_categories(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("categories")
         .and(warp::path::end())
         .and(warp::get())
@@ -24,21 +24,21 @@ fn get_categories(state: State) -> impl Filter<Extract = impl Reply, Error = Rej
 ///
 /// # Errors
 /// * Returns a `404` error if no `Category` with the given id is found.
-fn get_category(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn get_category(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("categories" / String)
         .and(warp::get())
         .and_then(move |category_id| handlers::get_category(category_id, state.clone()))
 }
 
 /// Returns a random `Category`.
-fn random(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn random(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("random" / "categories")
         .and(warp::get())
         .and_then(move || handlers::random(state.clone()))
 }
 
 /// Searches for categorys matching the given search term.
-fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn search(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("search" / "categories" / String)
         .and(warp::get())
         .and_then(move |search_term| handlers::search(search_term, state.clone()))

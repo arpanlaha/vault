@@ -4,7 +4,7 @@ use warp::{Filter, Rejection, Reply};
 
 /// Wraps all `Crate` routes.
 #[must_use]
-pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     get_crate(state.clone())
         .or(random(state.clone()))
         .or(search(state.clone()))
@@ -16,21 +16,21 @@ pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejecti
 ///
 /// # Errors
 /// * Returns a `404` error if no `Crate` with the given id is found.
-fn get_crate(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn get_crate(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("crates" / String)
         .and(warp::get())
         .and_then(move |crate_id| handlers::get_crate(crate_id, state.clone()))
 }
 
 /// Returns a random `Crate`.
-fn random(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn random(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("random" / "crates")
         .and(warp::get())
         .and_then(move || handlers::random(state.clone()))
 }
 
 /// Searches for crates matching the given search term.
-fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn search(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("search" / "crates" / String)
         .and(warp::get())
         .and_then(move |search_term| handlers::search(search_term, state.clone()))
@@ -42,7 +42,7 @@ fn search(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> 
 /// * Returns a `404` error if no `Crate` with the given id is found.
 fn get_dependency_graph(
     state: State,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("graph" / String)
         .and(warp::get())
         .and(warp::query::<HashMap<String, String>>())
@@ -60,7 +60,7 @@ fn get_dependency_graph(
 /// Returns the `DependencyGraph` of a random `Crate`.
 fn get_random_dependency_graph(
     state: State,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("random" / "graph")
         .and(warp::get())
         .and_then(move || handlers::get_random_dependency_graph(state.clone()))

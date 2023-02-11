@@ -5,19 +5,19 @@ pub use handlers::{CfgNameList, TargetList};
 
 /// Wraps all compiler-related routes.
 #[must_use]
-pub fn routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     get_targets(state.clone()).or(get_cfg_names(state))
 }
 
 /// Returns a list of targets.
-fn get_targets(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn get_targets(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("compiler" / "targets")
         .and(warp::get())
         .and_then(move || handlers::get_targets(state.clone()))
 }
 
 /// Returns a list of cfg names.
-fn get_cfg_names(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn get_cfg_names(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path!("compiler" / "cfg-names")
         .and(warp::get())
         .and_then(move || handlers::get_cfg_names(state.clone()))

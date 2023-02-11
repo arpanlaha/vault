@@ -10,7 +10,7 @@ use warp::{Filter, Rejection, Reply};
 
 /// Wraps all routes.
 #[must_use]
-pub fn get(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn get(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     crates::routes(state.clone())
         .or(compiler::routes(state.clone()))
         .or(state::routes(state.clone()))
