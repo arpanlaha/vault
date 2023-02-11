@@ -36,17 +36,17 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
         match e {
             VaultError::CategoryNotFound(category_id) => (
                 StatusCode::NOT_FOUND,
-                format!("Category with id {} not found.", category_id),
+                format!("Category with id {category_id} not found."),
             ),
 
             VaultError::CrateNotFound(crate_id) => (
                 StatusCode::NOT_FOUND,
-                format!("Crate with id {} not found.", crate_id),
+                format!("Crate with id {crate_id} not found."),
             ),
 
             VaultError::KeywordNotFound(keyword_id) => (
                 StatusCode::NOT_FOUND,
-                format!("Keyword with id {} not found.", keyword_id),
+                format!("Keyword with id {keyword_id} not found."),
             ),
 
             VaultError::NonexistentOptions(nonexistent_options) => (
@@ -63,7 +63,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
             String::from("Method Not Allowed"),
         )
     } else {
-        eprintln!("unhandled error: {:?}", err);
+        eprintln!("unhandled error: {err:?}");
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             String::from("Internal Server Error"),

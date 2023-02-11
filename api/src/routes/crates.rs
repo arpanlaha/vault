@@ -76,11 +76,10 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Crate` with the given id is found.
     pub async fn get_crate(crate_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.crates().get(&crate_id) {
-            None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
-
-            Some(crate_val) => Ok(reply::json(crate_val)),
-        }
+        state.crates().get(&crate_id).map_or_else(
+            || Err(reject::custom(VaultError::CrateNotFound(crate_id))),
+            |crate_val| Ok(reply::json(crate_val)),
+        )
     }
 
     /// Returns a random `Crate`.
@@ -124,10 +123,10 @@ mod handlers {
         }
 
         if nonexistent_options.is_empty() {
-            match &state.get_dependency_graph(
-                &crate_id,
-                match features_option {
-                    Some(features) => {
+            state
+                .get_dependency_graph(
+                    &crate_id,
+                    features_option.map_or_else(Vec::new, |features| {
                         if features.contains(',') {
                             features
                                 .split(',')
@@ -136,16 +135,14 @@ mod handlers {
                         } else {
                             vec![features]
                         }
-                    }
-                    None => vec![],
-                },
-                &target_option,
-                &cfg_name_option,
-            ) {
-                None => Err(reject::custom(VaultError::CrateNotFound(crate_id))),
-
-                Some(dependency_graph) => Ok(reply::json(dependency_graph)),
-            }
+                    }),
+                    &target_option,
+                    &cfg_name_option,
+                )
+                .map_or_else(
+                    || Err(reject::custom(VaultError::CrateNotFound(crate_id))),
+                    |dependency_graph| Ok(reply::json(&dependency_graph)),
+                )
         } else {
             Err(reject::custom(VaultError::NonexistentOptions(
                 nonexistent_options,

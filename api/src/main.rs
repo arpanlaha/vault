@@ -17,7 +17,7 @@ async fn main() {
 
         port_string
             .parse::<u16>()
-            .unwrap_or_else(|_| panic!("{} is not a valid port number", port_string))
+            .unwrap_or_else(|_| panic!("{port_string} is not a valid port number"))
     };
 
     // address defaults to `0.0.0.0`, unless the `-l` or `--local` argument is passed, in which case the address is `127.0.0.1`

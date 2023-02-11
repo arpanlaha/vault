@@ -63,11 +63,10 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Category` with the given id is found.
     pub async fn get_category(category_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.categories().get(&category_id) {
-            None => Err(reject::custom(VaultError::CategoryNotFound(category_id))),
-
-            Some(category) => Ok(reply::json(&CategoryResponse::new(category, &state))),
-        }
+        state.categories().get(&category_id).map_or_else(
+            || Err(reject::custom(VaultError::CategoryNotFound(category_id))),
+            |category| Ok(reply::json(&CategoryResponse::new(category, &state))),
+        )
     }
 
     /// Returns a random `Category`.

@@ -43,11 +43,10 @@ mod handlers {
     /// # Errors
     /// * Returns a `404` error if no `Keyword` with the given id is found.
     pub async fn get_keyword(keyword_id: String, state: State) -> Result<impl Reply, Rejection> {
-        match state.keywords().get(&keyword_id) {
-            None => Err(reject::custom(VaultError::KeywordNotFound(keyword_id))),
-
-            Some(keyword) => Ok(reply::json(keyword)),
-        }
+        state.keywords().get(&keyword_id).map_or_else(
+            || Err(reject::custom(VaultError::KeywordNotFound(keyword_id))),
+            |keyword| Ok(reply::json(keyword)),
+        )
     }
 
     /// Returns a random `Keyword`.
