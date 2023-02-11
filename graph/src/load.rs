@@ -106,8 +106,7 @@ fn load_vertices<T: DeserializeOwned + Vertex + Debug>(
     let mut id_lookup = AHashMap::<usize, String>::new();
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&file_path))
-            .unwrap_or_else(|_| panic!("Unable to open {file_path}")),
+        File::open(Path::new(&file_path)).unwrap_or_else(|_| panic!("Unable to open {file_path}")),
     ))
     .deserialize()
     {
@@ -308,8 +307,8 @@ fn load_dependencies(
     ))
     .deserialize()
     {
-        let sql_dependency: SqlDependency = result
-            .unwrap_or_else(|_| panic!("Unable to deserialize entry {count} as Dependency"));
+        let sql_dependency: SqlDependency =
+            result.unwrap_or_else(|_| panic!("Unable to deserialize entry {count} as Dependency"));
         let SqlDependency {
             default_features,
             features,
@@ -353,7 +352,8 @@ fn load_dependencies(
                             .get(&sql_dependency_crate_id)
                             .unwrap_or_else(|| {
                                 panic!("Crate with id {sql_dependency_crate_id} not found")
-                            }).clone(),
+                            })
+                            .clone(),
                     });
             }
         }
@@ -387,8 +387,7 @@ fn load_crate_categories(
     let file_path = get_collection_path(data_path, "crates_categories");
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&file_path))
-            .unwrap_or_else(|_| panic!("Unable to open {file_path}")),
+        File::open(Path::new(&file_path)).unwrap_or_else(|_| panic!("Unable to open {file_path}")),
     ))
     .deserialize()
     {
@@ -449,8 +448,7 @@ fn load_crate_keywords(
     let file_path = get_collection_path(data_path, "crates_keywords");
 
     for result in Reader::from_reader(BufReader::new(
-        File::open(Path::new(&file_path))
-            .unwrap_or_else(|_| panic!("Unable to open {file_path}")),
+        File::open(Path::new(&file_path)).unwrap_or_else(|_| panic!("Unable to open {file_path}")),
     ))
     .deserialize()
     {
