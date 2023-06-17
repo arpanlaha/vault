@@ -59,7 +59,12 @@ impl Graph {
     pub fn new() -> Self {
         let temp_dir = fs::fetch_data();
 
-        let data_path = fs::get_data_path(&temp_dir).unwrap();
+        let data_path = fs::get_data_path(&temp_dir).unwrap_or_else(|| {
+            panic!(
+                "Unable to find data path in {}.",
+                temp_dir.path().display().to_string()
+            )
+        });
 
         let (categories, crates, keywords) = load::get_data(data_path.as_str());
         fs::clean_tempdir(temp_dir);

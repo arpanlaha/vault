@@ -37,7 +37,7 @@ async fn main() {
     warp::serve(
         routes::get(app_state.clone())
             .recover(utils::handle_rejection)
-            .with(warp::cors().allow_any_origin())
+            .with(warp::cors().allow_origin("https://vault.arpanlaha.com"))
             .with(warp::log("info")),
     )
     .run((address, port))

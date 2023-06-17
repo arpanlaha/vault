@@ -1,4 +1,9 @@
-use std::{fs, process::Command, time::Instant};
+use std::{
+    fs,
+    io::{self, Write},
+    process::Command,
+    time::Instant,
+};
 use tempfile::TempDir;
 
 /// Returns the location of the `data` directory inside the crates.io database dump.
@@ -42,12 +47,14 @@ pub fn fetch_data() -> TempDir {
 
     println!("Downloading tarballed database dump...");
     let download_start = Instant::now();
-    Command::new("curl")
-        .arg("https://static.crates.io/db-dump.tar.gz")
+    let curl_output = Command::new("curl")
+        .arg("https://cloudfront-static.crates.io/db-dump.tar.gz")
         .arg("-o")
         .arg(tgz_path_name)
         .output()
         .expect("Unable to fetch Crates database dump");
+    io::stdout().write_all(&curl_output.stdout).unwrap();
+    io::stderr().write_all(&curl_output.stderr).unwrap();
     println!(
         "Downloaded tarballed database dump in {} seconds.",
         download_start.elapsed().as_secs_f64()
